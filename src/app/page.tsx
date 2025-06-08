@@ -1,24 +1,53 @@
 
-"use client"; // Required for the hook
+"use client"; 
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, FileText, Zap, SettingsIcon } from 'lucide-react'; // Added ChevronRight, FileText, Zap, SettingsIcon
+import { PlusCircle, ListChecks, ChevronRight, FileText, Zap, SettingsIcon } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
 import { useLocalization } from '@/hooks/useLocalization';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function HomePage() {
-  const { t, language } = useLocalization(); // Added language for date formatting
+  const { t, language } = useLocalization(); 
 
-  const lastProjects = [
-    { id: 'proj1', name: t({ en: 'Johnson Property Offer', el: 'Πρόταση Ακινήτου Johnson' }), date: '2023-05-15' },
-    { id: 'proj2', name: t({ en: 'Lakeside Condo Offer', el: 'Πρόταση Διαμερίσματος Lakeside' }), date: '2023-04-28' },
-    { id: 'proj3', name: t({ en: 'Downtown Loft Offer', el: 'Πρόταση Σοφίτας Downtown' }), date: '2023-03-12' },
-    { id: 'proj4', name: t({ en: 'Riverfront Estate Offer', el: 'Πρόταση Κτήματος Riverfront' }), date: '2023-02-05' },
-  ];
+  // Define project data structure.
+  // useMemo will ensure lastProjects array identity is stable unless `t` changes.
+  // However, `t` itself might change if language changes, potentially causing re-evaluation.
+  // For truly static data, define outside or ensure `t` calls are stable or handled differently.
+  const lastProjectsStaticData = useMemo(() => [
+    { id: 'proj1', nameKey: { en: 'Johnson Property Offer', el: 'Πρόταση Ακινήτου Johnson' }, date: '2023-05-15' },
+    { id: 'proj2', nameKey: { en: 'Lakeside Condo Offer', el: 'Πρόταση Διαμερίσματος Lakeside' }, date: '2023-04-28' },
+    { id: 'proj3', nameKey: { en: 'Downtown Loft Offer', el: 'Πρόταση Σοφίτας Downtown' }, date: '2023-03-12' },
+    { id: 'proj4', nameKey: { en: 'Riverfront Estate Offer', el: 'Πρόταση Κτήματος Riverfront' }, date: '2023-02-05' },
+  ], []);
+
+  const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const newFormattedDates: Record<string, string> = {};
+    lastProjectsStaticData.forEach(project => {
+      newFormattedDates[project.id] = new Date(project.date).toLocaleDateString(language, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    });
+    setFormattedDates(newFormattedDates);
+  }, [language, lastProjectsStaticData]);
+
+
+  const projectsToDisplay = useMemo(() => {
+    return lastProjectsStaticData.map(p => ({
+      ...p,
+      name: t(p.nameKey),
+      formattedDate: formattedDates[p.id] || '...', // Show '...' while loading
+    }));
+  }, [lastProjectsStaticData, t, formattedDates]);
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -40,9 +69,9 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-6 text-center text-muted-foreground">
             {t({ en: 'Recent Offer Sheets', el: 'Πρόσφατες Προσφορές' })}
           </h2>
-          {lastProjects.length > 0 ? (
+          {projectsToDisplay.length > 0 ? (
             <div className="space-y-4 max-w-2xl mx-auto">
-              {lastProjects.map((project) => (
+              {projectsToDisplay.map((project) => (
                 <Link href={`/offer-sheet/edit?id=${project.id}`} key={project.id} className="block">
                   <Card className="hover:shadow-lg transition-shadow duration-300 group bg-card rounded-xl border">
                     <CardContent className="p-5 flex items-center justify-between">
@@ -50,7 +79,7 @@ export default function HomePage() {
                         <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">{project.name}</h3>
                         <p className="text-sm text-muted-foreground">
                           {t({ en: 'Created on', el: 'Δημιουργήθηκε στις' })}{' '}
-                          {new Date(project.date).toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' })}
+                          {project.formattedDate}
                         </p>
                       </div>
                       <Button
