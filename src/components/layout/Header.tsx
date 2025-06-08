@@ -90,7 +90,7 @@ export default function Header() {
       };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isClient]); // currentDefaultCurrency removed from deps, it is set within.
+  }, [isClient]); 
 
   const handleLanguageChange = (lang: Language) => {
     setAppLanguage(lang);
@@ -105,7 +105,7 @@ export default function Header() {
           currentSettings = JSON.parse(savedSettings);
         } catch (e) { 
           console.error("Failed to parse settings during currency change in header:", e);
-          currentSettings = {}; // Reset if parsing fails
+          currentSettings = {}; 
         }
       }
       const settingsToSave: SettingsData = { ...currentSettings, defaultCurrency: newCurrency };
