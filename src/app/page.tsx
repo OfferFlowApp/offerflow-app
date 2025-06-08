@@ -1,49 +1,93 @@
+
 "use client"; // Required for the hook
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ArrowRight } from 'lucide-react';
+import { PlusCircle, ListChecks, ChevronRight, FileText, Zap, SettingsIcon } from 'lucide-react'; // Added ChevronRight, FileText, Zap, SettingsIcon
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
 import { useLocalization } from '@/hooks/useLocalization';
 
 export default function HomePage() {
-  const { t } = useLocalization();
+  const { t, language } = useLocalization(); // Added language for date formatting
 
   const lastProjects = [
-    { id: 'proj1', name: t({ en: 'Q4 Tech Sale Proposal', el: 'Πρόταση Πώλησης Τεχνολογίας Q4' }), date: '2023-10-15' },
-    { id: 'proj2', name: t({ en: 'Spring Marketing Offer', el: 'Ανοιξιάτικη Προσφορά Μάρκετινγκ' }), date: '2023-09-28' },
+    { id: 'proj1', name: t({ en: 'Johnson Property Offer', el: 'Πρόταση Ακινήτου Johnson' }), date: '2023-05-15' },
+    { id: 'proj2', name: t({ en: 'Lakeside Condo Offer', el: 'Πρόταση Διαμερίσματος Lakeside' }), date: '2023-04-28' },
+    { id: 'proj3', name: t({ en: 'Downtown Loft Offer', el: 'Πρόταση Σοφίτας Downtown' }), date: '2023-03-12' },
+    { id: 'proj4', name: t({ en: 'Riverfront Estate Offer', el: 'Πρόταση Κτήματος Riverfront' }), date: '2023-02-05' },
   ];
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
-        <section className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-6 font-headline text-primary">{t({ en: 'Welcome to OfferSheet', el: 'Καλώς ήρθατε στο OfferSheet' })}</h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {t({ 
-              en: 'Streamline your sales process with professional, easy-to-create offer sheets. Upload your logo, add products, set terms, and impress your clients.', 
-              el: 'Βελτιστοποιήστε τη διαδικασία πωλήσεών σας με επαγγελματικά, εύκολα στη δημιουργία δελτία προσφορών. Ανεβάστε το λογότυπό σας, προσθέστε προϊόντα, ορίστε όρους και εντυπωσιάστε τους πελάτες σας.' 
-            })}
-          </p>
-          <Link href="/offer-sheet/edit">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <PlusCircle className="mr-2 h-5 w-5" />
+        <section className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-8 text-primary">
+            {t({ en: 'Your Offer Sheets', el: 'Οι Προσφορές Σας' })}
+          </h1>
+          <Link href="/offer-sheet/edit" className="block max-w-2xl mx-auto">
+            <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-5 text-lg rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <PlusCircle className="mr-2 h-6 w-6" />
               {t({ en: 'Create New Offer Sheet', el: 'Δημιουργία Νέου Δελτίου Προσφοράς' })}
             </Button>
           </Link>
         </section>
 
         <section className="mb-16">
+          <h2 className="text-xl font-semibold mb-6 text-center text-muted-foreground">
+            {t({ en: 'Recent Offer Sheets', el: 'Πρόσφατες Προσφορές' })}
+          </h2>
+          {lastProjects.length > 0 ? (
+            <div className="space-y-4 max-w-2xl mx-auto">
+              {lastProjects.map((project) => (
+                <Link href={`/offer-sheet/edit?id=${project.id}`} key={project.id} className="block">
+                  <Card className="hover:shadow-lg transition-shadow duration-300 group bg-card rounded-xl border">
+                    <CardContent className="p-5 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">{project.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {t({ en: 'Created on', el: 'Δημιουργήθηκε στις' })}{' '}
+                          {new Date(project.date).toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                      </div>
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-10 w-10 shrink-0 shadow"
+                        aria-label={t({ en: 'Open offer', el: 'Άνοιγμα προσφοράς' })}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center py-12 max-w-2xl mx-auto rounded-xl border bg-card">
+              <CardHeader className="pb-4">
+                <ListChecks className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <CardTitle className="font-headline text-2xl">
+                  {t({ en: 'No Recent Offer Sheets', el: 'Καμία Πρόσφατη Προσφορά' })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">{t({ en: 'Start by creating a new offer sheet above.', el: 'Ξεκινήστε δημιουργώντας ένα νέο δελτίο προσφοράς παραπάνω.' })}</p>
+              </CardContent>
+            </Card>
+          )}
+        </section>
+        
+        <section className="mb-16">
           <h2 className="text-3xl font-semibold mb-8 text-center font-headline">{t({ en: 'Key Features', el: 'Βασικά Χαρακτηριστικά' })}</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
               <CardHeader>
                 <div className="p-3 bg-primary/10 rounded-md inline-block mb-4">
-                   <Image src="https://placehold.co/48x48.png" alt={t({ en: "Logo Upload Icon", el: "Εικονίδιο Μεταφόρτωσης Λογοτύπου"})} width={48} height={48} data-ai-hint="logo upload" />
+                   <Image src="https://placehold.co/48x48.png" alt={t({ en: "Logo Upload Icon", el: "Εικονίδιο Μεταφόρτωσης Λογοτύπου"})} width={48} height={48} data-ai-hint="logo upload" className="rounded" />
                 </div>
                 <CardTitle className="font-headline">{t({ en: 'Custom Branding', el: 'Προσαρμοσμένη Επωνυμία' })}</CardTitle>
               </CardHeader>
@@ -51,10 +95,10 @@ export default function HomePage() {
                 <p className="text-muted-foreground">{t({ en: 'Easily upload your company logo to personalize every offer sheet.', el: 'Ανεβάστε εύκολα το λογότυπο της εταιρείας σας για να εξατομικεύσετε κάθε δελτίο προσφοράς.' })}</p>
               </CardContent>
             </Card>
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
               <CardHeader>
                 <div className="p-3 bg-primary/10 rounded-md inline-block mb-4">
-                  <Image src="https://placehold.co/48x48.png" alt={t({ en: "Product List Icon", el: "Εικονίδιο Λίστας Προϊόντων" })} width={48} height={48} data-ai-hint="product list"/>
+                  <Image src="https://placehold.co/48x48.png" alt={t({ en: "Product List Icon", el: "Εικονίδιο Λίστας Προϊόντων" })} width={48} height={48} data-ai-hint="product list" className="rounded"/>
                 </div>
                 <CardTitle className="font-headline">{t({ en: 'Dynamic Product Lists', el: 'Δυναμικές Λίστες Προϊόντων' })}</CardTitle>
               </CardHeader>
@@ -62,10 +106,10 @@ export default function HomePage() {
                 <p className="text-muted-foreground">{t({ en: 'Add multiple products with details, images, and pricing effortlessly.', el: 'Προσθέστε πολλαπλά προϊόντα με λεπτομέρειες, εικόνες και τιμολόγηση χωρίς κόπο.' })}</p>
               </CardContent>
             </Card>
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
               <CardHeader>
                 <div className="p-3 bg-primary/10 rounded-md inline-block mb-4">
-                 <Image src="https://placehold.co/48x48.png" alt={t({ en: "Export Icon", el: "Εικονίδιο Εξαγωγής" })} width={48} height={48} data-ai-hint="export share" />
+                 <Image src="https://placehold.co/48x48.png" alt={t({ en: "Export Icon", el: "Εικονίδιο Εξαγωγής" })} width={48} height={48} data-ai-hint="export share" className="rounded"/>
                 </div>
                 <CardTitle className="font-headline">{t({ en: 'Export & Share', el: 'Εξαγωγή & Κοινοποίηση' })}</CardTitle>
               </CardHeader>
@@ -76,38 +120,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section>
-          <h2 className="text-3xl font-semibold mb-8 text-center font-headline">{t({ en: 'Your Recent Offer Sheets', el: 'Τα Πρόσφατα Δελτία Προσφορών Σας' })}</h2>
-          {lastProjects.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lastProjects.map((project) => (
-                <Card key={project.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="font-headline text-lg">{project.name}</CardTitle>
-                    <CardDescription>{t({ en: 'Last updated:', el: 'Τελευταία ενημέρωση:' })} {project.date}</CardDescription>
-                  </CardHeader>
-                  <CardFooter>
-                    <Button variant="outline" asChild>
-                      <Link href={`/offer-sheet/edit?id=${project.id}`}>
-                        {t({ en: 'Open Project', el: 'Άνοιγμα Έργου' })} <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="text-center py-12">
-              <CardHeader>
-                <ListChecks className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <CardTitle className="font-headline">{t({ en: 'No Recent Projects', el: 'Κανένα Πρόσφατο Έργο' })}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{t({ en: 'Start by creating a new offer sheet.', el: 'Ξεκινήστε δημιουργώντας ένα νέο δελτίο προσφοράς.' })}</p>
-              </CardContent>
-            </Card>
-          )}
-        </section>
       </main>
       <Footer />
     </div>
