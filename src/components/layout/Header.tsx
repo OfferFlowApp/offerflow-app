@@ -1,3 +1,4 @@
+
 "use client"; // Required for the hook
 
 import Link from 'next/link';
@@ -35,8 +36,8 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-8 flex items-center">
-          {/* User TODO: Create an image named e.g. offerflow-logo.png in /public and update src below */}
-          <Image src="https://placehold.co/144x36.png" alt="OfferFlow Logo" width={144} height={36} data-ai-hint="company logo" priority />
+          {/* Ensure you have 'offerflow-logo.png' in your /public directory */}
+          <Image src="/offerflow-logo.png" alt="OfferFlow Logo" width={144} height={36} priority />
         </Link>
         <nav className="flex items-center space-x-6 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-primary">
