@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, FileText, Zap, SettingsIcon } from 'lucide-react'; 
+import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2 } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
@@ -14,10 +14,6 @@ import { useState, useEffect, useMemo } from 'react';
 export default function HomePage() {
   const { t, language } = useLocalization(); 
 
-  // Define project data structure.
-  // useMemo will ensure lastProjects array identity is stable unless `t` changes.
-  // However, `t` itself might change if language changes, potentially causing re-evaluation.
-  // For truly static data, define outside or ensure `t` calls are stable or handled differently.
   const lastProjectsStaticData = useMemo(() => [
     { id: 'proj1', nameKey: { en: 'Johnson Property Offer', el: 'Πρόταση Ακινήτου Johnson' }, date: '2023-05-15' },
     { id: 'proj2', nameKey: { en: 'Lakeside Condo Offer', el: 'Πρόταση Διαμερίσματος Lakeside' }, date: '2023-04-28' },
@@ -44,7 +40,7 @@ export default function HomePage() {
     return lastProjectsStaticData.map(p => ({
       ...p,
       name: t(p.nameKey),
-      formattedDate: formattedDates[p.id] || '...', // Show '...' while loading
+      formattedDate: formattedDates[p.id] || '...', 
     }));
   }, [lastProjectsStaticData, t, formattedDates]);
 
@@ -115,8 +111,8 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
               <CardHeader>
-                <div className="p-3 bg-primary/10 rounded-md inline-block mb-4">
-                   <Image src="https://placehold.co/48x48.png" alt={t({ en: "Logo Upload Icon", el: "Εικονίδιο Μεταφόρτωσης Λογοτύπου"})} width={48} height={48} data-ai-hint="logo upload" className="rounded" />
+                <div className="p-3 bg-primary/10 rounded-md inline-flex items-center justify-center mb-4 w-12 h-12">
+                   <Palette className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="font-headline">{t({ en: 'Custom Branding', el: 'Προσαρμοσμένη Επωνυμία' })}</CardTitle>
               </CardHeader>
@@ -126,8 +122,8 @@ export default function HomePage() {
             </Card>
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
               <CardHeader>
-                <div className="p-3 bg-primary/10 rounded-md inline-block mb-4">
-                  <Image src="https://placehold.co/48x48.png" alt={t({ en: "Product List Icon", el: "Εικονίδιο Λίστας Προϊόντων" })} width={48} height={48} data-ai-hint="product list" className="rounded"/>
+                <div className="p-3 bg-primary/10 rounded-md inline-flex items-center justify-center mb-4 w-12 h-12">
+                  <ClipboardList className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="font-headline">{t({ en: 'Dynamic Product Lists', el: 'Δυναμικές Λίστες Προϊόντων' })}</CardTitle>
               </CardHeader>
@@ -137,8 +133,8 @@ export default function HomePage() {
             </Card>
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
               <CardHeader>
-                <div className="p-3 bg-primary/10 rounded-md inline-block mb-4">
-                 <Image src="https://placehold.co/48x48.png" alt={t({ en: "Export Icon", el: "Εικονίδιο Εξαγωγής" })} width={48} height={48} data-ai-hint="export share" className="rounded"/>
+                <div className="p-3 bg-primary/10 rounded-md inline-flex items-center justify-center mb-4 w-12 h-12">
+                 <Share2 className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="font-headline">{t({ en: 'Export & Share', el: 'Εξαγωγή & Κοινοποίηση' })}</CardTitle>
               </CardHeader>
