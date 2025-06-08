@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-// Removed useState, useEffect, useCallback from here, will use React.useState etc.
 import type { OfferSheetData, Product, CustomerInfo, Currency } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,13 +11,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Settings, Euro, DollarSign as DollarIcon, PoundSterling } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { DndProvider, useDrag, useDrop, type XYCoord } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import update from 'immutability-helper';
 import { useLocalization } from '@/hooks/useLocalization';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const initialProduct: Product = {
   id: '',
@@ -186,6 +193,8 @@ export default function OfferSheetForm() {
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const [logoPreview, setLogoPreview] = React.useState<string | undefined>(undefined);
   const { toast } = useToast();
+  const offerSheetRef = React.useRef<HTMLFormElement>(null);
+
 
   React.useEffect(() => {
     let userDefaultLogo: string | undefined = undefined;
@@ -274,7 +283,7 @@ export default function OfferSheetForm() {
         },
       }),
     )
-  }, []); // Removed offerData.products from dependencies as update() handles it
+  }, []); 
 
   const handleCurrencyChange = (value: string) => {
     if (currencyMetadata[value as Currency]) {
@@ -302,26 +311,82 @@ export default function OfferSheetForm() {
     });
   };
   
-  const handleExportPdf = () => {
-    toast({
-      title: t({ en: "Export to PDF (Placeholder)", el: "Εξαγωγή σε PDF (Placeholder)" }),
-      description: t({ en: "This feature will be implemented soon with A4 page dimensions.", el: "Αυτή η δυνατότητα θα υλοποιηθεί σύντομα με διαστάσεις σελίδας Α4."}),
-      variant: "default",
-    });
-  }
+  const triggerDownload = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportAsPdf = async () => {
+    const element = offerSheetRef.current;
+    if (!element) {
+      toast({ title: "Error", description: "Could not find offer sheet content to export.", variant: "destructive" });
+      return;
+    }
+    toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
+    try {
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, allowTaint: true,  windowWidth: element.scrollWidth, windowHeight: element.scrollHeight});
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgWidth = imgProps.width;
+      const imgHeight = imgProps.height;
+      
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const newImgWidth = imgWidth * ratio;
+      const newImgHeight = imgHeight * ratio;
+      
+      // Center the image on the PDF page (optional)
+      const xOffset = (pdfWidth - newImgWidth) / 2;
+      const yOffset = (pdfHeight - newImgHeight) / 2;
+
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight);
+      pdf.save('offer-sheet.pdf');
+      toast({ title: t({en: "PDF Generated", el: "Το PDF δημιουργήθηκε"}), description: t({en: "Your PDF has been downloaded.", el: "Το PDF σας έχει ληφθεί."}), variant: "default" });
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ title: t({en: "PDF Generation Failed", el: "Η δημιουργία PDF απέτυχε"}), description: String(error), variant: "destructive" });
+    }
+  };
+
+  const exportAsJpeg = async () => {
+    const element = offerSheetRef.current;
+    if (!element) {
+      toast({ title: "Error", description: "Could not find offer sheet content to export.", variant: "destructive" });
+      return;
+    }
+    toast({ title: t({en: "Generating JPEG...", el: "Δημιουργία JPEG..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
+    try {
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, allowTaint: true, windowWidth: element.scrollWidth, windowHeight: element.scrollHeight });
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
+      triggerDownload(dataUrl, 'offer-sheet.jpg');
+      toast({ title: t({en: "JPEG Generated", el: "Το JPEG δημιουργήθηκε"}), description: t({en: "Your JPEG has been downloaded.", el: "Το JPEG σας έχει ληφθεί."}), variant: "default" });
+    } catch (error) {
+      console.error("Error generating JPEG:", error);
+      toast({ title: t({en: "JPEG Generation Failed", el: "Η δημιουργία JPEG απέτυχε"}), description: String(error), variant: "destructive" });
+    }
+  };
+
 
   const handleShare = () => {
      toast({
-      title: t({ en: "Share Offer (Placeholder)", el: "Κοινοποίηση Προσφοράς (Placeholder)" }),
-      description: t({ en: "Sharing functionality will be available soon.", el: "Η λειτουργία κοινοποίησης θα είναι διαθέσιμη σύντομα." }),
+      title: t({ en: "Share Feature Not Yet Active", el: "Η Κοινοποίηση δεν είναι Ενεργή Ακόμα" }),
+      description: t({ en: "Direct sharing is under development. Please download your offer sheet first.", el: "Η απευθείας κοινοποίηση είναι υπό ανάπτυξη. Παρακαλούμε κατεβάστε πρώτα το δελτίο προσφοράς σας." }),
       variant: "default",
     });
   }
 
   return (
     <DndProvider backend={HTML5Backend}>
-    <form onSubmit={handleSubmit} className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto">
-      <Card className="shadow-lg">
+    <form onSubmit={handleSubmit} ref={offerSheetRef} id="offer-sheet-form-capture-area" className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto bg-card rounded-xl shadow-2xl border">
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">{t({ en: 'Company Logo', el: 'Λογότυπο Εταιρείας' })}</CardTitle>
         </CardHeader>
@@ -338,7 +403,7 @@ export default function OfferSheetForm() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg">
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">{t({ en: 'Customer Information & Offer Validity', el: 'Στοιχεία Πελάτη & Ισχύς Προσφοράς' })}</CardTitle>
         </CardHeader>
@@ -384,7 +449,7 @@ export default function OfferSheetForm() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg">
+      <Card className="shadow-none border-none">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-headline text-2xl">{t({ en: 'Products', el: 'Προϊόντα' })}</CardTitle>
           <Button type="button" variant="outline" onClick={addProduct} className="text-primary border-primary hover:bg-primary/10">
@@ -410,7 +475,7 @@ export default function OfferSheetForm() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg">
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">{t({ en: 'Price Summary', el: 'Σύνοψη Τιμών' })}</CardTitle>
         </CardHeader>
@@ -426,7 +491,7 @@ export default function OfferSheetForm() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg">
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">{t({ en: 'Notes / Terms & Conditions', el: 'Σημειώσεις / Όροι & Προϋποθέσεις' })}</CardTitle>
         </CardHeader>
@@ -440,13 +505,29 @@ export default function OfferSheetForm() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-6">
+      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-6 border-t mt-8">
         <Button type="button" variant="outline" onClick={handleShare}>
           <Share2 className="mr-2 h-5 w-5" /> {t({ en: 'Share', el: 'Κοινοποίηση' })}
         </Button>
-        <Button type="button" variant="outline" onClick={handleExportPdf}>
-          <FileDown className="mr-2 h-5 w-5" /> {t({ en: 'Export PDF', el: 'Εξαγωγή PDF' })}
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <FileDown className="mr-2 h-5 w-5" /> {t({ en: 'Export', el: 'Εξαγωγή' })}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={exportAsPdf}>
+              <FileText className="mr-2 h-4 w-4" />
+              {t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF' })}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportAsJpeg}>
+              <ImageIcon className="mr-2 h-4 w-4" />
+              {t({ en: 'Export as JPEG', el: 'Εξαγωγή ως JPEG' })}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Save className="mr-2 h-5 w-5" /> {t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
         </Button>
@@ -455,5 +536,3 @@ export default function OfferSheetForm() {
     </DndProvider>
   );
 }
-
-    
