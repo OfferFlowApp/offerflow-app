@@ -6,8 +6,9 @@ export type Theme = 'light' | 'dark';
 export interface Product {
   id: string;
   title: string;
-  originalPrice: number;
+  originalPrice: number; // Assumed to be VAT-exclusive
   discountedPrice: number;
+  discountedPriceType?: 'exclusive' | 'inclusive'; // How to interpret discountedPrice regarding VAT
   description: string;
   imageUrl?: string;
 }
@@ -25,13 +26,13 @@ export interface OfferSheetData {
   validityEndDate?: Date;
   products: Product[];
   termsAndConditions: string;
-  currency: Currency; // Added currency
-  defaultLogoUrl?: string; // For prototype feature
+  currency: Currency;
+  defaultLogoUrl?: string;
+  vatRate?: number; // User-defined VAT rate for the whole offer sheet (percentage)
 }
 
 export interface SettingsData {
   defaultLogoUrl?: string;
   defaultCurrency?: Currency;
   preferredLanguage?: Language;
-  // Theme is stored in a separate localStorage key for simplicity
 }
