@@ -5,32 +5,62 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
-// Removed many imports related to dropdowns, icons, hooks for simplification
+import { useLocalization } from '@/hooks/useLocalization';
+import type { Language } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Languages } from 'lucide-react';
+
+const languageOptions: { value: Language; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'el', label: 'Ελληνικά' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'fr', label: 'Français' },
+];
 
 export default function Header() {
-  // All complex state, effects, and custom hook calls have been removed.
+  const { language, setAppLanguage, t } = useLocalization();
+
+  const handleLanguageChange = (value: string) => {
+    setAppLanguage(value as Language);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-8 flex items-center">
-          {/* Make sure offerflow-logo.png is in your /public folder */}
           <Image src="/offerflow-logo.png" alt="OfferFlow Logo" width={144} height={36} priority data-ai-hint="app logo"/>
         </Link>
         <nav className="flex items-center space-x-6 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-primary">
-            Home
+            {t({ en: 'Home', el: 'Αρχική', de: 'Startseite', fr: 'Accueil' })}
           </Link>
           <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary">
-            Create Offer
+            {t({ en: 'Create Offer', el: 'Δημιουργία', de: 'Angebot Erstellen', fr: 'Créer Offre' })}
           </Link>
           <Link href="/settings" className="transition-colors hover:text-primary">
-            Settings
+            {t({ en: 'Settings', el: 'Ρυθμίσεις', de: 'Einstellungen', fr: 'Paramètres' })}
           </Link>
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-2">
-          {/* All interactive elements like theme toggle, language/currency switchers, and user menu are removed for now. */}
-          <span className="text-sm text-muted-foreground">(Simplified Header)</span>
+        <div className="flex flex-1 items-center justify-end space-x-4">
+          <Select value={language} onValueChange={handleLanguageChange}>
+            <SelectTrigger className="w-auto h-9 px-3 text-sm">
+              <Languages className="h-4 w-4 mr-2" />
+              <SelectValue placeholder={t({ en: "Language", el: "Γλώσσα", de: "Sprache", fr: "Langue"})} />
+            </SelectTrigger>
+            <SelectContent>
+              {languageOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <Separator />
