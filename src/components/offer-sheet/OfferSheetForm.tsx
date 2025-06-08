@@ -1,14 +1,16 @@
+
 "use client";
 
+import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useState, useEffect, useCallback } from 'react';
+// Removed useState, useEffect, useCallback from here, will use React.useState etc.
 import type { OfferSheetData, Product, CustomerInfo, Currency } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DatePicker } from '@/components/ui/date-picker'; 
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Settings, Euro, DollarSign as DollarIcon, PoundSterling } from 'lucide-react';
 import Image from 'next/image';
@@ -181,16 +183,13 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
 
 export default function OfferSheetForm() {
   const { t } = useLocalization();
-  // Initialize offerData with a currency that's consistent for server and initial client render.
-  const [offerData, setOfferData] = useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
-  const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
+  const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
+  const [logoPreview, setLogoPreview] = React.useState<string | undefined>(undefined);
   const { toast } = useToast();
-  // const [isOfferDataInitialized, setIsOfferDataInitialized] = useState(false); // Currently unused
 
-  useEffect(() => {
-    // This effect runs only on the client, after hydration.
+  React.useEffect(() => {
     let userDefaultLogo: string | undefined = undefined;
-    let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY; // Start with base default
+    let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY;
 
     const savedSettings = localStorage.getItem('offerSheetSettings');
     if (savedSettings) {
@@ -204,7 +203,6 @@ export default function OfferSheetForm() {
         }
       } catch (error) {
         console.error("Failed to parse settings from localStorage", error);
-        // Fallback to defaults if parsing fails
         userDefaultLogo = undefined;
         userDefaultCurrency = BASE_DEFAULT_CURRENCY;
       }
@@ -212,8 +210,6 @@ export default function OfferSheetForm() {
     
     setOfferData(prev => {
       const newLogoUrl = prev.logoUrl === undefined && userDefaultLogo ? userDefaultLogo : prev.logoUrl;
-      // Apply user's default currency from settings if the current currency is still the initial base default.
-      // This allows user's saved preference to take effect on new forms, without overriding if they change currency on the form.
       const newCurrency = prev.currency === BASE_DEFAULT_CURRENCY ? userDefaultCurrency : prev.currency;
       
       return {
@@ -223,17 +219,12 @@ export default function OfferSheetForm() {
       };
     });
 
-    // Update logo preview only if the logoUrl was actually set or is already the userDefaultLogo.
-    // This avoids clearing a user-uploaded logo preview with the default if they interacted quickly.
     if (userDefaultLogo && (offerData.logoUrl === userDefaultLogo || (offerData.logoUrl === undefined))) {
         setLogoPreview(userDefaultLogo);
-    } else if (offerData.logoUrl) { // If offerData.logoUrl is already set (e.g. user uploaded one), use that for preview
+    } else if (offerData.logoUrl) {
         setLogoPreview(offerData.logoUrl);
     }
-
-
-    // setIsOfferDataInitialized(true); // Mark that settings have been applied
-  }, []); // Run once on mount to load settings from localStorage.
+  }, []);
 
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -272,7 +263,7 @@ export default function OfferSheetForm() {
     setOfferData({ ...offerData, products: newProducts });
   };
   
-  const moveProduct = useCallback((dragIndex: number, hoverIndex: number) => {
+  const moveProduct = React.useCallback((dragIndex: number, hoverIndex: number) => {
     setOfferData((prevOfferData) =>
       update(prevOfferData, {
         products: {
@@ -283,7 +274,7 @@ export default function OfferSheetForm() {
         },
       }),
     )
-  }, []);
+  }, []); // Removed offerData.products from dependencies as update() handles it
 
   const handleCurrencyChange = (value: string) => {
     if (currencyMetadata[value as Currency]) {
@@ -312,10 +303,6 @@ export default function OfferSheetForm() {
   };
   
   const handleExportPdf = () => {
-    // TODO: Implement PDF generation.
-    // User requirement: PDF should be in A4 page dimensions.
-    // This will require a PDF generation library (e.g., pdf-lib, react-pdf)
-    // and specific styling to ensure A4 layout.
     toast({
       title: t({ en: "Export to PDF (Placeholder)", el: "Εξαγωγή σε PDF (Placeholder)" }),
       description: t({ en: "This feature will be implemented soon with A4 page dimensions.", el: "Αυτή η δυνατότητα θα υλοποιηθεί σύντομα με διαστάσεις σελίδας Α4."}),
@@ -379,7 +366,7 @@ export default function OfferSheetForm() {
                    <SelectItem key={code} value={code}>
                      <div className="flex items-center">
                        <IconComponent className="h-4 w-4 mr-2" />
-                       {t({en: label, el: label})} {/* Assuming label is language-agnostic or handled by `t` if it were structured differently */}
+                       {t({en: label, el: label})}
                      </div>
                    </SelectItem>
                 ))}
@@ -468,3 +455,5 @@ export default function OfferSheetForm() {
     </DndProvider>
   );
 }
+
+    
