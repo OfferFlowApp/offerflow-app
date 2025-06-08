@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import AppProviders from '@/components/layout/AppProviders';
 
 export const metadata: Metadata = {
-  title: 'OfferSheet App',
+  title: 'OfferFlow App',
   description: 'Create and manage professional offer sheets.',
 };
 

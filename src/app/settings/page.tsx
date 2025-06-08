@@ -28,7 +28,7 @@ export default function SettingsPage() {
         <div className="max-w-2xl mx-auto space-y-8">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">Offer Sheet Prototype</CardTitle>
+              <CardTitle className="font-headline text-2xl">Branding Settings</CardTitle>
               <CardDescription>
                 Set a default logo that will be automatically added to new offer sheets.
               </CardDescription>
