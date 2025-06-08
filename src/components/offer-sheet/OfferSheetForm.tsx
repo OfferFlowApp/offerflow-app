@@ -2,19 +2,21 @@
 
 import type { ChangeEvent, FormEvent } from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import type { OfferSheetData, Product, CustomerInfo } from '@/lib/types';
+import type { OfferSheetData, Product, CustomerInfo, Currency } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker'; 
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Settings, DollarSign } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Settings, Euro, DollarSign as DollarIcon, PoundSterling } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { DndProvider, useDrag, useDrop, type XYCoord } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import update from 'immutability-helper';
+import { useLocalization } from '@/hooks/useLocalization';
 
 const initialProduct: Product = {
   id: '',
@@ -31,21 +33,36 @@ const initialCustomerInfo: CustomerInfo = {
   contact: '',
 };
 
-const initialOfferSheetData: OfferSheetData = {
+const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType }> = {
+  EUR: { symbol: '€', IconComponent: Euro },
+  USD: { symbol: '$', IconComponent: DollarIcon },
+  GBP: { symbol: '£', IconComponent: PoundSterling },
+};
+
+const getCurrencySymbol = (currency: Currency): string => {
+  return currencyMetadata[currency]?.symbol || '$';
+};
+
+
+const initialOfferSheetData = (defaultCurrency: Currency): OfferSheetData => ({
   logoUrl: undefined,
   customerInfo: initialCustomerInfo,
   validityStartDate: undefined,
   validityEndDate: undefined,
   products: [],
   termsAndConditions: '',
-};
+  currency: defaultCurrency,
+});
+
 
 interface ProductItemProps {
   product: Product;
   index: number;
+  currencySymbol: string;
   updateProduct: (index: number, updatedProduct: Product) => void;
   removeProduct: (index: number) => void;
   moveProduct: (dragIndex: number, hoverIndex: number) => void;
+  t: (translations: { [key in 'en' | 'el']?: string } | string, fallback?: string) => string;
 }
 
 const ItemTypes = {
@@ -58,7 +75,7 @@ interface DragItem {
   type: string
 }
 
-const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, updateProduct, removeProduct, moveProduct }) => {
+const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencySymbol, updateProduct, removeProduct, moveProduct, t }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: any }>({
     accept: ItemTypes.PRODUCT,
@@ -123,34 +140,34 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, updatePro
     <div ref={ref} data-handler-id={handlerId} style={{ opacity: isDragging ? 0.5 : 1 }} className="mb-4 p-1 border rounded-lg cursor-move">
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-medium">Product #{index + 1}</CardTitle>
+          <CardTitle className="text-lg font-medium">{t({ en: 'Product', el: 'Προϊόν' })} #{index + 1}</CardTitle>
           <Button variant="ghost" size="icon" onClick={() => removeProduct(index)} className="text-destructive hover:text-destructive/80">
             <Trash2 className="h-5 w-5" />
           </Button>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor={`productTitle-${index}`}>Title</Label>
-            <Input id={`productTitle-${index}`} name="title" value={product.title} onChange={handleProductChange} placeholder="Product Title" />
+            <Label htmlFor={`productTitle-${index}`}>{t({ en: 'Title', el: 'Τίτλος' })}</Label>
+            <Input id={`productTitle-${index}`} name="title" value={product.title} onChange={handleProductChange} placeholder={t({ en: "Product Title", el: "Τίτλος Προϊόντος" })} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`productDescription-${index}`}>Description</Label>
-            <Textarea id={`productDescription-${index}`} name="description" value={product.description} onChange={handleProductChange} placeholder="Product Description" />
+            <Label htmlFor={`productDescription-${index}`}>{t({ en: 'Description', el: 'Περιγραφή' })}</Label>
+            <Textarea id={`productDescription-${index}`} name="description" value={product.description} onChange={handleProductChange} placeholder={t({ en: "Product Description", el: "Περιγραφή Προϊόντος" })} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`originalPrice-${index}`}>Original Price</Label>
+            <Label htmlFor={`originalPrice-${index}`}>{t({ en: 'Original Price', el: 'Αρχική Τιμή' })} ({currencySymbol})</Label>
             <Input id={`originalPrice-${index}`} name="originalPrice" type="number" value={product.originalPrice} onChange={handleProductChange} placeholder="0.00" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`discountedPrice-${index}`}>Discounted Price</Label>
+            <Label htmlFor={`discountedPrice-${index}`}>{t({ en: 'Discounted Price', el: 'Τιμή με Έκπτωση' })} ({currencySymbol})</Label>
             <Input id={`discountedPrice-${index}`} name="discountedPrice" type="number" value={product.discountedPrice} onChange={handleProductChange} placeholder="0.00" />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor={`productImage-${index}`}>Product Image</Label>
+            <Label htmlFor={`productImage-${index}`}>{t({ en: 'Product Image', el: 'Εικόνα Προϊόντος' })}</Label>
             <Input id={`productImage-${index}`} type="file" accept="image/*" onChange={handleProductImageUpload} className="file:text-primary file:font-medium" />
             {product.imageUrl && (
               <div className="mt-2">
-                <Image src={product.imageUrl} alt="Product Preview" width={100} height={100} className="rounded-md object-cover" data-ai-hint="product image" />
+                <Image src={product.imageUrl} alt={t({ en: "Product Preview", el: "Προεπισκόπηση Προϊόντος" })} width={100} height={100} className="rounded-md object-cover" data-ai-hint="product image" />
               </div>
             )}
           </div>
@@ -162,20 +179,49 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, updatePro
 
 
 export default function OfferSheetForm() {
-  const [offerData, setOfferData] = useState<OfferSheetData>(initialOfferSheetData);
+  const { t } = useLocalization();
+  const [offerData, setOfferData] = useState<OfferSheetData>(() => {
+    let defaultCurrency: Currency = 'EUR';
+    if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('offerSheetSettings');
+        if (savedSettings) {
+            const parsedSettings = JSON.parse(savedSettings);
+            if (parsedSettings.defaultCurrency) {
+                defaultCurrency = parsedSettings.defaultCurrency;
+            }
+        }
+    }
+    return initialOfferSheetData(defaultCurrency);
+  });
   const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load saved data or default settings
-    const savedSettings = localStorage.getItem('offerSheetSettings');
-    if (savedSettings) {
-      const parsedSettings = JSON.parse(savedSettings);
-      if(parsedSettings.defaultLogoUrl) {
-        setOfferData(prev => ({ ...prev, logoUrl: parsedSettings.defaultLogoUrl }));
-        setLogoPreview(parsedSettings.defaultLogoUrl);
-      }
+    let defaultLogo: string | undefined = undefined;
+    let defaultCurr: Currency = 'EUR';
+
+    if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('offerSheetSettings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          if(parsedSettings.defaultLogoUrl) {
+            defaultLogo = parsedSettings.defaultLogoUrl;
+          }
+          if(parsedSettings.defaultCurrency) {
+            defaultCurr = parsedSettings.defaultCurrency;
+          }
+        }
     }
+    
+    setOfferData(prev => ({ 
+        ...prev, 
+        logoUrl: defaultLogo || prev.logoUrl, // Keep existing if already set by user on this form
+        currency: prev.currency || defaultCurr // Keep existing if already set, else use default
+    }));
+    if (defaultLogo) {
+        setLogoPreview(defaultLogo);
+    }
+
   }, []);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -227,6 +273,9 @@ export default function OfferSheetForm() {
     )
   }, []);
 
+  const handleCurrencyChange = (value: string) => {
+    setOfferData({ ...offerData, currency: value as Currency });
+  };
 
   const calculateTotals = () => {
     const totalOriginalPrice = offerData.products.reduce((sum, p) => sum + (p.originalPrice || 0), 0);
@@ -235,152 +284,170 @@ export default function OfferSheetForm() {
   };
 
   const { totalOriginalPrice, totalDiscountedPrice } = calculateTotals();
+  const currentCurrencySymbol = getCurrencySymbol(offerData.currency);
+
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // For now, just log data. Later, this would save to a backend.
     console.log("Offer Sheet Data:", offerData);
     toast({
-      title: "Offer Sheet Saved (Simulated)",
-      description: "Your offer sheet data has been logged to the console.",
+      title: t({ en: "Offer Sheet Saved (Simulated)", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε (Προσομοίωση)" }),
+      description: t({ en: "Your offer sheet data has been logged to the console.", el: "Τα δεδομένα του δελτίου προσφοράς καταγράφηκαν στην κονσόλα." }),
       variant: "default",
     });
   };
   
   const handleExportPdf = () => {
+    // TODO: Implement PDF generation.
+    // User requirement: PDF should be in A4 page dimensions.
+    // This will require a PDF generation library (e.g., pdf-lib, react-pdf)
+    // and specific styling to ensure A4 layout.
     toast({
-      title: "Export to PDF (Placeholder)",
-      description: "This feature will be implemented soon.",
+      title: t({ en: "Export to PDF (Placeholder)", el: "Εξαγωγή σε PDF (Placeholder)" }),
+      description: t({ en: "This feature will be implemented soon with A4 page dimensions.", el: "Αυτή η δυνατότητα θα υλοποιηθεί σύντομα με διαστάσεις σελίδας Α4."}),
       variant: "default",
     });
   }
 
   const handleShare = () => {
      toast({
-      title: "Share Offer (Placeholder)",
-      description: "Sharing functionality will be available soon.",
+      title: t({ en: "Share Offer (Placeholder)", el: "Κοινοποίηση Προσφοράς (Placeholder)" }),
+      description: t({ en: "Sharing functionality will be available soon.", el: "Η λειτουργία κοινοποίησης θα είναι διαθέσιμη σύντομα." }),
       variant: "default",
     });
   }
 
-
   return (
     <DndProvider backend={HTML5Backend}>
     <form onSubmit={handleSubmit} className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto">
-      {/* Logo Upload Section */}
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Company Logo</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t({ en: 'Company Logo', el: 'Λογότυπο Εταιρείας' })}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-4">
           {logoPreview ? (
-            <Image src={logoPreview} alt="Logo Preview" width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
+            <Image src={logoPreview} alt={t({ en: "Logo Preview", el: "Προεπισκόπηση Λογοτύπου" })} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
           ) : (
             <div className="w-40 h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
               <UploadCloud className="h-16 w-16" />
             </div>
           )}
           <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
-          <Label htmlFor="logoUpload" className="text-sm text-muted-foreground">Upload your company logo (PNG, JPG, SVG)</Label>
+          <Label htmlFor="logoUpload" className="text-sm text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</Label>
         </CardContent>
       </Card>
 
-      {/* Customer Info & Validity Dates Section */}
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Customer Information & Offer Validity</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t({ en: 'Customer Information & Offer Validity', el: 'Στοιχεία Πελάτη & Ισχύς Προσφοράς' })}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="customerName">Customer Name</Label>
+            <Label htmlFor="customerName">{t({ en: 'Customer Name', el: 'Όνομα Πελάτη' })}</Label>
             <Input id="customerName" name="name" value={offerData.customerInfo.name} onChange={handleCustomerInfoChange} placeholder="John Doe" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="customerCompany">Company</Label>
+            <Label htmlFor="customerCompany">{t({ en: 'Company', el: 'Εταιρεία' })}</Label>
             <Input id="customerCompany" name="company" value={offerData.customerInfo.company} onChange={handleCustomerInfoChange} placeholder="Acme Corp" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="customerContact">Contact (Email/Phone)</Label>
+            <Label htmlFor="customerContact">{t({ en: 'Contact (Email/Phone)', el: 'Επικοινωνία (Email/Τηλέφωνο)' })}</Label>
             <Input id="customerContact" name="contact" value={offerData.customerInfo.contact} onChange={handleCustomerInfoChange} placeholder="john.doe@example.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="validityStartDate">Offer Valid From</Label>
+            <Label htmlFor="offerCurrency">{t({ en: 'Offer Currency', el: 'Νόμισμα Προσφοράς' })}</Label>
+            <Select value={offerData.currency} onValueChange={handleCurrencyChange}>
+              <SelectTrigger id="offerCurrency">
+                <SelectValue placeholder={t({ en: "Select currency", el: "Επιλογή νομίσματος" })} />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(currencyMetadata).map(([code, {label, IconComponent}]) => (
+                   <SelectItem key={code} value={code}>
+                     <div className="flex items-center">
+                       <IconComponent className="h-4 w-4 mr-2" />
+                       {label || code}
+                     </div>
+                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="validityStartDate">{t({ en: 'Offer Valid From', el: 'Έναρξη Ισχύος Προσφοράς' })}</Label>
             <DatePicker date={offerData.validityStartDate} onDateChange={(date) => setOfferData({ ...offerData, validityStartDate: date })} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="validityEndDate">Offer Valid Until</Label>
+            <Label htmlFor="validityEndDate">{t({ en: 'Offer Valid Until', el: 'Λήξη Ισχύος Προσφοράς' })}</Label>
             <DatePicker date={offerData.validityEndDate} onDateChange={(date) => setOfferData({ ...offerData, validityEndDate: date })} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Product List Section */}
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-headline text-2xl">Products</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t({ en: 'Products', el: 'Προϊόντα' })}</CardTitle>
           <Button type="button" variant="outline" onClick={addProduct} className="text-primary border-primary hover:bg-primary/10">
-            <PlusCircle className="mr-2 h-5 w-5" /> Add Product
+            <PlusCircle className="mr-2 h-5 w-5" /> {t({ en: 'Add Product', el: 'Προσθήκη Προϊόντος' })}
           </Button>
         </CardHeader>
         <CardContent>
           {offerData.products.length === 0 && (
-            <p className="text-muted-foreground text-center py-4">No products added yet. Click Add Product to get started.</p>
+            <p className="text-muted-foreground text-center py-4">{t({ en: 'No products added yet. Click Add Product to get started.', el: 'Δεν έχουν προστεθεί προϊόντα ακόμα. Κάντε κλικ στην Προσθήκη Προϊόντος για να ξεκινήσετε.' })}</p>
           )}
           {offerData.products.map((product, index) => (
             <ProductItemCard
               key={product.id || index}
               index={index}
               product={product}
+              currencySymbol={currentCurrencySymbol}
               updateProduct={updateProduct}
               removeProduct={removeProduct}
               moveProduct={moveProduct}
+              t={t}
             />
           ))}
         </CardContent>
       </Card>
 
-      {/* Price Calculation Section */}
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Price Summary</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t({ en: 'Price Summary', el: 'Σύνοψη Τιμών' })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center text-lg">
-            <span className="text-muted-foreground">Total Original Price:</span>
-            <span className="font-semibold"><DollarSign className="inline h-5 w-5 relative -top-px"/>{totalOriginalPrice.toFixed(2)}</span>
+            <span className="text-muted-foreground">{t({ en: 'Total Original Price:', el: 'Συνολική Αρχική Τιμή:' })}</span>
+            <span className="font-semibold">{currentCurrencySymbol}{totalOriginalPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center text-lg font-bold text-primary">
-            <span>Total Discounted Price:</span>
-            <span><DollarSign className="inline h-5 w-5 relative -top-px"/>{totalDiscountedPrice.toFixed(2)}</span>
+            <span>{t({ en: 'Total Discounted Price:', el: 'Συνολική Τιμή με Έκπτωση:' })}</span>
+            <span>{currentCurrencySymbol}{totalDiscountedPrice.toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Terms and Conditions Section */}
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Notes / Terms & Conditions</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t({ en: 'Notes / Terms & Conditions', el: 'Σημειώσεις / Όροι & Προϋποθέσεις' })}</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
             value={offerData.termsAndConditions}
             onChange={(e) => setOfferData({ ...offerData, termsAndConditions: e.target.value })}
-            placeholder="Enter any notes or terms and conditions for this offer..."
+            placeholder={t({ en: "Enter any notes or terms and conditions for this offer...", el: "Εισαγάγετε τυχόν σημειώσεις ή όρους και προϋποθέσεις για αυτήν την προσφορά..."})}
             rows={5}
           />
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-6">
         <Button type="button" variant="outline" onClick={handleShare}>
-          <Share2 className="mr-2 h-5 w-5" /> Share
+          <Share2 className="mr-2 h-5 w-5" /> {t({ en: 'Share', el: 'Κοινοποίηση' })}
         </Button>
         <Button type="button" variant="outline" onClick={handleExportPdf}>
-          <FileDown className="mr-2 h-5 w-5" /> Export PDF
+          <FileDown className="mr-2 h-5 w-5" /> {t({ en: 'Export PDF', el: 'Εξαγωγή PDF' })}
         </Button>
         <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Save className="mr-2 h-5 w-5" /> Save Offer Sheet
+          <Save className="mr-2 h-5 w-5" /> {t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
         </Button>
       </div>
     </form>
