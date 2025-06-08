@@ -14,11 +14,12 @@ import { useState, useEffect, useMemo } from 'react';
 export default function HomePage() {
   const { t, language } = useLocalization(); 
 
+  // Updated to have non-localized names to show persistence
   const lastProjectsStaticData = useMemo(() => [
-    { id: 'proj1', nameKey: { en: 'Johnson Property Offer', el: 'Πρόταση Ακινήτου Johnson' }, date: '2023-05-15' },
-    { id: 'proj2', nameKey: { en: 'Lakeside Condo Offer', el: 'Πρόταση Διαμερίσματος Lakeside' }, date: '2023-04-28' },
-    { id: 'proj3', nameKey: { en: 'Downtown Loft Offer', el: 'Πρόταση Σοφίτας Downtown' }, date: '2023-03-12' },
-    { id: 'proj4', nameKey: { en: 'Riverfront Estate Offer', el: 'Πρόταση Κτήματος Riverfront' }, date: '2023-02-05' },
+    { id: 'proj1', name: 'Johnson Property Offer', date: '2023-05-15' }, // Example in English
+    { id: 'proj2', name: 'Προσφορά Διαμερίσματος Lakeside', date: '2023-04-28' }, // Example in Greek
+    { id: 'proj3', name: 'Downtown Loft Offer', date: '2023-03-12' },
+    { id: 'proj4', name: 'Angebot für Riverfront Anwesen', date: '2023-02-05' }, // Example in German
   ], []);
 
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
@@ -26,7 +27,7 @@ export default function HomePage() {
   useEffect(() => {
     const newFormattedDates: Record<string, string> = {};
     lastProjectsStaticData.forEach(project => {
-      newFormattedDates[project.id] = new Date(project.date).toLocaleDateString(language, {
+      newFormattedDates[project.id] = new Date(project.date).toLocaleDateString(language, { // Date formatting still uses current app language
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -39,10 +40,10 @@ export default function HomePage() {
   const projectsToDisplay = useMemo(() => {
     return lastProjectsStaticData.map(p => ({
       ...p,
-      name: t(p.nameKey),
+      // Name is now directly used, not translated by t()
       formattedDate: formattedDates[p.id] || '...', 
     }));
-  }, [lastProjectsStaticData, t, formattedDates]);
+  }, [lastProjectsStaticData, formattedDates]);
 
 
   return (
@@ -72,6 +73,7 @@ export default function HomePage() {
                   <Card className="hover:shadow-lg transition-shadow duration-300 group bg-card rounded-xl border">
                     <CardContent className="p-5 flex items-center justify-between">
                       <div>
+                        {/* Use project.name directly */}
                         <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">{project.name}</h3>
                         <p className="text-sm text-muted-foreground">
                           {t({ en: 'Created on', el: 'Δημιουργήθηκε στις' })}{' '}

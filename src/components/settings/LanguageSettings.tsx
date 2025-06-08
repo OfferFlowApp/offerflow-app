@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Save,Languages } from 'lucide-react';
+import { Save } from 'lucide-react'; // Removed Languages icon as it's not used here
 import { useToast } from "@/hooks/use-toast";
 import type { SettingsData, Language } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +14,8 @@ import { useLocalization } from '@/hooks/useLocalization';
 const languageOptions: { value: Language, label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'el', label: 'Ελληνικά (Greek)' },
+  { value: 'de', label: 'Deutsch (German)' },
+  { value: 'fr', label: 'Français (French)' },
 ];
 
 export default function LanguageSettings() {
@@ -34,7 +37,12 @@ export default function LanguageSettings() {
     const savedSettings = localStorage.getItem('offerSheetSettings');
     let currentSettings: SettingsData = {};
     if (savedSettings) {
-      currentSettings = JSON.parse(savedSettings);
+      try {
+        currentSettings = JSON.parse(savedSettings);
+      } catch (e) {
+        console.error("Failed to parse settings: ", e);
+        currentSettings = {}; // Reset if parsing fails
+      }
     }
     const settingsToSave: SettingsData = { ...currentSettings, preferredLanguage: selectedLanguage };
     localStorage.setItem('offerSheetSettings', JSON.stringify(settingsToSave));
@@ -44,8 +52,7 @@ export default function LanguageSettings() {
       description: t({ en: "Your preferred language has been updated.", el: "Η προτιμώμενη γλώσσα σας ενημερώθηκε." }),
       variant: "default",
     });
-     // Optionally force a reload if components aren't updating reactively across the app
-    setTimeout(() => window.location.reload(), 500);
+    // The reload is handled by setAppLanguage now
   };
   
   if (!selectedLanguage) {

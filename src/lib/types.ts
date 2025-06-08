@@ -1,5 +1,7 @@
+
 export type Currency = 'EUR' | 'USD' | 'GBP';
-export type Language = 'en' | 'el';
+export type Language = 'en' | 'el' | 'de' | 'fr';
+export type Theme = 'light' | 'dark';
 
 export interface Product {
   id: string;
@@ -29,6 +31,7 @@ export interface OfferSheetData {
 
 export interface SettingsData {
   defaultLogoUrl?: string;
-  defaultCurrency?: Currency; // Added default currency
-  preferredLanguage?: Language; // Added preferred language
+  defaultCurrency?: Currency;
+  preferredLanguage?: Language;
+  // Theme is stored in a separate localStorage key for simplicity
 }
