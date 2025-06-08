@@ -294,16 +294,30 @@ export default function OfferSheetForm() {
   const calculateTotals = () => {
     const totalOriginalPrice = offerData.products.reduce((sum, p) => sum + (p.originalPrice || 0), 0);
     const totalDiscountedPrice = offerData.products.reduce((sum, p) => sum + (p.discountedPrice || 0), 0);
-    return { totalOriginalPrice, totalDiscountedPrice };
+    const vatRate = 0.24; // 24% VAT
+    const vatAmount = totalDiscountedPrice * vatRate;
+    const grandTotal = totalDiscountedPrice + vatAmount;
+    return { totalOriginalPrice, totalDiscountedPrice, vatAmount, grandTotal };
   };
 
-  const { totalOriginalPrice, totalDiscountedPrice } = calculateTotals();
+  const { totalOriginalPrice, totalDiscountedPrice, vatAmount, grandTotal } = calculateTotals();
   const currentCurrencySymbol = getCurrencySymbol(offerData.currency);
 
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    console.log("Offer Sheet Data:", offerData);
+    // Include VAT and Grand Total in the logged data
+    const offerDataWithTotals = {
+        ...offerData,
+        calculatedTotals: {
+            totalOriginalPrice,
+            totalDiscountedPrice,
+            vatAmount,
+            grandTotal,
+            currency: offerData.currency,
+        }
+    };
+    console.log("Offer Sheet Data:", offerDataWithTotals);
     toast({
       title: t({ en: "Offer Sheet Saved (Simulated)", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε (Προσομοίωση)" }),
       description: t({ en: "Your offer sheet data has been logged to the console.", el: "Τα δεδομένα του δελτίου προσφοράς καταγράφηκαν στην κονσόλα." }),
@@ -343,11 +357,45 @@ export default function OfferSheetForm() {
       const newImgWidth = imgWidth * ratio;
       const newImgHeight = imgHeight * ratio;
       
-      // Center the image on the PDF page (optional)
       const xOffset = (pdfWidth - newImgWidth) / 2;
-      const yOffset = (pdfHeight - newImgHeight) / 2;
+      const yOffset = 0; // Start from top for potentially long content
 
-      pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight);
+      let currentY = yOffset;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let remainingHeight = newImgHeight;
+      let pageCanvas = document.createElement('canvas');
+      let pageCtx = pageCanvas.getContext('2d');
+      pageCanvas.width = imgWidth; // Use original canvas width for cropping
+
+      while(remainingHeight > 0) {
+          const chunkHeight = Math.min(remainingHeight, imgHeight * (pageHeight/newImgHeight) * (imgWidth/newImgWidth) ); // calculate effective height of content that fits on one PDF page
+          const sourceY = imgHeight - remainingHeight; // Y position on original canvas to start cropping
+
+          pageCanvas.height = chunkHeight;
+          pageCtx?.drawImage(canvas, 0, sourceY, imgWidth, chunkHeight, 0, 0, imgWidth, chunkHeight);
+          
+          const pageImgData = pageCanvas.toDataURL('image/png');
+          const pageImgProps = pdf.getImageProperties(pageImgData);
+          const pageImgActualHeight = pageImgProps.height * (pdfWidth / pageImgProps.width);
+
+
+          if (currentY !== yOffset && (currentY + pageImgActualHeight > pageHeight -10)) { // add some margin at bottom
+            pdf.addPage();
+            currentY = yOffset;
+          }
+
+          pdf.addImage(pageImgData, 'PNG', xOffset, currentY, pdfWidth - (2*xOffset), pageImgActualHeight);
+          currentY += pageImgActualHeight;
+          remainingHeight -= chunkHeight;
+
+          if (remainingHeight > 0 && currentY < pageHeight - 10) { // check if next chunk can fit
+             // no new page if next chunk fits
+          } else if (remainingHeight > 0) {
+            pdf.addPage();
+            currentY = yOffset;
+          }
+      }
+
       pdf.save('offer-sheet.pdf');
       toast({ title: t({en: "PDF Generated", el: "Το PDF δημιουργήθηκε"}), description: t({en: "Your PDF has been downloaded.", el: "Το PDF σας έχει ληφθεί."}), variant: "default" });
     } catch (error) {
@@ -484,9 +532,17 @@ export default function OfferSheetForm() {
             <span className="text-muted-foreground">{t({ en: 'Total Original Price:', el: 'Συνολική Αρχική Τιμή:' })}</span>
             <span className="font-semibold">{currentCurrencySymbol}{totalOriginalPrice.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between items-center text-lg font-bold text-primary">
-            <span>{t({ en: 'Total Discounted Price:', el: 'Συνολική Τιμή με Έκπτωση:' })}</span>
-            <span>{currentCurrencySymbol}{totalDiscountedPrice.toFixed(2)}</span>
+          <div className="flex justify-between items-center text-lg">
+            <span className="text-muted-foreground">{t({ en: 'Subtotal (Discounted):', el: 'Μερικό Σύνολο (με Έκπτωση):' })}</span>
+            <span className="font-semibold">{currentCurrencySymbol}{totalDiscountedPrice.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-lg">
+            <span className="text-muted-foreground">{t({ en: 'VAT (24%):', el: 'ΦΠΑ (24%):' })}</span>
+            <span className="font-semibold">{currentCurrencySymbol}{vatAmount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-xl font-bold text-primary">
+            <span>{t({ en: 'Grand Total (incl. VAT):', el: 'Γενικό Σύνολο (με ΦΠΑ):' })}</span>
+            <span>{currentCurrencySymbol}{grandTotal.toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>
@@ -499,7 +555,7 @@ export default function OfferSheetForm() {
           <Textarea
             value={offerData.termsAndConditions}
             onChange={(e) => setOfferData({ ...offerData, termsAndConditions: e.target.value })}
-            placeholder={t({ en: "Enter any notes or terms and conditions for this offer...", el: "Εισαγάγετε τυχόν σημειώσεις ή όρους και προϋпоθέσεις για αυτήν την προσφορά..."})}
+            placeholder={t({ en: "Enter any notes or terms and conditions for this offer...", el: "Εισαγάγετε τυχόν σημειώσεις ή όρους και προϋποθέσεις για αυτήν την προσφορά..."})}
             rows={5}
           />
         </CardContent>
@@ -536,3 +592,6 @@ export default function OfferSheetForm() {
     </DndProvider>
   );
 }
+
+
+    
