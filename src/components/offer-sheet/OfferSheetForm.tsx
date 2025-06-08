@@ -33,16 +33,17 @@ const initialCustomerInfo: CustomerInfo = {
   contact: '',
 };
 
-const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType }> = {
-  EUR: { symbol: '€', IconComponent: Euro },
-  USD: { symbol: '$', IconComponent: DollarIcon },
-  GBP: { symbol: '£', IconComponent: PoundSterling },
+const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType, label: string }> = {
+  EUR: { symbol: '€', IconComponent: Euro, label: 'Euro' },
+  USD: { symbol: '$', IconComponent: DollarIcon, label: 'US Dollar' },
+  GBP: { symbol: '£', IconComponent: PoundSterling, label: 'British Pound' },
 };
 
 const getCurrencySymbol = (currency: Currency): string => {
   return currencyMetadata[currency]?.symbol || '$';
 };
 
+const BASE_DEFAULT_CURRENCY: Currency = 'EUR';
 
 const initialOfferSheetData = (defaultCurrency: Currency): OfferSheetData => ({
   logoUrl: undefined,
@@ -180,49 +181,60 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
 
 export default function OfferSheetForm() {
   const { t } = useLocalization();
-  const [offerData, setOfferData] = useState<OfferSheetData>(() => {
-    let defaultCurrency: Currency = 'EUR';
-    if (typeof window !== 'undefined') {
-        const savedSettings = localStorage.getItem('offerSheetSettings');
-        if (savedSettings) {
-            const parsedSettings = JSON.parse(savedSettings);
-            if (parsedSettings.defaultCurrency) {
-                defaultCurrency = parsedSettings.defaultCurrency;
-            }
-        }
-    }
-    return initialOfferSheetData(defaultCurrency);
-  });
+  // Initialize offerData with a currency that's consistent for server and initial client render.
+  const [offerData, setOfferData] = useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
   const { toast } = useToast();
+  // const [isOfferDataInitialized, setIsOfferDataInitialized] = useState(false); // Currently unused
 
   useEffect(() => {
-    let defaultLogo: string | undefined = undefined;
-    let defaultCurr: Currency = 'EUR';
+    // This effect runs only on the client, after hydration.
+    let userDefaultLogo: string | undefined = undefined;
+    let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY; // Start with base default
 
-    if (typeof window !== 'undefined') {
-        const savedSettings = localStorage.getItem('offerSheetSettings');
-        if (savedSettings) {
-          const parsedSettings = JSON.parse(savedSettings);
-          if(parsedSettings.defaultLogoUrl) {
-            defaultLogo = parsedSettings.defaultLogoUrl;
-          }
-          if(parsedSettings.defaultCurrency) {
-            defaultCurr = parsedSettings.defaultCurrency;
-          }
+    const savedSettings = localStorage.getItem('offerSheetSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        if (parsedSettings.defaultLogoUrl) {
+          userDefaultLogo = parsedSettings.defaultLogoUrl;
         }
+        if (parsedSettings.defaultCurrency && currencyMetadata[parsedSettings.defaultCurrency]) {
+          userDefaultCurrency = parsedSettings.defaultCurrency;
+        }
+      } catch (error) {
+        console.error("Failed to parse settings from localStorage", error);
+        // Fallback to defaults if parsing fails
+        userDefaultLogo = undefined;
+        userDefaultCurrency = BASE_DEFAULT_CURRENCY;
+      }
     }
     
-    setOfferData(prev => ({ 
-        ...prev, 
-        logoUrl: defaultLogo || prev.logoUrl, // Keep existing if already set by user on this form
-        currency: prev.currency || defaultCurr // Keep existing if already set, else use default
-    }));
-    if (defaultLogo) {
-        setLogoPreview(defaultLogo);
+    setOfferData(prev => {
+      const newLogoUrl = prev.logoUrl === undefined && userDefaultLogo ? userDefaultLogo : prev.logoUrl;
+      // Apply user's default currency from settings if the current currency is still the initial base default.
+      // This allows user's saved preference to take effect on new forms, without overriding if they change currency on the form.
+      const newCurrency = prev.currency === BASE_DEFAULT_CURRENCY ? userDefaultCurrency : prev.currency;
+      
+      return {
+        ...prev,
+        logoUrl: newLogoUrl,
+        currency: newCurrency,
+      };
+    });
+
+    // Update logo preview only if the logoUrl was actually set or is already the userDefaultLogo.
+    // This avoids clearing a user-uploaded logo preview with the default if they interacted quickly.
+    if (userDefaultLogo && (offerData.logoUrl === userDefaultLogo || (offerData.logoUrl === undefined))) {
+        setLogoPreview(userDefaultLogo);
+    } else if (offerData.logoUrl) { // If offerData.logoUrl is already set (e.g. user uploaded one), use that for preview
+        setLogoPreview(offerData.logoUrl);
     }
 
-  }, []);
+
+    // setIsOfferDataInitialized(true); // Mark that settings have been applied
+  }, []); // Run once on mount to load settings from localStorage.
+
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -274,7 +286,9 @@ export default function OfferSheetForm() {
   }, []);
 
   const handleCurrencyChange = (value: string) => {
-    setOfferData({ ...offerData, currency: value as Currency });
+    if (currencyMetadata[value as Currency]) {
+      setOfferData({ ...offerData, currency: value as Currency });
+    }
   };
 
   const calculateTotals = () => {
@@ -365,7 +379,7 @@ export default function OfferSheetForm() {
                    <SelectItem key={code} value={code}>
                      <div className="flex items-center">
                        <IconComponent className="h-4 w-4 mr-2" />
-                       {label || code}
+                       {t({en: label, el: label})} {/* Assuming label is language-agnostic or handled by `t` if it were structured differently */}
                      </div>
                    </SelectItem>
                 ))}
@@ -433,7 +447,7 @@ export default function OfferSheetForm() {
           <Textarea
             value={offerData.termsAndConditions}
             onChange={(e) => setOfferData({ ...offerData, termsAndConditions: e.target.value })}
-            placeholder={t({ en: "Enter any notes or terms and conditions for this offer...", el: "Εισαγάγετε τυχόν σημειώσεις ή όρους και προϋποθέσεις για αυτήν την προσφορά..."})}
+            placeholder={t({ en: "Enter any notes or terms and conditions for this offer...", el: "Εισαγάγετε τυχόν σημειώσεις ή όρους και προϋпоθέσεις για αυτήν την προσφορά..."})}
             rows={5}
           />
         </CardContent>
