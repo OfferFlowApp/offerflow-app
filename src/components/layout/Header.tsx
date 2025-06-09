@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, LogIn, UserCircle } from 'lucide-react'; // LogOut removed as it's part of useAuth now
+import { Languages, LogIn, LogOut as LogOutIcon, UserCircle } from 'lucide-react'; // Changed to LogOutIcon
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -28,7 +28,7 @@ const languageOptions: { value: Language; label: string }[] = [
 
 export default function Header() {
   const { language, setAppLanguage, t } = useLocalization();
-  const { currentUser, logOut, loading } = useAuth(); // logOut is available but will show disabled message
+  const { currentUser, logOut, loading } = useAuth();
   const router = useRouter();
 
   const handleLanguageChange = (value: string) => {
@@ -73,16 +73,14 @@ export default function Header() {
             <>
               {currentUser ? (
                 <>
-                  {/* This part will likely not render if currentUser is always null with Firebase removed */}
-                  <span className="text-sm text-muted-foreground hidden md:inline whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" title={(currentUser as any).email || ''}>
-                    {(currentUser as any).email}
+                  <span className="text-sm text-muted-foreground hidden md:inline whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" title={currentUser.email || ''}>
+                    {currentUser.email}
                   </span>
-                   <Button variant="ghost" size="icon" onClick={() => router.push('/profile')} aria-label={t({en: "User Profile", el: "Προφίλ Χρήστη"})}>
+                   <Button variant="ghost" size="icon" onClick={() => router.push('/profile')} aria-label={t({en: "User Profile", el: "Προφίλ Χρήστη", de: "Benutzerprofil", fr: "Profil Utilisateur"})}>
                      <UserCircle className="h-5 w-5" />
                    </Button>
                   <Button variant="outline" size="sm" onClick={logOut}>
-                    {/* LogOut icon can stay, but functionality is from new AuthContext */}
-                    <LogIn className="mr-0 sm:mr-2 h-4 w-4 transform rotate-180" /> {/* Using LogIn and rotating as a visual cue for LogOut */}
+                    <LogOutIcon className="mr-0 sm:mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">{t({ en: 'Logout', el: 'Αποσύνδεση', de: 'Abmelden', fr: 'Déconnexion' })}</span>
                   </Button>
                 </>

@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-// import { useRouter } from 'next/navigation'; // Not strictly needed if login is disabled
-// import { useAuth } from '@/contexts/AuthContext'; // Auth context might not have signInWithEmail anymore
+import { useRouter } from 'next/navigation'; 
+import { useAuth } from '@/contexts/AuthContext'; 
 import React, { useState } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
 
@@ -19,17 +19,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
-  // const router = useRouter();
+  const router = useRouter();
   const { t } = useLocalization();
+  const { signInWithEmail, loading } = useAuth();
 
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: t({en: "Login Disabled", el: "Η Σύνδεση είναι Απενεργοποιημένη", de: "Anmeldung deaktiviert", fr: "Connexion désactivée"}),
-      description: t({en: "Firebase authentication is currently disabled.", el: "Η πιστοποίηση Firebase είναι προς το παρόν απενεργοποιημένη.", de: "Die Firebase-Authentifizierung ist derzeit deaktiviert.", fr: "L'authentification Firebase est actuellement désactivée."}),
-      variant: "default",
-    });
+    if (!email || !password) {
+      toast({ title: t({en: "Missing Fields", el: "Λείπουν Πεδία"}), description: t({en: "Please enter both email and password.", el: "Παρακαλώ εισάγετε email και κωδικό πρόσβασης."}), variant: "destructive"});
+      return;
+    }
+    const user = await signInWithEmail(email, password);
+    if (user) {
+      // Navigation is handled within signInWithEmail on success
+    }
   };
 
   return (
@@ -39,7 +43,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-md shadow-xl rounded-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold text-primary">{t({en: "Login", el: "Σύνδεση", de: "Anmelden", fr: "Connexion"})}</CardTitle>
-            <CardDescription>{t({en: "Access your OfferFlow account. (Authentication currently disabled)", el: "Αποκτήστε πρόσβαση στον λογαριασμό σας OfferFlow. (Η πιστοποίηση είναι προς το παρόν απενεργοποιημένη)", de: "Greifen Sie auf Ihr OfferFlow-Konto zu. (Authentifizierung derzeit deaktiviert)", fr: "Accédez à votre compte OfferFlow. (Authentification actuellement désactivée)"})}</CardDescription>
+            <CardDescription>{t({en: "Access your OfferFlow account.", el: "Αποκτήστε πρόσβαση στον λογαριασμό σας OfferFlow.", de: "Greifen Sie auf Ihr OfferFlow-Konto zu.", fr: "Accédez à votre compte OfferFlow."})}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
@@ -52,7 +56,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -64,11 +68,11 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled>
-                {t({en: "Login", el: "Σύνδεση", de: "Anmelden", fr: "Connexion"})}
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+                {loading ? t({en: "Logging in...", el: "Γίνεται σύνδεση...", de: "Anmelden...", fr: "Connexion..."}) : t({en: "Login", el: "Σύνδεση", de: "Anmelden", fr: "Connexion"})}
               </Button>
             </form>
             <p className="mt-6 text-center text-sm text-muted-foreground">
