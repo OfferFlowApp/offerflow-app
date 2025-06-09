@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { OfferSheetData, Product, CustomerInfo, Currency } from '@/lib/types';
+import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,22 +17,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIcon, Percent } from 'lucide-react';
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
-import { DndProvider, useDrag, useDrop, type XYCoord } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useDrag, useDrop, type XYCoord } from 'react-dnd'; // DndProvider is in AppProviders
 import update from 'immutability-helper';
 import { useLocalization } from '@/hooks/useLocalization';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import PdfPageLayout from './PdfPageLayout'; // Import the new layout component
+import ReactDOM from 'react-dom/client';
+
 
 const initialProduct: Product = {
   id: '',
   title: '',
-  originalPrice: 0,
-  discountedPrice: 0,
-  discountedPriceType: 'exclusive', // Default to price excluding VAT
+  quantity: 1, // New field
+  originalPrice: 0, // Unit price
+  discountedPrice: 0, // Unit price
+  discountedPriceType: 'exclusive',
   description: '',
   imageUrl: undefined,
 };
@@ -40,7 +43,17 @@ const initialProduct: Product = {
 const initialCustomerInfo: CustomerInfo = {
   name: '',
   company: '',
+  contact: '', // Primary contact (email/phone)
+  vatNumber: '',
+  address: '',
+  phone2: '',
+};
+
+const initialSellerInfo: SellerInfo = {
+  name: '',
+  address: '',
   contact: '',
+  logoUrl: undefined,
 };
 
 const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType, label: string }> = {
@@ -56,14 +69,14 @@ const getCurrencySymbol = (currency: Currency): string => {
 const BASE_DEFAULT_CURRENCY: Currency = 'EUR';
 
 const initialOfferSheetData = (defaultCurrency: Currency): OfferSheetData => ({
-  logoUrl: undefined,
-  customerInfo: initialCustomerInfo,
+  customerInfo: { ...initialCustomerInfo },
+  sellerInfo: { ...initialSellerInfo },
   validityStartDate: undefined,
   validityEndDate: undefined,
   products: [],
   termsAndConditions: '',
   currency: defaultCurrency,
-  vatRate: 0, // Default VAT rate to 0%
+  vatRate: 0,
 });
 
 
@@ -140,7 +153,7 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
   const handleProductInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const fieldName = name as keyof Product;
-    const parsedValue = name.includes('Price') ? parseFloat(value) || 0 : value;
+    const parsedValue = (name.includes('Price') || name === 'quantity') ? parseFloat(value) || 0 : value;
     handleProductFieldChange(fieldName, parsedValue);
   };
 
@@ -163,25 +176,29 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
             <Trash2 className="h-5 w-5" />
           </Button>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2 md:col-span-2">
             <Label htmlFor={`productTitle-${index}`}>{t({ en: 'Title', el: 'Τίτλος', de: 'Titel', fr: 'Titre' })}</Label>
             <Input id={`productTitle-${index}`} name="title" value={product.title} onChange={handleProductInputChange} placeholder={t({ en: "Product Title", el: "Τίτλος Προϊόντος", de: "Produkttitel", fr: "Titre du produit" })} />
           </div>
-          <div className="space-y-2">
+           <div className="space-y-2">
+            <Label htmlFor={`productQuantity-${index}`}>{t({ en: 'Quantity', el: 'Ποσότητα', de: 'Menge', fr: 'Quantité' })}</Label>
+            <Input id={`productQuantity-${index}`} name="quantity" type="number" value={product.quantity} onChange={handleProductInputChange} placeholder="1" min="1" />
+          </div>
+          <div className="space-y-2 md:col-span-3">
             <Label htmlFor={`productDescription-${index}`}>{t({ en: 'Description', el: 'Περιγραφή', de: 'Beschreibung', fr: 'Description' })}</Label>
             <Textarea id={`productDescription-${index}`} name="description" value={product.description} onChange={handleProductInputChange} placeholder={t({ en: "Product Description", el: "Περιγραφή Προϊόντος", de: "Produktbeschreibung", fr: "Description du produit" })} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`originalPrice-${index}`}>{t({ en: 'Original Price (excl. VAT)', el: 'Αρχική Τιμή (χωρίς ΦΠΑ)', de: 'Originalpreis (exkl. MwSt.)', fr: 'Prix Original (hors TVA)' })} ({currencySymbol})</Label>
+            <Label htmlFor={`originalPrice-${index}`}>{t({ en: 'Original Unit Price (excl. VAT)', el: 'Αρχική Τιμή Μονάδας (χωρίς ΦΠΑ)', de: 'Originalstückpreis (exkl. MwSt.)', fr: 'Prix Unitaire Original (hors TVA)' })} ({currencySymbol})</Label>
             <Input id={`originalPrice-${index}`} name="originalPrice" type="number" value={product.originalPrice} onChange={handleProductInputChange} placeholder="0.00" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`discountedPrice-${index}`}>{t({ en: 'Discounted Price', el: 'Τιμή με Έκπτωση', de: 'Reduzierter Preis', fr: 'Prix Réduit' })} ({currencySymbol})</Label>
+            <Label htmlFor={`discountedPrice-${index}`}>{t({ en: 'Discounted Unit Price', el: 'Τιμή Μονάδας με Έκπτωση', de: 'Reduzierter Stückpreis', fr: 'Prix Unitaire Réduit' })} ({currencySymbol})</Label>
             <Input id={`discountedPrice-${index}`} name="discountedPrice" type="number" value={product.discountedPrice} onChange={handleProductInputChange} placeholder="0.00" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`discountedPriceType-${index}`}>{t({ en: 'Discounted Price Type', el: 'Τύπος Τιμής με Έκπτωση', de: 'Art des reduzierten Preises', fr: 'Type de Prix Réduit' })}</Label>
+            <Label htmlFor={`discountedPriceType-${index}`}>{t({ en: 'Discounted Price VAT Type', el: 'Τύπος ΦΠΑ Τιμής με Έκπτωση', de: 'MwSt.-Art des reduzierten Preises', fr: 'Type de TVA du Prix Réduit' })}</Label>
             <Select
               value={product.discountedPriceType || 'exclusive'}
               onValueChange={(value) => handleProductFieldChange('discountedPriceType', value as 'exclusive' | 'inclusive')}
@@ -195,7 +212,7 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2 md:col-span-3">
             <Label htmlFor={`productImage-${index}`}>{t({ en: 'Product Image', el: 'Εικόνα Προϊόντος', de: 'Produktbild', fr: 'Image du Produit' })}</Label>
             <Input id={`productImage-${index}`} type="file" accept="image/*" onChange={handleProductImageUpload} className="file:text-primary file:font-medium" />
             {product.imageUrl && (
@@ -214,13 +231,12 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
 export default function OfferSheetForm() {
   const { t } = useLocalization();
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
-  const [logoPreview, setLogoPreview] = React.useState<string | undefined>(undefined);
   const { toast } = useToast();
-  const offerSheetRef = React.useRef<HTMLFormElement>(null);
-
+  // Removed offerSheetRef as PDF generation target will be dynamic
 
   React.useEffect(() => {
-    let userDefaultLogo: string | undefined = undefined;
+    let userDefaultSellerLogo: string | undefined = undefined;
+    let userDefaultSellerInfo: Partial<SellerInfo> | undefined = undefined;
     let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY;
 
     const savedSettings = localStorage.getItem('offerSheetSettings');
@@ -228,60 +244,65 @@ export default function OfferSheetForm() {
       try {
         const parsedSettings = JSON.parse(savedSettings);
         if (parsedSettings.defaultLogoUrl) {
-          userDefaultLogo = parsedSettings.defaultLogoUrl;
+          userDefaultSellerLogo = parsedSettings.defaultLogoUrl;
+        }
+        if (parsedSettings.defaultSellerInfo) {
+          userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
         }
         if (parsedSettings.defaultCurrency && currencyMetadata[parsedSettings.defaultCurrency]) {
           userDefaultCurrency = parsedSettings.defaultCurrency;
         }
       } catch (error) {
         console.error("Failed to parse settings from localStorage", error);
-        userDefaultLogo = undefined;
-        userDefaultCurrency = BASE_DEFAULT_CURRENCY;
       }
     }
     
-    setOfferData(prev => {
-      const newLogoUrl = prev.logoUrl === undefined && userDefaultLogo ? userDefaultLogo : prev.logoUrl;
-      const newCurrency = prev.currency === BASE_DEFAULT_CURRENCY ? userDefaultCurrency : prev.currency;
-      
-      return {
-        ...prev,
-        logoUrl: newLogoUrl,
-        currency: newCurrency,
-        vatRate: prev.vatRate === undefined ? 0 : prev.vatRate, // Ensure vatRate is initialized
-      };
-    });
+    setOfferData(prev => ({
+      ...initialOfferSheetData(userDefaultCurrency), // Start fresh with new structure but keep currency
+      sellerInfo: {
+        ...initialSellerInfo,
+        logoUrl: userDefaultSellerLogo || initialSellerInfo.logoUrl,
+        name: userDefaultSellerInfo?.name || initialSellerInfo.name,
+        address: userDefaultSellerInfo?.address || initialSellerInfo.address,
+        contact: userDefaultSellerInfo?.contact || initialSellerInfo.contact,
+      },
+      currency: userDefaultCurrency,
+      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
+    }));
 
-    if (userDefaultLogo && (offerData.logoUrl === userDefaultLogo || (offerData.logoUrl === undefined))) {
-        setLogoPreview(userDefaultLogo);
-    } else if (offerData.logoUrl) {
-        setLogoPreview(offerData.logoUrl);
-    }
   }, []);
 
 
-  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => { // This is for Seller Logo
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-        setOfferData({ ...offerData, logoUrl: reader.result as string });
+        setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, logoUrl: reader.result as string } }));
       };
       reader.readAsDataURL(e.target.files[0]);
     }
   };
+  
+  const handleSellerInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setOfferData(prev => ({
+      ...prev,
+      sellerInfo: { ...prev.sellerInfo, [name]: value },
+    }));
+  };
 
-  const handleCustomerInfoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setOfferData({
-      ...offerData,
-      customerInfo: { ...offerData.customerInfo, [e.target.name]: e.target.value },
-    });
+  const handleCustomerInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setOfferData(prev => ({
+      ...prev,
+      customerInfo: { ...prev.customerInfo, [name]: value },
+    }));
   };
   
   const addProduct = () => {
     setOfferData({
       ...offerData,
-      products: [...offerData.products, { ...initialProduct, id: `product-${Date.now()}` }],
+      products: [...offerData.products, { ...initialProduct, id: `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, quantity: 1 }],
     });
   };
 
@@ -320,26 +341,27 @@ export default function OfferSheetForm() {
     setOfferData({ ...offerData, vatRate: parseFloat(value) || 0 });
   };
 
-  const calculateTotals = () => {
+  const calculateTotals = React.useCallback(() => {
     const currentVatRateAsDecimal = (offerData.vatRate || 0) / 100;
 
-    const totalOriginalPrice = offerData.products.reduce((sum, p) => sum + (p.originalPrice || 0), 0);
+    const totalOriginalPrice = offerData.products.reduce((sum, p) => sum + ((p.originalPrice || 0) * (p.quantity || 1)), 0);
     
     const subtotalDiscounted = offerData.products.reduce((sum, p) => {
-      let priceExclVat = p.discountedPrice || 0;
+      let unitDiscountedPriceExclVat = p.discountedPrice || 0;
       if (p.discountedPriceType === 'inclusive' && currentVatRateAsDecimal > 0) {
-        priceExclVat = (p.discountedPrice || 0) / (1 + currentVatRateAsDecimal);
+         // This logic might need review if discountedPriceType is still used with unit prices
+        unitDiscountedPriceExclVat = (p.discountedPrice || 0) / (1 + currentVatRateAsDecimal);
       }
-      return sum + priceExclVat;
+      return sum + (unitDiscountedPriceExclVat * (p.quantity || 1));
     }, 0);
 
     const vatAmount = subtotalDiscounted * currentVatRateAsDecimal;
     const grandTotal = subtotalDiscounted + vatAmount;
 
     return { totalOriginalPrice, subtotalDiscounted, vatAmount, grandTotal };
-  };
+  }, [offerData.products, offerData.vatRate]);
 
-  const { totalOriginalPrice, subtotalDiscounted, vatAmount, grandTotal } = calculateTotals();
+  const currentCalculatedTotals = calculateTotals();
   const currentCurrencySymbol = getCurrencySymbol(offerData.currency);
 
 
@@ -347,19 +369,14 @@ export default function OfferSheetForm() {
     e.preventDefault();
     const offerDataWithTotals = {
         ...offerData,
-        calculatedTotals: {
-            totalOriginalPrice,
-            subtotalDiscounted,
-            vatAmount,
-            grandTotal,
-            vatRateApplied: offerData.vatRate || 0,
-            currency: offerData.currency,
-        }
+        calculatedTotals: currentCalculatedTotals,
     };
     console.log("Offer Sheet Data:", offerDataWithTotals);
+    // Save to localStorage example
+    localStorage.setItem(`offerSheet-${Date.now()}`, JSON.stringify(offerDataWithTotals));
     toast({
       title: t({ en: "Offer Sheet Saved (Simulated)", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε (Προσομοίωση)", de: "Angebot gespeichert (Simuliert)", fr: "Devis sauvegardé (Simulation)" }),
-      description: t({ en: "Your offer sheet data has been logged to the console.", el: "Τα δεδομένα του δελτίου προσφοράς καταγράφηκαν στην κονσόλα.", de: "Ihre Angebotsdaten wurden in der Konsole protokolliert.", fr: "Les données de votre devis ont été enregistrées dans la console." }),
+      description: t({ en: "Your offer sheet data has been logged and saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς καταγράφηκαν και αποθηκεύτηκαν στο localStorage.", de: "Ihre Angebotsdaten wurden in der Konsole protokolliert und im localStorage gespeichert.", fr: "Les données de votre devis ont été enregistrées dans la console et sauvegardées dans localStorage." }),
       variant: "default",
     });
   };
@@ -374,77 +391,131 @@ export default function OfferSheetForm() {
   };
 
   const exportAsPdf = async () => {
-    const element = offerSheetRef.current;
-    if (!element) {
-      toast({ title: t({en: "Error", el: "Σφάλμα", de: "Fehler", fr: "Erreur"}), description: t({en: "Could not find offer sheet content to export.", el: "Δεν ήταν δυνατή η εύρεση περιεχομένου δελτίου προσφοράς για εξαγωγή.", de: "Angebot konnte nicht zum Export gefunden werden.", fr: "Impossible de trouver le contenu du devis à exporter."}), variant: "destructive" });
-      return;
-    }
-    toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF...", de: "PDF wird generiert...", fr: "Génération du PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο.", de: "Dies kann einen Moment dauern.", fr: "Cela peut prendre un moment."})});
-    try {
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, allowTaint: true,  windowWidth: element.scrollWidth, windowHeight: element.scrollHeight});
-      const imgData = canvas.toDataURL('image/png');
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      // const pdfHeight = pdf.internal.pageSize.getHeight(); // Not directly used for single page image fit
-      
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = imgProps.width;
-      const imgHeight = imgProps.height;
-      
-      // Calculate the number of pages needed
-      const pageHeightA4 = pdf.internal.pageSize.getHeight();
-      const contentHeightInMM = (imgHeight * pdfWidth) / imgWidth; // Scale image height to fit PDF width
-      const numPages = Math.ceil(contentHeightInMM / pageHeightA4);
+    const PRODUCTS_PER_PAGE = 3; // Adjust as needed based on typical product content length
+    const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const creationDate = new Date().toLocaleDateString();
 
-      for (let i = 0; i < numPages; i++) {
+    toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF...", de: "PDF wird generiert...", fr: "Génération du PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο.", de: "Dies kann einen Moment dauern.", fr: "Cela peut prendre un moment."})});
+
+    for (let i = 0; i < totalPages; i++) {
+      const pageNum = i + 1;
+      const startIndex = i * PRODUCTS_PER_PAGE;
+      const endIndex = startIndex + PRODUCTS_PER_PAGE;
+      const productsOnPage = offerData.products.slice(startIndex, endIndex);
+
+      const tempPdfPageContainer = document.createElement('div');
+      tempPdfPageContainer.style.position = 'absolute';
+      tempPdfPageContainer.style.left = '-210mm'; // Position off-screen
+      tempPdfPageContainer.style.width = '210mm';
+      // tempPdfPageContainer.style.height = '297mm'; // Min height set in component
+      document.body.appendChild(tempPdfPageContainer);
+      
+      const root = ReactDOM.createRoot(tempPdfPageContainer);
+      root.render(
+        <React.StrictMode> {/* StrictMode for better practices, can be removed if issues arise */}
+          <PdfPageLayout
+            offerData={offerData}
+            productsOnPage={productsOnPage}
+            pageNum={pageNum}
+            totalPages={totalPages}
+            currencySymbol={currentCurrencySymbol}
+            calculatedTotals={currentCalculatedTotals}
+            creationDate={creationDate}
+          />
+        </React.StrictMode>
+      );
+
+      // Allow time for rendering, especially if images are involved (though dataURIs are faster)
+      await new Promise(resolve => setTimeout(resolve, 200)); 
+
+      try {
+        const canvas = await html2canvas(tempPdfPageContainer, { 
+          scale: 2, 
+          useCORS: true,
+          // width: tempPdfPageContainer.scrollWidth, // Use explicit width of A4
+          // height: tempPdfPageContainer.scrollHeight,
+          windowWidth: tempPdfPageContainer.scrollWidth,
+          windowHeight: tempPdfPageContainer.scrollHeight,
+
+        });
+        const imgData = canvas.toDataURL('image/png');
+        
         if (i > 0) {
           pdf.addPage();
         }
-        // Calculate y-offset for cropping from the original canvas
-        // The height of the crop is the original canvas height scaled to one PDF page height equivalent
-        const cropSourceY = (pageHeightA4 / contentHeightInMM) * imgHeight * i;
-        const cropSourceHeight = Math.min((pageHeightA4 / contentHeightInMM) * imgHeight, imgHeight - cropSourceY);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        const ratio = imgProps.height / imgProps.width;
+        const imgHeight = pdfWidth * ratio;
+        
+        let heightToUse = imgHeight;
+        if (imgHeight > pdfHeight) { // If image is taller than page, crop or scale
+            heightToUse = pdfHeight; // This will fit to page height, potentially letterboxing width
+        }
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, heightToUse);
 
-        // Create a temporary canvas for the current page's content
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = imgWidth; // Keep original image width for quality
-        pageCanvas.height = cropSourceHeight;
-        const pageCtx = pageCanvas.getContext('2d');
-        
-        // Draw the cropped part of the original canvas onto the temporary page canvas
-        pageCtx?.drawImage(canvas, 0, cropSourceY, imgWidth, cropSourceHeight, 0, 0, imgWidth, cropSourceHeight);
-        const pageImgData = pageCanvas.toDataURL('image/png');
-        
-        // Add the image for the current page to the PDF
-        // Scale it to fit the PDF width, height will adjust proportionally
-        pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, (cropSourceHeight * pdfWidth) / imgWidth);
+      } catch (error) {
+        console.error("Error generating canvas for page:", pageNum, error);
+        toast({ title: t({en: "PDF Page Generation Failed", el: "Η δημιουργία σελίδας PDF απέτυχε", de: "PDF-Seitenerstellung fehlgeschlagen", fr: "Échec de la génération de la page PDF"}), description: `Page ${pageNum}: ${String(error)}`, variant: "destructive" });
+        // Clean up temporary div even on error
+        root.unmount();
+        document.body.removeChild(tempPdfPageContainer);
+        return; // Stop PDF generation
+      } finally {
+        // Clean up the temporary div
+        root.unmount();
+        if (document.body.contains(tempPdfPageContainer)) {
+             document.body.removeChild(tempPdfPageContainer);
+        }
       }
-
-
-      pdf.save('offer-sheet.pdf');
-      toast({ title: t({en: "PDF Generated", el: "Το PDF δημιουργήθηκε", de: "PDF generiert", fr: "PDF généré"}), description: t({en: "Your PDF has been downloaded.", el: "Το PDF σας έχει ληφθεί.", de: "Ihre PDF wurde heruntergeladen.", fr: "Votre PDF a été téléchargé."}), variant: "default" });
-    } catch (error) {
-        console.error("Error generating PDF:", error);
-        toast({ title: t({en: "PDF Generation Failed", el: "Η δημιουργία PDF απέτυχε", de: "PDF-Generierung fehlgeschlagen", fr: "Échec de la génération du PDF"}), description: String(error), variant: "destructive" });
     }
+
+    pdf.save('offer-sheet.pdf');
+    toast({ title: t({en: "PDF Generated", el: "Το PDF δημιουργήθηκε", de: "PDF generiert", fr: "PDF généré"}), description: t({en: "Your PDF has been downloaded.", el: "Το PDF σας έχει ληφθεί.", de: "Ihre PDF wurde heruntergeladen.", fr: "Votre PDF a été téléchargé."}), variant: "default" });
   };
 
+
   const exportAsJpeg = async () => {
-    const element = offerSheetRef.current;
-    if (!element) {
-      toast({ title: t({en: "Error", el: "Σφάλμα", de: "Fehler", fr: "Erreur"}), description: t({en: "Could not find offer sheet content to export.", el: "Δεν ήταν δυνατή η εύρεση περιεχομένου δελτίου προσφοράς για εξαγωγή.", de: "Angebot konnte nicht zum Export gefunden werden.", fr: "Impossible de trouver le contenu du devis à exporter."}), variant: "destructive" });
-      return;
-    }
+    // JPEG export might need to be re-thought for multi-page or just capture the first page.
+    // For now, let's assume it tries to capture a single page representation (perhaps the first).
+    const tempPdfPageContainer = document.createElement('div');
+    tempPdfPageContainer.style.position = 'absolute';
+    tempPdfPageContainer.style.left = '-210mm';
+    tempPdfPageContainer.style.width = '210mm';
+    document.body.appendChild(tempPdfPageContainer);
+    
+    const root = ReactDOM.createRoot(tempPdfPageContainer);
+    const productsForFirstPage = offerData.products.slice(0, 3); // Example: 3 products for JPEG
+    
+    root.render(
+      <PdfPageLayout
+        offerData={offerData}
+        productsOnPage={productsForFirstPage} // Only first page for JPEG
+        pageNum={1}
+        totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} // Example total pages
+        currencySymbol={currentCurrencySymbol}
+        calculatedTotals={currentCalculatedTotals}
+        creationDate={new Date().toLocaleDateString()}
+      />
+    );
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     toast({ title: t({en: "Generating JPEG...", el: "Δημιουργία JPEG...", de: "JPEG wird generiert...", fr: "Génération du JPEG..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο.", de: "Dies kann einen Moment dauern.", fr: "Cela peut prendre un moment."})});
     try {
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, allowTaint: true, windowWidth: element.scrollWidth, windowHeight: element.scrollHeight });
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
-      triggerDownload(dataUrl, 'offer-sheet.jpg');
-      toast({ title: t({en: "JPEG Generated", el: "Το JPEG δημιουργήθηκε", de: "JPEG generiert", fr: "JPEG généré"}), description: t({en: "Your JPEG has been downloaded.", el: "Το JPEG σας έχει ληφθεί.", de: "Ihre JPEG wurde heruntergeladen.", fr: "Votre JPEG a été téléchargé."}), variant: "default" });
+      const canvas = await html2canvas(tempPdfPageContainer, { scale: 2, useCORS: true, windowWidth: tempPdfPageContainer.scrollWidth, windowHeight: tempPdfPageContainer.scrollHeight });
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      triggerDownload(dataUrl, 'offer-sheet-page1.jpg');
+      toast({ title: t({en: "JPEG Generated (Page 1)", el: "Το JPEG δημιουργήθηκε (Σελίδα 1)", de: "JPEG generiert (Seite 1)", fr: "JPEG généré (Page 1)"}), description: t({en: "Your JPEG has been downloaded.", el: "Το JPEG σας έχει ληφθεί.", de: "Ihre JPEG wurde heruntergeladen.", fr: "Votre JPEG a été téléchargé."}), variant: "default" });
     } catch (error) {
       console.error("Error generating JPEG:", error);
       toast({ title: t({en: "JPEG Generation Failed", el: "Η δημιουργία JPEG απέτυχε", de: "JPEG-Generierung fehlgeschlagen", fr: "Échec de la génération du JPEG"}), description: String(error), variant: "destructive" });
+    } finally {
+        root.unmount();
+        if (document.body.contains(tempPdfPageContainer)) {
+             document.body.removeChild(tempPdfPageContainer);
+        }
     }
   };
 
@@ -458,24 +529,43 @@ export default function OfferSheetForm() {
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
-    <form onSubmit={handleSubmit} ref={offerSheetRef} id="offer-sheet-form-capture-area" className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto bg-card rounded-xl shadow-2xl border">
+    // DndProvider is now in AppProviders
+    <form onSubmit={handleSubmit} id="offer-sheet-form-capture-area" className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto bg-card rounded-xl shadow-2xl border">
+      
       <Card className="shadow-none border-none">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">{t({ en: 'Company Logo', el: 'Λογότυπο Εταιρείας', de: 'Firmenlogo', fr: 'Logo de l\'entreprise' })}</CardTitle>
+          <CardTitle className="font-headline text-2xl">{t({ en: 'Seller Information & Logo', el: 'Πληροφορίες Πωλητή & Λογότυπο', de: 'Verkäuferinformationen & Logo', fr: 'Informations Vendeur & Logo' })}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-4">
-          {logoPreview ? (
-            <Image src={logoPreview} alt={t({ en: "Logo Preview", el: "Προεπισκόπηση Λογοτύπου", de: "Logo-Vorschau", fr: "Aperçu du logo" })} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
-          ) : (
-            <div className="w-40 h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-              <UploadCloud className="h-16 w-16" />
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="sellerName">{t({ en: 'Seller Company Name', el: 'Όνομα Εταιρείας Πωλητή', de: 'Name des Verkäuferunternehmens', fr: 'Nom de l\'entreprise du Vendeur' })}</Label>
+            <Input id="sellerName" name="name" value={offerData.sellerInfo.name} onChange={handleSellerInfoChange} placeholder="Your Company Inc." />
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="sellerContact">{t({ en: 'Seller Contact (Email/Phone)', el: 'Επικοινωνία Πωλητή (Email/Τηλέφωνο)', de: 'Verkäuferkontakt (E-Mail/Telefon)', fr: 'Contact Vendeur (Email/Téléphone)' })}</Label>
+            <Input id="sellerContact" name="contact" value={offerData.sellerInfo.contact} onChange={handleSellerInfoChange} placeholder="sales@yourcompany.com" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="sellerAddress">{t({ en: 'Seller Address', el: 'Διεύθυνση Πωλητή', de: 'Verkäuferadresse', fr: 'Adresse du Vendeur' })}</Label>
+            <Textarea id="sellerAddress" name="address" value={offerData.sellerInfo.address} onChange={handleSellerInfoChange} placeholder="123 Business Rd, Suite 400, City, Country" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="logoUpload">{t({ en: 'Seller Logo', el: 'Λογότυπο Πωλητή', de: 'Verkäuferlogo', fr: 'Logo du Vendeur' })}</Label>
+            <div className="flex flex-col items-start space-y-2">
+              {offerData.sellerInfo.logoUrl ? (
+                <Image src={offerData.sellerInfo.logoUrl} alt={t({ en: "Seller Logo Preview", el: "Προεπισκόπηση Λογοτύπου Πωλητή"})} width={150} height={75} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
+              ) : (
+                <div className="w-32 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                  <UploadCloud className="h-8 w-8" />
+                </div>
+              )}
+              <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
+              <p className="text-xs text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</p>
             </div>
-          )}
-          <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
-          <Label htmlFor="logoUpload" className="text-sm text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)', de: 'Laden Sie Ihr Firmenlogo hoch (PNG, JPG, SVG)', fr: 'Téléchargez le logo de votre entreprise (PNG, JPG, SVG)' })}</Label>
+          </div>
         </CardContent>
       </Card>
+
 
       <Card className="shadow-none border-none">
         <CardHeader>
@@ -490,9 +580,25 @@ export default function OfferSheetForm() {
             <Label htmlFor="customerCompany">{t({ en: 'Company', el: 'Εταιρεία', de: 'Firma', fr: 'Entreprise' })}</Label>
             <Input id="customerCompany" name="company" value={offerData.customerInfo.company} onChange={handleCustomerInfoChange} placeholder="Acme Corp" />
           </div>
+           <div className="space-y-2">
+            <Label htmlFor="customerVatNumber">{t({ en: 'Client VAT Number', el: 'ΑΦΜ Πελάτη', de: 'USt-IdNr. des Kunden', fr: 'Numéro de TVA du Client' })}</Label>
+            <Input id="customerVatNumber" name="vatNumber" value={offerData.customerInfo.vatNumber || ''} onChange={handleCustomerInfoChange} placeholder="EL123456789" />
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="customerContact">{t({ en: 'Contact (Email/Phone)', el: 'Επικοινωνία (Email/Τηλέφωνο)', de: 'Kontakt (E-Mail/Telefon)', fr: 'Contact (Email/Téléphone)' })}</Label>
-            <Input id="customerContact" name="contact" value={offerData.customerInfo.contact} onChange={handleCustomerInfoChange} placeholder="john.doe@example.com" />
+            <Label htmlFor="customerContact">{t({ en: 'Client Email', el: 'Email Επικοινωνίας Πελάτη', de: 'Kunden-E-Mail', fr: 'Email du Client' })}</Label>
+            <Input id="customerContact" name="contact" type="email" value={offerData.customerInfo.contact} onChange={handleCustomerInfoChange} placeholder="john.doe@example.com" />
+          </div>
+           {/* <div className="space-y-2">
+            <Label htmlFor="customerPhone1">{t({ en: 'Client Phone 1', el: 'Τηλέφωνο Πελάτη 1', de: 'Kundentelefon 1', fr: 'Téléphone Client 1' })}</Label>
+            <Input id="customerPhone1" name="phone1" value={offerData.customerInfo.phone1 || ''} onChange={handleCustomerInfoChange} placeholder="555-0101" />
+          </div> */}
+          <div className="space-y-2">
+            <Label htmlFor="customerPhone2">{t({ en: 'Client Phone', el: 'Τηλέφωνο Πελάτη', de: 'Kundentelefon', fr: 'Téléphone Client' })}</Label>
+            <Input id="customerPhone2" name="phone2" value={offerData.customerInfo.phone2 || ''} onChange={handleCustomerInfoChange} placeholder="555-0202" />
+          </div>
+           <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="customerAddress">{t({ en: 'Client Address', el: 'Διεύθυνση Πελάτη', de: 'Kundenadresse', fr: 'Adresse du Client' })}</Label>
+            <Textarea id="customerAddress" name="address" value={offerData.customerInfo.address || ''} onChange={handleCustomerInfoChange} placeholder="456 Client Ave, Town, Country" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="offerCurrency">{t({ en: 'Offer Currency', el: 'Νόμισμα Προσφοράς', de: 'Angebotswährung', fr: 'Devise de l\'Offre' })}</Label>
@@ -556,11 +662,11 @@ export default function OfferSheetForm() {
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center text-lg">
             <span className="text-muted-foreground">{t({ en: 'Total Original Price (excl. VAT):', el: 'Συνολική Αρχική Τιμή (χωρίς ΦΠΑ):', de: 'Gesamter Originalpreis (exkl. MwSt.):', fr: 'Prix Original Total (hors TVA):' })}</span>
-            <span className="font-semibold">{currentCurrencySymbol}{totalOriginalPrice.toFixed(2)}</span>
+            <span className="font-semibold">{currentCurrencySymbol}{currentCalculatedTotals.totalOriginalPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center text-lg">
             <span className="text-muted-foreground">{t({ en: 'Subtotal (Discounted, excl. VAT):', el: 'Μερικό Σύνολο (με Έκπτωση, χωρίς ΦΠΑ):', de: 'Zwischensumme (Reduziert, exkl. MwSt.):', fr: 'Sous-total (Réduit, hors TVA):' })}</span>
-            <span className="font-semibold">{currentCurrencySymbol}{subtotalDiscounted.toFixed(2)}</span>
+            <span className="font-semibold">{currentCurrencySymbol}{currentCalculatedTotals.subtotalDiscounted.toFixed(2)}</span>
           </div>
           <div className="space-y-2">
             <Label htmlFor="vatRate">{t({ en: 'VAT Rate (%)', el: 'Ποσοστό ΦΠΑ (%)', de: 'MwSt.-Satz (%)', fr: 'Taux de TVA (%)' })}</Label>
@@ -571,11 +677,11 @@ export default function OfferSheetForm() {
           </div>
           <div className="flex justify-between items-center text-lg">
             <span className="text-muted-foreground">{t({ en: `VAT (${offerData.vatRate || 0}%):`, el: `ΦΠΑ (${offerData.vatRate || 0}%):`, de: `MwSt. (${offerData.vatRate || 0}%):`, fr: `TVA (${offerData.vatRate || 0}%):` })}</span>
-            <span className="font-semibold">{currentCurrencySymbol}{vatAmount.toFixed(2)}</span>
+            <span className="font-semibold">{currentCurrencySymbol}{currentCalculatedTotals.vatAmount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center text-xl font-bold text-primary">
             <span>{t({ en: 'Grand Total (incl. VAT):', el: 'Γενικό Σύνολο (με ΦΠΑ):', de: 'Gesamtsumme (inkl. MwSt.):', fr: 'Total Général (TVA incl.):' })}</span>
-            <span>{currentCurrencySymbol}{grandTotal.toFixed(2)}</span>
+            <span>{currentCurrencySymbol}{currentCalculatedTotals.grandTotal.toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>
@@ -611,8 +717,8 @@ export default function OfferSheetForm() {
               {t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF', de: 'Als PDF exportieren', fr: 'Exporter en PDF' })}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={exportAsJpeg}>
-              <ImageIcon className="mr-2 h-4 w-4" />
-              {t({ en: 'Export as JPEG', el: 'Εξαγωγή ως JPEG', de: 'Als JPEG exportieren', fr: 'Exporter en JPEG' })}
+              <ImageIconLucide className="mr-2 h-4 w-4" />
+              {t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)', de: 'Als JPEG exportieren (Seite 1)', fr: 'Exporter en JPEG (Page 1)' })}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -622,6 +728,5 @@ export default function OfferSheetForm() {
         </Button>
       </div>
     </form>
-    </DndProvider>
   );
 }
