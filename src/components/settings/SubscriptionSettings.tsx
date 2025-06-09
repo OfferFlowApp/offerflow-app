@@ -1,55 +1,66 @@
+
 "use client";
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, CreditCard } from 'lucide-react';
+import { useLocalization } from '@/hooks/useLocalization';
 
 export default function SubscriptionSettings() {
-  // Placeholder state and logic
-  const currentPlan = "Pro Plan";
-  const nextBillingDate = "November 30, 2024";
+  const { t } = useLocalization();
+  // Placeholder data
+  const currentPlan = t({ en: "Pro Plan (Example)", el: "Pro Plan (Παράδειγμα)", de: "Pro Plan (Beispiel)", fr: "Plan Pro (Exemple)" });
+  const nextBillingDate = t({ en: "Not Applicable", el: "Μη Διαθέσιμο", de: "Nicht Zutreffend", fr: "Non Applicable" });
+
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-headline">Current Plan: {currentPlan}</CardTitle>
-          <CardDescription>Next billing date: {nextBillingDate}</CardDescription>
+          <CardTitle className="text-xl font-headline">{t({ en: "Current Plan:", el: "Τρέχον Πρόγραμμα:", de: "Aktueller Plan:", fr: "Plan Actuel:" })} {currentPlan}</CardTitle>
+          <CardDescription>
+            {t({ en: "Subscription features are currently placeholders and not functional.", el: "Οι λειτουργίες συνδρομής είναι προς το παρόν placeholders και μη λειτουργικές.", de: "Abonnementfunktionen sind derzeit Platzhalter und nicht funktionsfähig.", fr: "Les fonctionnalités d'abonnement sont actuellement des placeholders et non fonctionnelles." })}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> Unlimited Offer Sheets</li>
-            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> Custom Branding</li>
-            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> PDF Export</li>
-            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> Priority Support</li>
+            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> {t({ en: "Unlimited Offer Sheets (Example Feature)", el: "Απεριόριστα Δελτία Προσφορών (Παράδειγμα Λειτουργίας)", de: "Unbegrenzte Angebotsblätter (Beispielfunktion)", fr: "Fiches d'Offre Illimitées (Exemple de Fonctionnalité)" })}</li>
+            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> {t({ en: "Custom Branding (Example Feature)", el: "Προσαρμοσμένη Επωνυμία (Παράδειγμα Λειτουργίας)", de: "Benutzerdefiniertes Branding (Beispielfunktion)", fr: "Marque Personnalisée (Exemple de Fonctionnalité)" })}</li>
+            <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-accent" /> {t({ en: "PDF Export (Example Feature)", el: "Εξαγωγή PDF (Παράδειγμα Λειτουργίας)", de: "PDF-Export (Beispielfunktion)", fr: "Exportation PDF (Exemple de Fonctionnalité)" })}</li>
           </ul>
         </CardContent>
-        <CardFooter className="flex justify-between items-center">
-          <Button variant="outline">Change Plan</Button>
-          <Button variant="destructive">Cancel Subscription</Button>
+        <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-2">
+          <Button variant="outline" disabled>
+            {t({ en: "Change Plan", el: "Αλλαγή Προγράμματος", de: "Plan ändern", fr: "Changer de Plan" })}
+          </Button>
+          <Button variant="destructive" disabled>
+            {t({ en: "Cancel Subscription", el: "Ακύρωση Συνδρομής", de: "Abonnement kündigen", fr: "Annuler l'Abonnement" })}
+          </Button>
         </CardFooter>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-headline">Billing Information</CardTitle>
-          <CardDescription>Manage your payment methods.</CardDescription>
+          <CardTitle className="text-xl font-headline">{t({ en: "Billing Information (Placeholder)", el: "Στοιχεία Χρέωσης (Placeholder)", de: "Rechnungsinformationen (Platzhalter)", fr: "Informations de Facturation (Placeholder)" })}</CardTitle>
+          <CardDescription>
+             {t({ en: "Payment method management is not yet active.", el: "Η διαχείριση τρόπων πληρωμής δεν είναι ακόμη ενεργή.", de: "Die Verwaltung der Zahlungsmethoden ist noch nicht aktiv.", fr: "La gestion des méthodes de paiement n'est pas encore active." })}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-3">
             <CreditCard className="h-6 w-6 text-muted-foreground" />
             <div>
-              <p className="font-medium">Visa ending in **** 1234</p>
-              <p className="text-sm text-muted-foreground">Expires 12/2025</p>
+              <p className="font-medium">{t({ en: "Card ending in **** XXXX (Example)", el: "Κάρτα που λήγει σε **** XXXX (Παράδειγμα)", de: "Karte endet auf **** XXXX (Beispiel)", fr: "Carte se terminant par **** XXXX (Exemple)" })}</p>
+              <p className="text-sm text-muted-foreground">{t({ en: "Expires MM/YYYY", el: "Λήγει MM/YYYY", de: "Läuft ab MM/JJJJ", fr: "Expire MM/AAAA" })}</p>
             </div>
           </div>
         </CardContent>
         <CardFooter>
-          <Button>Update Payment Method</Button>
+          <Button disabled>{t({ en: "Update Payment Method", el: "Ενημέρωση Τρόπου Πληρωμής", de: "Zahlungsmethode aktualisieren", fr: "Mettre à Jour le Moyen de Paiement" })}</Button>
         </CardFooter>
       </Card>
-       <p className="text-sm text-muted-foreground text-center">
-        Subscription and billing features are currently placeholders.
+       <p className="text-sm text-muted-foreground text-center pt-4">
+        {t({ en: "Subscription and billing features are currently placeholders and not functional.", el: "Οι λειτουργίες συνδρομής και χρέωσης είναι προς το παρόν placeholders και μη λειτουργικές.", de: "Abonnement- und Abrechnungsfunktionen sind derzeit Platzhalter und nicht funktionsfähig.", fr: "Les fonctionnalités d'abonnement et de facturation sont actuellement des placeholders et non fonctionnelles." })}
       </p>
     </div>
   );

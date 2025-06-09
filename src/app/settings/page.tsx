@@ -1,3 +1,4 @@
+
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import DefaultLogoSettings from '@/components/settings/DefaultLogoSettings';
@@ -10,27 +11,21 @@ import { useLocalization } from '@/hooks/useLocalization'; // Import the hook
 
 
 export default function SettingsPage() {
-  // No need to call useLocalization here if children components handle their text
-  // Or, if SettingsPage itself had text to translate, you would:
-  // const { t } = useLocalization();
-  // <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
-  //   {t({ en: "Application Settings", el: "Ρυθμίσεις Εφαρμογής"})}
-  // </h1>
+  const { t } = useLocalization();
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
-        {/* This title will be translated by Header component if Header uses useLocalization */}
         <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
-           Application Settings
+           {t({ en: "Application Settings", el: "Ρυθμίσεις Εφαρμογής", de: "Anwendungseinstellungen", fr: "Paramètres de l'application"})}
         </h1>
         <div className="max-w-2xl mx-auto space-y-8">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">Branding Settings</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Branding Settings", el: "Ρυθμίσεις Επωνυμίας", de: "Branding-Einstellungen", fr: "Paramètres de Marque" })}</CardTitle>
               <CardDescription>
-                Set a default logo that will be automatically added to new offer sheets.
+                {t({ en: "Set a default logo that will be automatically added to new offer sheets.", el: "Ορίστε ένα προεπιλεγμένο λογότυπο που θα προστίθεται αυτόματα σε νέα δελτία προσφοράς.", de: "Legen Sie ein Standardlogo fest, das automatisch zu neuen Angebotsblättern hinzugefügt wird.", fr: "Définissez un logo par défaut qui sera automatiquement ajouté aux nouvelles fiches d'offre." })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -42,9 +37,9 @@ export default function SettingsPage() {
 
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">Localization</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Localization", el: "Τοπικοποίηση", de: "Lokalisierung", fr: "Localisation" })}</CardTitle>
               <CardDescription>
-                Set your preferred language and default currency.
+                {t({ en: "Set your preferred language and default currency.", el: "Ορίστε την προτιμώμενη γλώσσα και το προεπιλεγμένο νόμισμά σας.", de: "Stellen Sie Ihre bevorzugte Sprache und Standardwährung ein.", fr: "Définissez votre langue préférée et votre devise par défaut." })}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -58,9 +53,9 @@ export default function SettingsPage() {
 
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">Subscription & Billing</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Subscription & Billing (Placeholder)", el: "Συνδρομή & Χρέωση (Placeholder)", de: "Abonnement & Abrechnung (Platzhalter)", fr: "Abonnement & Facturation (Placeholder)" })}</CardTitle>
               <CardDescription>
-                Manage your subscription plan and billing details.
+                {t({ en: "Manage your subscription plan and billing details. (This section is a non-functional placeholder).", el: "Διαχειριστείτε το πρόγραμμα συνδρομής και τα στοιχεία χρέωσής σας. (Αυτή η ενότητα είναι ένας μη λειτουργικός placeholder).", de: "Verwalten Sie Ihren Abonnementplan und Ihre Rechnungsdetails. (Dieser Abschnitt ist ein nicht funktionsfähiger Platzhalter).", fr: "Gérez votre plan d'abonnement et vos informations de facturation. (Cette section est un espace réservé non fonctionnel)." })}
               </CardDescription>
             </CardHeader>
             <CardContent>
