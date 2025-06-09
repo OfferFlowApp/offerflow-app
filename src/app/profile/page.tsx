@@ -10,19 +10,21 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label'; // Keep for potential future use if local profile info is added
 
 export default function ProfilePage() {
   const { currentUser, loading, logOut } = useAuth();
   const router = useRouter();
   const { t } = useLocalization();
 
-  useEffect(() => {
-    if (!loading && !currentUser) {
-      router.push('/login');
-    }
-  }, [currentUser, loading, router]);
+  // Removed useEffect redirecting to login, as login is disabled.
+  // useEffect(() => {
+  //   if (!loading && !currentUser) {
+  //     router.push('/login');
+  //   }
+  // }, [currentUser, loading, router]);
 
-  if (loading) {
+  if (loading) { // This loading state might always be false now
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -53,21 +55,37 @@ export default function ProfilePage() {
     );
   }
 
+  // With Firebase removed, currentUser will likely always be null.
+  // Display a message indicating functionality is disabled.
   if (!currentUser) {
-     // This case should ideally be handled by the useEffect redirect,
-     // but as a fallback:
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
-          <p>{t({en: "Redirecting to login...", el: "Ανακατεύθυνση στη σύνδεση...", de: "Weiterleitung zur Anmeldung...", fr: "Redirection vers la connexion..."})}</p>
+        <main className="flex-grow container mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
+            {t({en: "User Profile", el: "Προφίλ Χρήστη", de: "Benutzerprofil", fr: "Profil Utilisateur"})}
+          </h1>
+          <Card className="max-w-lg mx-auto shadow-lg rounded-lg">
+            <CardHeader>
+              <CardTitle className="text-2xl">{t({en: "Profile Unavailable", el: "Προφίλ μη Διαθέσιμο", de: "Profil nicht verfügbar", fr: "Profil non disponible"})}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {t({en: "User profile functionality is currently disabled as Firebase authentication has been removed.", el: "Η λειτουργικότητα προφίλ χρήστη είναι προς το παρόν απενεργοποιημένη καθώς η πιστοποίηση Firebase έχει αφαιρεθεί.", de: "Die Benutzerprofilfunktionalität ist derzeit deaktiviert, da die Firebase-Authentifizierung entfernt wurde.", fr: "La fonctionnalité de profil utilisateur est actuellement désactivée car l'authentification Firebase a été supprimée."})}
+              </p>
+              <Button onClick={() => router.push('/')} className="mt-6 w-full">
+                {t({en: "Go to Homepage", el: "Μετάβαση στην Αρχική Σελίδα", de: "Zur Startseite", fr: "Aller à la page d'accueil"})}
+              </Button>
+            </CardContent>
+          </Card>
         </main>
         <Footer />
       </div>
     );
   }
 
-
+  // This part below will likely not be reached if currentUser is always null.
+  // Kept for structure, but content should reflect disabled state if somehow reached.
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -77,32 +95,14 @@ export default function ProfilePage() {
         </h1>
         <Card className="max-w-lg mx-auto shadow-lg rounded-lg">
           <CardHeader>
-            <CardTitle className="text-2xl">{t({en: "My Information", el: "Οι Πληροφορίες μου", de: "Meine Informationen", fr: "Mes Informations"})}</CardTitle>
-            <CardDescription>{t({en: "View and manage your account details.", el: "Δείτε και διαχειριστείτε τις λεπτομέρειες του λογαριασμού σας.", de: "Sehen und verwalten Sie Ihre Kontodetails.", fr: "Consultez et gérez les détails de votre compte."})}</CardDescription>
+            <CardTitle className="text-2xl">{t({en: "My Information (Disabled)", el: "Οι Πληροφορίες μου (Απενεργοποιημένο)", de: "Meine Informationen (Deaktiviert)", fr: "Mes Informations (Désactivé)"})}</CardTitle>
+            <CardDescription>{t({en: "Firebase authentication is disabled.", el: "Η πιστοποίηση Firebase είναι απενεργοποιημένη.", de: "Firebase-Authentifizierung ist deaktiviert.", fr: "L'authentification Firebase est désactivée."})}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="border-b pb-4">
-              <Label className="text-sm font-medium text-muted-foreground">{t({en: "Email Address", el: "Διεύθυνση Email", de: "E-Mail-Adresse", fr: "Adresse e-mail"})}</Label>
-              <p className="text-lg">{currentUser.email}</p>
-            </div>
-            <div className="border-b pb-4">
-              <Label className="text-sm font-medium text-muted-foreground">{t({en: "User ID", el: "Αναγνωριστικό Χρήστη", de: "Benutzer-ID", fr: "ID Utilisateur"})}</Label>
-              <p className="text-sm break-all text-muted-foreground">{currentUser.uid}</p>
-            </div>
-            
-            <div>
-                <h3 className="text-lg font-semibold mb-3">{t({en: "Account Management", el: "Διαχείριση Λογαριασμού", de: "Kontoverwaltung", fr: "Gestion du compte"})}</h3>
-                <Button variant="outline" className="w-full mb-3" onClick={() => toast({title: t({en: "Not Implemented", el: "Δεν έχει υλοποιηθεί"})})}>
-                    {t({en: "Change Password", el: "Αλλαγή Κωδικού", de: "Passwort ändern", fr: "Changer le mot de passe"})}
-                </Button>
-                <Button variant="destructive" className="w-full" onClick={logOut}>
-                    {t({en: "Logout", el: "Αποσύνδεση", de: "Abmelden", fr: "Déconnexion"})}
-                </Button>
-            </div>
-
-             <p className="text-xs text-muted-foreground pt-4 text-center">
-              {t({en: "More profile settings (like updating display name, photo, etc.) can be added here.", el: "Περισσότερες ρυθμίσεις προφίλ (όπως ενημέρωση ονόματος εμφάνισης, φωτογραφίας κ.λπ.) μπορούν να προστεθούν εδώ.", de: "Weitere Profileinstellungen (wie Aktualisierung des Anzeigenamens, Fotos usw.) können hier hinzugefügt werden.", fr: "D'autres paramètres de profil (comme la mise à jour du nom d'affichage, de la photo, etc.) peuvent être ajoutés ici."})}
-            </p>
+            <p>{t({en: "User details are unavailable.", el: "Οι λεπτομέρειες χρήστη δεν είναι διαθέσιμες.", de: "Benutzerdetails sind nicht verfügbar.", fr: "Les détails de l'utilisateur ne sont pas disponibles."})}</p>
+            <Button variant="destructive" className="w-full" onClick={logOut}>
+                {t({en: "Logout", el: "Αποσύνδεση", de: "Abmelden", fr: "Déconnexion"})}
+            </Button>
           </CardContent>
         </Card>
       </main>

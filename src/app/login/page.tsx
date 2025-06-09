@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-// import { useAuth } from '@/contexts/AuthContext'; // To be used when login function is implemented
+// import { useRouter } from 'next/navigation'; // Not strictly needed if login is disabled
+// import { useAuth } from '@/contexts/AuthContext'; // Auth context might not have signInWithEmail anymore
 import React, { useState } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
 
@@ -18,27 +18,18 @@ import { useLocalization } from '@/hooks/useLocalization';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // const { signInWithEmail } = useAuth(); // Uncomment when signInWithEmail is implemented
   const { toast } = useToast();
-  const router = useRouter();
+  // const router = useRouter();
   const { t } = useLocalization();
 
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     toast({
-      title: t({en: "Login Not Implemented", el: "Η Σύνδεση δεν έχει Υλοποιηθεί", de: "Anmeldung nicht implementiert", fr: "Connexion non implémentée"}),
-      description: t({en: "Login functionality will be available soon.", el: "Η λειτουργία σύνδεσης θα είναι σύντομα διαθέσιμη.", de: "Die Anmeldefunktion wird in Kürze verfügbar sein.", fr: "La fonctionnalité de connexion sera bientôt disponible."}),
+      title: t({en: "Login Disabled", el: "Η Σύνδεση είναι Απενεργοποιημένη", de: "Anmeldung deaktiviert", fr: "Connexion désactivée"}),
+      description: t({en: "Firebase authentication is currently disabled.", el: "Η πιστοποίηση Firebase είναι προς το παρόν απενεργοποιημένη.", de: "Die Firebase-Authentifizierung ist derzeit deaktiviert.", fr: "L'authentification Firebase est actuellement désactivée."}),
       variant: "default",
     });
-    // Example usage when implemented:
-    // try {
-    //   await signInWithEmail(email, password);
-    //   toast({ title: t({en: 'Logged In Successfully!', el: 'Επιτυχής Σύνδεση!'}) });
-    //   router.push('/');
-    // } catch (error: any) {
-    //   toast({ title: t({en: 'Login Failed', el: 'Η Σύνδεση Απέτυχε'}), description: error.message, variant: 'destructive' });
-    // }
   };
 
   return (
@@ -48,7 +39,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-md shadow-xl rounded-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold text-primary">{t({en: "Login", el: "Σύνδεση", de: "Anmelden", fr: "Connexion"})}</CardTitle>
-            <CardDescription>{t({en: "Access your OfferFlow account.", el: "Αποκτήστε πρόσβαση στον λογαριασμό σας OfferFlow.", de: "Greifen Sie auf Ihr OfferFlow-Konto zu.", fr: "Accédez à votre compte OfferFlow."})}</CardDescription>
+            <CardDescription>{t({en: "Access your OfferFlow account. (Authentication currently disabled)", el: "Αποκτήστε πρόσβαση στον λογαριασμό σας OfferFlow. (Η πιστοποίηση είναι προς το παρόν απενεργοποιημένη)", de: "Greifen Sie auf Ihr OfferFlow-Konto zu. (Authentifizierung derzeit deaktiviert)", fr: "Accédez à votre compte OfferFlow. (Authentification actuellement désactivée)"})}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
@@ -61,6 +52,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled
                 />
               </div>
               <div className="space-y-2">
@@ -72,9 +64,10 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled
                 />
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled>
                 {t({en: "Login", el: "Σύνδεση", de: "Anmelden", fr: "Connexion"})}
               </Button>
             </form>

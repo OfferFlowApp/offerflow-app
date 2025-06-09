@@ -2,66 +2,69 @@
 "use client";
 
 import type { ReactNode, FC } from 'react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { User as FirebaseUser } from 'firebase/auth';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+// import type { User as FirebaseUser } from 'firebase/auth'; // Firebase no longer used
+// import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; // Firebase no longer used
+// import { auth } from '@/lib/firebase'; // Firebase no longer used
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useLocalization } from '@/hooks/useLocalization';
 
+// Define a simpler User type if needed, or just use null
+interface User {
+  // email?: string; // Example, can be extended if a mock user is desired
+  // uid?: string;
+}
 
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
+  currentUser: User | null;
   loading: boolean;
   logOut: () => Promise<void>;
-  // Placeholder for signUp and logIn, to be implemented later
-  // signUpWithEmail: (email: string, password: string) => Promise<any>; 
+  // signUpWithEmail: (email: string, password: string) => Promise<any>;
   // signInWithEmail: (email: string, password: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false); // No Firebase, so not loading initially
   const { toast } = useToast();
   const router = useRouter();
-  const { t } = useLocalization(); // For localized toasts
+  const { t } = useLocalization();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe(); // Cleanup subscription on unmount
-  }, []);
+  // Firebase onAuthStateChanged logic removed
+  // useEffect(() => {
+  //   // Simulate no user being logged in
+  //   setCurrentUser(null);
+  //   setLoading(false);
+  // }, []);
 
   const logOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      toast({ title: t({en: 'Logged Out', el: 'Αποσυνδεθήκατε'}), description: t({en: 'You have been successfully logged out.', el: 'Έχετε αποσυνδεθεί επιτυχώς.'}) });
-      router.push('/'); // Redirect to home page after logout
-    } catch (error) {
-      console.error('Logout Error:', error);
-      toast({ title: t({en: 'Logout Failed', el: 'Η Αποσύνδεση Απέτυχε'}), description: t({en: 'Could not log you out. Please try again.', el: 'Δεν ήταν δυνατή η αποσύνδεσή σας. Παρακαλώ προσπαθήστε ξανά.'}), variant: 'destructive' });
-    }
+    setCurrentUser(null); // Clear local mock user if any
+    toast({ title: t({en: 'Logout Disabled', el: 'Η Αποσύνδεση είναι Απενεργοποιημένη'}), description: t({en: 'Firebase authentication is currently disabled.', el: 'Η πιστοποίηση Firebase είναι προς το παρόν απενεργοποιημένη.'}) });
+    router.push('/'); // Redirect to home page
   };
 
-  // Placeholder functions for signUp and logIn
-  // const signUpWithEmail = async (email, password) => { /* Firebase signUp logic */ };
-  // const signInWithEmail = async (email, password) => { /* Firebase signIn logic */ };
+  // Placeholder functions for signUp and logIn if you want to keep the API
+  // const signUpWithEmail = async (email, password) => {
+  //   toast({ title: "Sign Up Disabled", description: "Firebase authentication is currently disabled." });
+  //   throw new Error("Sign Up Disabled");
+  // };
+  // const signInWithEmail = async (email, password) => {
+  //   toast({ title: "Login Disabled", description: "Firebase authentication is currently disabled." });
+  //   throw new Error("Login Disabled");
+  // };
 
   const value = {
     currentUser,
     loading,
     logOut,
-    // signUpWithEmail, // Add when implemented
-    // signInWithEmail,   // Add when implemented
+    // signUpWithEmail,
+    // signInWithEmail,
   };
 
-  // Render children only when not loading to prevent flash of unauthenticated content
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

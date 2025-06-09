@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-// import { useAuth } from '@/contexts/AuthContext'; // To be used when signUp function is implemented
+// import { useRouter } from 'next/navigation';
+// import { useAuth } from '@/contexts/AuthContext';
 import React, { useState } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
 
@@ -18,30 +18,21 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  // const { signUpWithEmail } = useAuth(); // Uncomment when signUpWithEmail is implemented
   const { toast } = useToast();
-  const router = useRouter();
+  // const router = useRouter();
   const { t } = useLocalization();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      toast({ title: t({en: "Passwords don't match!", el: "Οι κωδικοί δεν ταιριάζουν!", de: "Passwörter stimmen nicht überein!", fr: "Les mots de passe ne correspondent pas !"}), variant: 'destructive' });
-      return;
-    }
+    // if (password !== confirmPassword) { // Basic validation can stay client-side
+    //   toast({ title: t({en: "Passwords don't match!", el: "Οι κωδικοί δεν ταιριάζουν!", de: "Passwörter stimmen nicht überein!", fr: "Les mots de passe ne correspondent pas !"}), variant: 'destructive' });
+    //   return;
+    // }
     toast({
-      title: t({en: "Sign Up Not Implemented", el: "Η Εγγραφή δεν έχει Υλοποιηθεί", de: "Registrierung nicht implementiert", fr: "Inscription non implémentée"}),
-      description: t({en: "Sign up functionality will be available soon.", el: "Η λειτουργία εγγραφής θα είναι σύντομα διαθέσιμη.", de: "Die Registrierungsfunktion wird in Kürze verfügbar sein.", fr: "La fonctionnalité d'inscription sera bientôt disponible."}),
+      title: t({en: "Sign Up Disabled", el: "Η Εγγραφή είναι Απενεργοποιημένη", de: "Registrierung deaktiviert", fr: "Inscription désactivée"}),
+      description: t({en: "Firebase authentication is currently disabled.", el: "Η πιστοποίηση Firebase είναι προς το παρόν απενεργοποιημένη.", de: "Die Firebase-Authentifizierung ist derzeit deaktiviert.", fr: "L'authentification Firebase est actuellement désactivée."}),
       variant: "default",
     });
-    // Example usage when implemented:
-    // try {
-    //   await signUpWithEmail(email, password);
-    //   toast({ title: t({en: 'Account Created Successfully!', el: 'Ο Λογαριασμός Δημιουργήθηκε Επιτυχώς!'}) });
-    //   router.push('/');
-    // } catch (error: any) {
-    //   toast({ title: t({en: 'Signup Failed', el: 'Η Εγγραφή Απέτυχε'}), description: error.message, variant: 'destructive' });
-    // }
   };
 
   return (
@@ -51,7 +42,7 @@ export default function SignupPage() {
         <Card className="w-full max-w-md shadow-xl rounded-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold text-primary">{t({en: "Create Account", el: "Δημιουργία Λογαριασμού", de: "Konto erstellen", fr: "Créer un compte"})}</CardTitle>
-            <CardDescription>{t({en: "Join OfferFlow today.", el: "Γίνετε μέλος του OfferFlow σήμερα.", de: "Treten Sie OfferFlow noch heute bei.", fr: "Rejoignez OfferFlow aujourd'hui."})}</CardDescription>
+            <CardDescription>{t({en: "Join OfferFlow today. (Authentication currently disabled)", el: "Γίνετε μέλος του OfferFlow σήμερα. (Η πιστοποίηση είναι προς το παρόν απενεργοποιημένη)", de: "Treten Sie OfferFlow noch heute bei. (Authentifizierung derzeit deaktiviert)", fr: "Rejoignez OfferFlow aujourd'hui. (Authentification actuellement désactivée)"})}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-6">
@@ -64,6 +55,7 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled
                 />
               </div>
               <div className="space-y-2">
@@ -75,6 +67,7 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled
                 />
               </div>
               <div className="space-y-2">
@@ -86,9 +79,10 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  disabled
                 />
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled>
                 {t({en: "Sign Up", el: "Εγγραφή", de: "Registrieren", fr: "S'inscrire"})}
               </Button>
             </form>
