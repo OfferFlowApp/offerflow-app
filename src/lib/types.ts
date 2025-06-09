@@ -6,10 +6,10 @@ export type Theme = 'light' | 'dark';
 export interface Product {
   id: string;
   title: string;
-  quantity: number; // New field
-  originalPrice: number; // Assumed to be VAT-exclusive UNIT price
-  discountedPrice: number; // Assumed to be VAT-exclusive UNIT price
-  discountedPriceType?: 'exclusive' | 'inclusive'; // How to interpret discountedPrice regarding VAT - Note: This might be less relevant if prices are unit based now.
+  quantity: number;
+  originalPrice: number; 
+  discountedPrice: number; 
+  discountedPriceType?: 'exclusive' | 'inclusive'; 
   description: string;
   imageUrl?: string;
 }
@@ -18,34 +18,39 @@ export interface CustomerInfo {
   name: string;
   company: string;
   contact: string;
-  vatNumber?: string; // Added from PDF mock
-  address?: string; // Added from PDF mock
-  phone2?: string; // Added from PDF mock
+  vatNumber?: string; 
+  address?: string; 
+  phone2?: string; 
 }
 
 export interface SellerInfo {
   name: string;
   address: string;
   contact: string;
-  logoUrl?: string; // This seems to be what `offerData.logoUrl` was for.
-  // Add other fields like VAT number if needed for seller
+  logoUrl?: string; 
 }
 
 export interface OfferSheetData {
   customerInfo: CustomerInfo;
-  sellerInfo: SellerInfo; // New field, replaces top-level logoUrl effectively
+  sellerInfo: SellerInfo; 
   validityStartDate?: Date;
   validityEndDate?: Date;
   products: Product[];
   termsAndConditions: string;
   currency: Currency;
-  vatRate?: number; // User-defined VAT rate for the whole offer sheet (percentage)
-  // defaultLogoUrl is for settings, not this data structure directly
+  vatRate?: number; 
+}
+
+export interface LocalUserProfile {
+  username?: string;
+  userCodes?: string; // For storing some codes or notes
 }
 
 export interface SettingsData {
-  defaultLogoUrl?: string; // This is the SELLER's default logo
+  defaultLogoUrl?: string; 
   defaultSellerInfo?: Partial<SellerInfo>;
   defaultCurrency?: Currency;
   preferredLanguage?: Language;
+  localProfile?: LocalUserProfile; // Can store the local profile here too if combined
 }
+

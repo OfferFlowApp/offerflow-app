@@ -5,103 +5,122 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Label } from '@/components/ui/label'; // Keep for potential future use if local profile info is added
+import { useToast } from "@/hooks/use-toast";
+import type { LocalUserProfile } from '@/lib/types';
+import { Save } from 'lucide-react';
+
+const LOCAL_PROFILE_STORAGE_KEY = 'offerFlowLocalProfile';
 
 export default function ProfilePage() {
-  const { currentUser, loading, logOut } = useAuth();
+  const { logOut } = useAuth(); // currentUser and loading might not be relevant for local profile
   const router = useRouter();
   const { t } = useLocalization();
+  const { toast } = useToast();
 
-  // Removed useEffect redirecting to login, as login is disabled.
-  // useEffect(() => {
-  //   if (!loading && !currentUser) {
-  //     router.push('/login');
-  //   }
-  // }, [currentUser, loading, router]);
+  const [username, setUsername] = useState('');
+  const [userCodes, setUserCodes] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  if (loading) { // This loading state might always be false now
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedProfile = localStorage.getItem(LOCAL_PROFILE_STORAGE_KEY);
+      if (storedProfile) {
+        try {
+          const profile: LocalUserProfile = JSON.parse(storedProfile);
+          setUsername(profile.username || '');
+          setUserCodes(profile.userCodes || '');
+        } catch (e) {
+          console.error("Failed to parse local profile", e);
+        }
+      }
+      setIsLoaded(true);
+    }
+  }, []);
+
+  const handleSaveProfile = () => {
+    if (typeof window !== 'undefined') {
+      const profileToSave: LocalUserProfile = { username, userCodes };
+      localStorage.setItem(LOCAL_PROFILE_STORAGE_KEY, JSON.stringify(profileToSave));
+      toast({
+        title: t({ en: "Profile Saved", el: "Το Προφίλ Αποθηκεύτηκε", de: "Profil gespeichert", fr: "Profil Enregistré" }),
+        description: t({ en: "Your local profile information has been updated.", el: "Οι πληροφορίες του τοπικού σας προφίλ ενημερώθηκαν.", de: "Ihre lokalen Profilinformationen wurden aktualisiert.", fr: "Vos informations de profil local ont été mises à jour." }),
+        variant: "default",
+      });
+    }
+  };
+  
+  const handleLogout = async () => {
+    // logOut already shows a toast about Firebase being disabled and redirects
+    await logOut(); 
+    // Optionally, clear local profile data on logout
+    // if (typeof window !== 'undefined') {
+    //   localStorage.removeItem(LOCAL_PROFILE_STORAGE_KEY);
+    //   setUsername('');
+    //   setUserCodes('');
+    // }
+  };
+
+
+  if (!isLoaded && typeof window !== 'undefined') { // Avoid SSR issues with localStorage access
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-12">
-           <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
-            <Skeleton className="h-10 w-48 mx-auto" />
-          </h1>
-          <Card className="max-w-md mx-auto shadow-lg">
-            <CardHeader>
-              <CardTitle><Skeleton className="h-8 w-3/4" /></CardTitle>
-              <CardDescription><Skeleton className="h-4 w-1/2" /></CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground"><Skeleton className="h-4 w-16 mb-1" /></p>
-                <p><Skeleton className="h-6 w-full" /></p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground"><Skeleton className="h-4 w-20 mb-1" /></p>
-                <p><Skeleton className="h-6 w-full" /></p>
-              </div>
-               <Skeleton className="h-10 w-full mt-4" />
-            </CardContent>
-          </Card>
+        <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
+          <p>{t({en: "Loading profile...", el: "Φόρτωση προφίλ...", de: "Profil wird geladen...", fr: "Chargement du profil..."})}</p>
         </main>
         <Footer />
       </div>
     );
   }
 
-  // With Firebase removed, currentUser will likely always be null.
-  // Display a message indicating functionality is disabled.
-  if (!currentUser) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
-            {t({en: "User Profile", el: "Προφίλ Χρήστη", de: "Benutzerprofil", fr: "Profil Utilisateur"})}
-          </h1>
-          <Card className="max-w-lg mx-auto shadow-lg rounded-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl">{t({en: "Profile Unavailable", el: "Προφίλ μη Διαθέσιμο", de: "Profil nicht verfügbar", fr: "Profil non disponible"})}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                {t({en: "User profile functionality is currently disabled as Firebase authentication has been removed.", el: "Η λειτουργικότητα προφίλ χρήστη είναι προς το παρόν απενεργοποιημένη καθώς η πιστοποίηση Firebase έχει αφαιρεθεί.", de: "Die Benutzerprofilfunktionalität ist derzeit deaktiviert, da die Firebase-Authentifizierung entfernt wurde.", fr: "La fonctionnalité de profil utilisateur est actuellement désactivée car l'authentification Firebase a été supprimée."})}
-              </p>
-              <Button onClick={() => router.push('/')} className="mt-6 w-full">
-                {t({en: "Go to Homepage", el: "Μετάβαση στην Αρχική Σελίδα", de: "Zur Startseite", fr: "Aller à la page d'accueil"})}
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // This part below will likely not be reached if currentUser is always null.
-  // Kept for structure, but content should reflect disabled state if somehow reached.
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
-          {t({en: "User Profile", el: "Προφίλ Χρήστη", de: "Benutzerprofil", fr: "Profil Utilisateur"})}
+          {t({en: "My Local Profile", el: "Το Τοπικό μου Προφίλ", de: "Mein lokales Profil", fr: "Mon Profil Local"})}
         </h1>
         <Card className="max-w-lg mx-auto shadow-lg rounded-lg">
           <CardHeader>
-            <CardTitle className="text-2xl">{t({en: "My Information (Disabled)", el: "Οι Πληροφορίες μου (Απενεργοποιημένο)", de: "Meine Informationen (Deaktiviert)", fr: "Mes Informations (Désactivé)"})}</CardTitle>
-            <CardDescription>{t({en: "Firebase authentication is disabled.", el: "Η πιστοποίηση Firebase είναι απενεργοποιημένη.", de: "Firebase-Authentifizierung ist deaktiviert.", fr: "L'authentification Firebase est désactivée."})}</CardDescription>
+            <CardTitle className="text-2xl">{t({en: "Edit Information", el: "Επεξεργασία Πληροφοριών", de: "Informationen bearbeiten", fr: "Modifier les Informations"})}</CardTitle>
+            <CardDescription>{t({en: "This information is saved locally in your browser.", el: "Αυτές οι πληροφορίες αποθηκεύονται τοπικά στο πρόγραμμα περιήγησής σας.", de: "Diese Informationen werden lokal in Ihrem Browser gespeichert.", fr: "Ces informations sont enregistrées localement dans votre navigateur."})}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <p>{t({en: "User details are unavailable.", el: "Οι λεπτομέρειες χρήστη δεν είναι διαθέσιμες.", de: "Benutzerdetails sind nicht verfügbar.", fr: "Les détails de l'utilisateur ne sont pas disponibles."})}</p>
-            <Button variant="destructive" className="w-full" onClick={logOut}>
-                {t({en: "Logout", el: "Αποσύνδεση", de: "Abmelden", fr: "Déconnexion"})}
+            <div className="space-y-2">
+              <Label htmlFor="username">{t({en: "Username", el: "Όνομα Χρήστη", de: "Benutzername", fr: "Nom d'utilisateur"})}</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={t({en: "Enter your desired username", el: "Εισαγάγετε το επιθυμητό όνομα χρήστη", de: "Geben Sie Ihren gewünschten Benutzernamen ein", fr: "Entrez le nom d'utilisateur souhaité"})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userCodes">{t({en: "My Codes/Notes", el: "Οι Κωδικοί/Σημειώσεις μου", de: "Meine Codes/Notizen", fr: "Mes Codes/Notes"})}</Label>
+              <Textarea
+                id="userCodes"
+                value={userCodes}
+                onChange={(e) => setUserCodes(e.target.value)}
+                placeholder={t({en: "Store any codes or notes here...", el: "Αποθηκεύστε τυχόν κωδικούς ή σημειώσεις εδώ...", de: "Speichern Sie hier Codes oder Notizen...", fr: "Stockez ici des codes ou des notes..."})}
+                rows={4}
+              />
+            </div>
+            <Button onClick={handleSaveProfile} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Save className="mr-2 h-5 w-5" />
+              {t({en: "Save Local Profile", el: "Αποθήκευση Τοπικού Προφίλ", de: "Lokales Profil speichern", fr: "Enregistrer le Profil Local"})}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => router.push('/')}>
+              {t({en: "Go to Homepage", el: "Μετάβαση στην Αρχική Σελίδα", de: "Zur Startseite", fr: "Aller à la page d'accueil"})}
+            </Button>
+             <Button variant="destructive" className="w-full mt-4" onClick={handleLogout}>
+                {t({en: "Logout (Account Disabled)", el: "Αποσύνδεση (Λογαριασμός Απενεργοποιημένος)", de: "Abmelden (Konto deaktiviert)", fr: "Déconnexion (Compte désactivé)"})}
             </Button>
           </CardContent>
         </Card>
