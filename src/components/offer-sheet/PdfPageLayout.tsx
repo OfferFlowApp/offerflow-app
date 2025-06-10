@@ -1,9 +1,9 @@
 
 "use client";
 
-import type { OfferSheetData, Product, SellerInfo, CustomerInfo, Currency } from '@/lib/types';
+import type { OfferSheetData, Product } from '@/lib/types';
 import Image from 'next/image';
-import type { FC } from 'react';
+import type { FC } from 'react'; // FC type import
 
 interface PdfPageLayoutProps {
   offerData: OfferSheetData;
@@ -21,7 +21,8 @@ interface PdfPageLayoutProps {
   t: (translations: { [key in 'en' | 'el']?: string } | string, fallback?: string) => string;
 }
 
-const PdfPageLayout: FC<PdfPageLayoutProps> = ({
+// Using a standard function declaration instead of arrow function with FC
+function PdfPageLayout({
   offerData,
   productsOnPage,
   pageNum,
@@ -30,7 +31,7 @@ const PdfPageLayout: FC<PdfPageLayoutProps> = ({
   calculatedTotals,
   creationDate,
   t,
-}) => {
+}: PdfPageLayoutProps): JSX.Element {
   const { customerInfo, sellerInfo, validityStartDate, validityEndDate, termsAndConditions, vatRate } = offerData;
 
   return (
@@ -150,6 +151,6 @@ const PdfPageLayout: FC<PdfPageLayoutProps> = ({
        {pageNum !== totalPages && <div style={{ flexGrow: 1 }}></div>}
     </div>
   );
-};
+}
 
 export default PdfPageLayout;
