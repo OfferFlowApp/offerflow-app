@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React from 'react'; // Ensure React is imported
 import type { OfferSheetData, Product, Language } from '@/lib/types';
 import Image from 'next/image';
 
@@ -21,48 +21,44 @@ interface PdfPageLayoutProps {
   t: (translations: { [key in Language]?: string } | string, fallback?: string) => string;
 }
 
-const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
-  offerData,
-  productsOnPage,
-  pageNum,
-  totalPages,
-  currencySymbol,
-  calculatedTotals,
-  creationDate,
-  t,
-}) => {
-  const { 
-    customerInfo, 
-    sellerInfo, 
-    validityStartDate, 
-    validityEndDate, 
-    termsAndConditions, 
-    vatRate 
-  } = offerData;
+// Using standard function declaration
+function PdfPageLayout(props: PdfPageLayoutProps): JSX.Element {
+  const {
+    offerData,
+    productsOnPage,
+    pageNum,
+    totalPages,
+    currencySymbol,
+    calculatedTotals,
+    creationDate,
+    t
+  } = props;
+
+  const {
+    customerInfo,
+    sellerInfo,
+    validityStartDate,
+    validityEndDate,
+    termsAndConditions,
+    vatRate
+  } = offerData; // Explicit semicolon
 
   return (
     <div
-      className="bg-white text-black p-6 font-body"
-      style={{ 
-        width: '210mm', 
-        minHeight: '297mm', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        fontFamily: 'Roboto, sans-serif' 
+      className="bg-white text-black p-6 font-body" // Using font-body from tailwind config
+      style={{
+        width: '210mm',
+        minHeight: '297mm',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'var(--font-body), sans-serif' // Use CSS variable for font
       }}
     >
       {/* Header */}
       <header className="flex justify-between items-start pb-4 border-b border-gray-300">
         <div className="w-2/5">
           {sellerInfo.logoUrl ? (
-             <Image 
-               src={sellerInfo.logoUrl} 
-               alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} 
-               width={120} 
-               height={60} 
-               className="max-h-20 object-contain mb-2"
-               data-ai-hint="company logo"
-             />
+             <Image src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} width={120} height={60} className="max-h-20 object-contain mb-2" data-ai-hint="company logo"/>
           ) : (
             <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
                 {t({en: "No Logo", el: "Χωρίς Λογότυπο"})}
@@ -82,7 +78,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
           <p><span className="font-semibold">{t({en: "Name:", el: "Όνομα:"})}</span> {customerInfo.name}</p>
           {customerInfo.company && <p><span className="font-semibold">{t({en: "Company:", el: "Εταιρεία:"})}</span> {customerInfo.company}</p>}
           {customerInfo.vatNumber && <p><span className="font-semibold">{t({en: "VAT No.:", el: "ΑΦΜ:"})}</span> {customerInfo.vatNumber}</p>}
-          {customerInfo.gemhNumber && <p><span className="font-semibold">{t({en: "GEMH No.:", el: "Γ.Ε.ΜΗ.:'})}</span> {customerInfo.gemhNumber}</p>}
+          {customerInfo.gemhNumber && <p><span className="font-semibold">{t({en: "GEMH No.:", el: "Γ.Ε.Μ.Η.:"})}</span> {customerInfo.gemhNumber}</p>}
           {customerInfo.contact && <p><span className="font-semibold">{t({en: "Email/Contact:", el: "Email/Επικοινωνία:"})}</span> {customerInfo.contact}</p>}
           {customerInfo.phone2 && <p><span className="font-semibold">{t({en: "Phone:", el: "Τηλέφωνο:"})}</span> {customerInfo.phone2}</p>}
           {customerInfo.address && <p className="whitespace-pre-line"><span className="font-semibold">{t({en: "Address:", el: "Διεύθυνση:"})}</span> {customerInfo.address}</p>}
@@ -120,14 +116,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
                         <tr key={product.id} className="border-b border-gray-200 align-top">
                             <td className="p-1">
                                 {product.imageUrl ? (
-                                <Image 
-                                  src={product.imageUrl} 
-                                  alt={product.title} 
-                                  width={80} 
-                                  height={80} 
-                                  className="w-full h-auto object-contain max-h-20 border" 
-                                  data-ai-hint="product image"
-                                />
+                                <Image src={product.imageUrl} alt={product.title} width={80} height={80} className="w-full h-auto object-contain max-h-20 border" data-ai-hint="product image" />
                                 ) : (
                                 <div className="w-full h-20 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
                                     {t({en: "No Image", el: "Χωρίς Εικόνα"})}
@@ -175,9 +164,11 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
           </div>
         </footer>
       )}
-       {pageNum !== totalPages && <div style={{ flexGrow: 1 }}></div>}
+       {pageNum !== totalPages && <div style={{ flexGrow: 1 }}></div>} {/* Ensure footer is at bottom */}
     </div>
   );
-};
+}
 
 export default PdfPageLayout;
+
+    
