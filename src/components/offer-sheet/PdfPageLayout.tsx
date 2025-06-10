@@ -1,9 +1,9 @@
 
 "use client";
 
-import type { OfferSheetData, Product } from '@/lib/types';
+import React from 'react';
+import type { OfferSheetData, Product, Language } from '@/lib/types';
 import Image from 'next/image';
-import type { FC } from 'react'; // FC type import
 
 interface PdfPageLayoutProps {
   offerData: OfferSheetData;
@@ -18,11 +18,10 @@ interface PdfPageLayoutProps {
     grandTotal: number;
   };
   creationDate: string;
-  t: (translations: { [key in 'en' | 'el']?: string } | string, fallback?: string) => string;
+  t: (translations: { [key in Language]?: string } | string, fallback?: string) => string;
 }
 
-// Using a standard function declaration instead of arrow function with FC
-function PdfPageLayout({
+const PdfPageLayout = ({
   offerData,
   productsOnPage,
   pageNum,
@@ -31,19 +30,37 @@ function PdfPageLayout({
   calculatedTotals,
   creationDate,
   t,
-}: PdfPageLayoutProps): JSX.Element {
-  const { customerInfo, sellerInfo, validityStartDate, validityEndDate, termsAndConditions, vatRate } = offerData;
+}: PdfPageLayoutProps): JSX.Element => {
+  const { 
+    customerInfo, 
+    sellerInfo, 
+    validityStartDate, 
+    validityEndDate, 
+    termsAndConditions, 
+    vatRate 
+  } = offerData;
 
   return (
     <div
       className="bg-white text-black p-6 font-['Roboto']"
-      style={{ width: '210mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', fontFamily: 'Roboto, sans-serif' }}
+      style={{ 
+        width: '210mm', 
+        minHeight: '297mm', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        fontFamily: 'Roboto, sans-serif' 
+      }}
     >
-      {/* Header */}
       <header className="flex justify-between items-start pb-4 border-b border-gray-300">
         <div className="w-2/5">
           {sellerInfo.logoUrl ? (
-             <Image src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} width={120} height={60} className="max-h-20 object-contain mb-2" data-ai-hint="company logo"/>
+             <Image 
+               src={sellerInfo.logoUrl} 
+               alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} 
+               width={120} 
+               height={60} 
+               className="max-h-20 object-contain mb-2"
+             />
           ) : (
             <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
                 {t({en: "No Logo", el: "Χωρίς Λογότυπο"})}
@@ -77,7 +94,6 @@ function PdfPageLayout({
         </div>
       </header>
 
-      {/* Products Table */}
       <main className="flex-grow py-4">
         <table className="w-full border-collapse text-xs">
             <thead>
@@ -100,7 +116,13 @@ function PdfPageLayout({
                         <tr key={product.id} className="border-b border-gray-200 align-top">
                             <td className="p-1">
                                 {product.imageUrl ? (
-                                <Image src={product.imageUrl} alt={product.title} width={80} height={80} className="w-full h-auto object-contain max-h-20 border" data-ai-hint="product image" />
+                                <Image 
+                                  src={product.imageUrl} 
+                                  alt={product.title} 
+                                  width={80} 
+                                  height={80} 
+                                  className="w-full h-auto object-contain max-h-20 border" 
+                                />
                                 ) : (
                                 <div className="w-full h-20 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
                                     {t({en: "No Image", el: "Χωρίς Εικόνα"})}
@@ -121,7 +143,6 @@ function PdfPageLayout({
         </table>
       </main>
 
-      {/* Footer - Only on last page */}
       {pageNum === totalPages && (
         <footer className="pt-4 border-t border-gray-300 text-xs mt-auto">
           <div className="flex justify-between">
@@ -138,7 +159,7 @@ function PdfPageLayout({
                   <p className="font-bold text-sm mt-1">{t({en: "Grand Total (Incl. VAT):", el: "Γενικό Σύνολο (Με ΦΠΑ):"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.grandTotal.toFixed(2)}</span></p>
                 </>
               )}
-               {vatRate === undefined || vatRate === 0 && (
+               {(vatRate === undefined || vatRate === 0) && (
                  <p className="font-bold text-sm mt-1">{t({en: "Grand Total:", el: "Γενικό Σύνολο:"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.grandTotal.toFixed(2)}</span></p>
                )}
             </div>
@@ -151,6 +172,8 @@ function PdfPageLayout({
        {pageNum !== totalPages && <div style={{ flexGrow: 1 }}></div>}
     </div>
   );
-}
+};
 
 export default PdfPageLayout;
+
+    
