@@ -32,10 +32,10 @@ import ReactDOM from 'react-dom/client';
 const initialProduct: Product = {
   id: '',
   title: '',
-  quantity: 1, // New field
+  quantity: 1, 
   originalPrice: 0, // Unit price
   discountedPrice: 0, // Unit price
-  discountedPriceType: 'exclusive',
+  discountedPriceType: 'exclusive', // Default to exclusive
   description: '',
   imageUrl: undefined,
 };
@@ -246,7 +246,6 @@ export default function OfferSheetForm() {
         if (parsedSettings.defaultSellerInfo) {
           userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
         }
-        // Since only EUR is supported, defaultCurrency will always be EUR or what's stored (if EUR)
         if (parsedSettings.defaultCurrency === 'EUR') {
           userDefaultCurrency = parsedSettings.defaultCurrency;
         }
@@ -264,8 +263,9 @@ export default function OfferSheetForm() {
         address: userDefaultSellerInfo?.address || initialSellerInfo.address,
         contact: userDefaultSellerInfo?.contact || initialSellerInfo.contact,
       },
-      currency: userDefaultCurrency, // Will be EUR
-      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
+      currency: userDefaultCurrency,
+      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate, // Ensure vatRate is initialized
+      products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'})) // Ensure new field has a default
     }));
 
   }, []);
@@ -300,7 +300,7 @@ export default function OfferSheetForm() {
   const addProduct = () => {
     setOfferData({
       ...offerData,
-      products: [...offerData.products, { ...initialProduct, id: `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, quantity: 1 }],
+      products: [...offerData.products, { ...initialProduct, id: `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, quantity: 1, discountedPriceType: 'exclusive' }],
     });
   };
 
@@ -329,7 +329,6 @@ export default function OfferSheetForm() {
   }, []); 
 
   const handleCurrencyChange = (value: string) => {
-    // Only EUR is an option now, but keeping structure in case it changes
     if (currencyMetadata[value as Currency]) {
       setOfferData({ ...offerData, currency: value as Currency });
     }
@@ -347,9 +346,11 @@ export default function OfferSheetForm() {
     
     const subtotalDiscounted = offerData.products.reduce((sum, p) => {
       let unitDiscountedPriceExclVat = p.discountedPrice || 0;
+      // If price includes VAT and there's a VAT rate, calculate the price excluding VAT
       if (p.discountedPriceType === 'inclusive' && currentVatRateAsDecimal > 0) {
         unitDiscountedPriceExclVat = (p.discountedPrice || 0) / (1 + currentVatRateAsDecimal);
       }
+      // Otherwise, the entered discounted price is already excluding VAT (or VAT rate is 0)
       return sum + (unitDiscountedPriceExclVat * (p.quantity || 1));
     }, 0);
 

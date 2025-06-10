@@ -9,7 +9,7 @@ export interface Product {
   quantity: number;
   originalPrice: number; 
   discountedPrice: number; 
-  discountedPriceType?: 'exclusive' | 'inclusive'; 
+  discountedPriceType: 'exclusive' | 'inclusive'; // Added: default to 'exclusive'
   description: string;
   imageUrl?: string;
 }
