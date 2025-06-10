@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail } from 'lucide-react';
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
@@ -260,10 +260,11 @@ export default function OfferSheetForm() {
   const [selectedSellerAddressKey, setSelectedSellerAddressKey] = React.useState<string>('');
   const [isFinalPriceVatInclusive, setIsFinalPriceVatInclusive] = React.useState(false);
   const [currentOfferId, setCurrentOfferId] = React.useState<string | null>(null);
+  const importFileRef = React.useRef<HTMLInputElement>(null);
 
 
   React.useEffect(() => {
-    const initializeNewOfferSheet = () => {
+    const initializeNewOfferSheet = (keepExistingId = false) => {
       let userDefaultSellerInfo: Partial<SellerInfo> | undefined = undefined;
       let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY;
       const savedSettingsRaw = localStorage.getItem('offerSheetSettings');
@@ -276,7 +277,7 @@ export default function OfferSheetForm() {
           } else if (parsedSettings.defaultLogoUrl) {
             userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
           }
-          if (parsedSettings.defaultCurrency === 'EUR') {
+          if (parsedSettings.defaultCurrency === 'EUR') { // Only EUR supported for now
             userDefaultCurrency = parsedSettings.defaultCurrency;
           }
         } catch (error) {
@@ -301,12 +302,14 @@ export default function OfferSheetForm() {
         ...baseInitialData,
         sellerInfo: effectiveSellerInfo,
         currency: userDefaultCurrency,
-        vatRate: baseInitialData.vatRate, // Retain default or potentially loaded from settings
+        vatRate: baseInitialData.vatRate,
         isFinalPriceVatInclusive: baseInitialData.isFinalPriceVatInclusive,
         products: baseInitialData.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
       });
       setIsFinalPriceVatInclusive(baseInitialData.isFinalPriceVatInclusive || false);
-      setCurrentOfferId(null); // Explicitly null for new offers
+      if (!keepExistingId) {
+        setCurrentOfferId(null); 
+      }
     };
 
     const loadOfferSheet = (id: string) => {
@@ -316,7 +319,6 @@ export default function OfferSheetForm() {
         try {
           const loadedData: OfferSheetData = JSON.parse(item);
           
-          // Ensure all nested objects are properly initialized if partially missing in saved data
           const customerInfo = { ...initialCustomerInfo, ...(loadedData.customerInfo || {}) };
           const sellerInfo = { ...initialSellerInfo, ...(loadedData.sellerInfo || {}) };
           const products = (loadedData.products || []).map(p => ({ ...initialProduct, ...p, discountedPriceType: p.discountedPriceType || 'exclusive' }));
@@ -327,7 +329,6 @@ export default function OfferSheetForm() {
             customerInfo,
             sellerInfo,
             products,
-            // Dates might be stringified, ensure they are Date objects or undefined
             validityStartDate: loadedData.validityStartDate ? new Date(loadedData.validityStartDate) : undefined,
             validityEndDate: loadedData.validityEndDate ? new Date(loadedData.validityEndDate) : undefined,
           };
@@ -364,7 +365,7 @@ export default function OfferSheetForm() {
       initializeNewOfferSheet();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, t]); // toast is stable, t updates with language but initialization should be fine
+  }, [searchParams, t]); 
 
   React.useEffect(() => {
     setOfferData(prev => ({ ...prev, isFinalPriceVatInclusive: isFinalPriceVatInclusive }));
@@ -521,21 +522,21 @@ export default function OfferSheetForm() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const offerDataWithTotalsAndFlag = {
+    const offerDataToSave = {
         ...offerData,
         isFinalPriceVatInclusive: isFinalPriceVatInclusive,
-        calculatedTotals: currentCalculatedTotals,
+        // calculatedTotals: currentCalculatedTotals, // Not storing calculated totals, they are derived
     };
     
     const saveId = currentOfferId || Date.now().toString();
-    localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataWithTotalsAndFlag));
+    localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
 
     toast({
       title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }),
       description: t({ en: "Your offer sheet data has been saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν στο localStorage." }),
       variant: "default",
     });
-    if (!currentOfferId) { // If it was a new offer, set its ID now
+    if (!currentOfferId) { 
         setCurrentOfferId(saveId);
     }
   };
@@ -547,6 +548,7 @@ export default function OfferSheetForm() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(dataUrl); // Clean up blob URL
   };
 
   const exportAsPdf = async () => {
@@ -558,7 +560,6 @@ export default function OfferSheetForm() {
     toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
 
     const currentOfferDataForPdf = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
-
 
     for (let i = 0; i < totalPages; i++) {
       const pageNum = i + 1;
@@ -581,7 +582,7 @@ export default function OfferSheetForm() {
             pageNum={pageNum}
             totalPages={totalPages}
             currencySymbol={currentCurrencySymbol}
-            calculatedTotals={currentCalculatedTotals}
+            calculatedTotals={currentCalculatedTotals} 
             creationDate={creationDate}
             t={t}
           />
@@ -676,6 +677,86 @@ export default function OfferSheetForm() {
     }
   };
 
+  const exportOfferDataAsJson = () => {
+    const dataToExport = {
+      ...offerData,
+      isFinalPriceVatInclusive: isFinalPriceVatInclusive, // Ensure this flag is included
+    };
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const customerIdentifier = offerData.customerInfo.name || offerData.customerInfo.company || 'offer';
+    const filename = `offer-sheet-${customerIdentifier.replace(/\s+/g, '_')}-${Date.now()}.json`;
+    triggerDownload(url, filename);
+    toast({ title: t({en: "Data Exported", el: "Τα Δεδομένα Εξήχθησαν"}), description: t({en: "Offer sheet data downloaded as JSON.", el: "Τα δεδομένα του δελτίου προσφοράς λήφθηκαν ως JSON."}) });
+  };
+
+  const handleImportFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') {
+          throw new Error(t({en: "File content is not readable text.", el: "Το περιεχόμενο του αρχείου δεν είναι αναγνώσιμο κείμενο."}));
+        }
+        const importedRawData = JSON.parse(text);
+
+        // Basic validation for imported data structure
+        if (!importedRawData.customerInfo || !importedRawData.products || typeof importedRawData.currency === 'undefined') {
+             throw new Error(t({en: "Invalid JSON structure for offer sheet.", el: "Μη έγκυρη δομή JSON για δελτίο προσφοράς."}));
+        }
+        
+        // Coerce into OfferSheetData, ensuring all fields, especially new ones, are present or defaulted
+        const importedOfferData: OfferSheetData = {
+          ...initialOfferSheetData(importedRawData.currency || BASE_DEFAULT_CURRENCY), // Start with a valid base
+          ...importedRawData, // Spread imported data
+          customerInfo: { ...initialCustomerInfo, ...(importedRawData.customerInfo || {}) },
+          sellerInfo: { ...initialSellerInfo, ...(importedRawData.sellerInfo || {}) },
+          products: (importedRawData.products || []).map((p: any) => ({ ...initialProduct, ...p, id: p.id || `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}` , discountedPriceType: p.discountedPriceType || 'exclusive' })),
+          validityStartDate: importedRawData.validityStartDate ? new Date(importedRawData.validityStartDate) : undefined,
+          validityEndDate: importedRawData.validityEndDate ? new Date(importedRawData.validityEndDate) : undefined,
+          isFinalPriceVatInclusive: typeof importedRawData.isFinalPriceVatInclusive === 'boolean' ? importedRawData.isFinalPriceVatInclusive : false,
+        };
+        
+        setOfferData(importedOfferData);
+        setIsFinalPriceVatInclusive(importedOfferData.isFinalPriceVatInclusive || false);
+        setCurrentOfferId(null); // Treat imported offer as a new one on this device
+
+        // Update seller name/address dropdown keys based on imported data
+        setSelectedSellerNameKey(
+            PREDEFINED_SELLER_NAMES.includes(importedOfferData.sellerInfo.name)
+            ? importedOfferData.sellerInfo.name
+            : OTHER_SELLER_NAME_VALUE
+        );
+        setSelectedSellerAddressKey(
+            PREDEFINED_SELLER_ADDRESSES.includes(importedOfferData.sellerInfo.address)
+            ? importedOfferData.sellerInfo.address
+            : OTHER_SELLER_ADDRESS_VALUE
+        );
+
+        toast({ title: t({en: "Data Imported", el: "Τα Δεδομένα Εισήχθησαν"}), description: t({en: "Offer sheet data loaded from JSON.", el: "Τα δεδομένα του δελτίου προσφοράς φορτώθηκαν από JSON."}) });
+      } catch (error) {
+        console.error("Error importing JSON:", error);
+        toast({ title: t({en: "Import Error", el: "Σφάλμα Εισαγωγής"}), description: (error as Error).message || t({en: "Could not parse or load the JSON file.", el: "Δεν ήταν δυνατή η ανάλυση ή η φόρτωση του αρχείου JSON."}), variant: "destructive" });
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input to allow importing the same file again if needed
+    if (importFileRef.current) {
+      importFileRef.current.value = "";
+    }
+  };
+
+  const triggerImportFileDialog = () => {
+    importFileRef.current?.click();
+  };
+
 
   const handleShare = () => {
      toast({
@@ -687,6 +768,7 @@ export default function OfferSheetForm() {
 
   return (
     <form onSubmit={handleSubmit} id="offer-sheet-form-capture-area" className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto bg-card rounded-xl shadow-2xl border">
+      <input type="file" accept=".json" ref={importFileRef} onChange={handleImportFileChange} style={{ display: 'none' }} />
       
       <Card className="shadow-none border-none">
         <CardHeader>
@@ -935,6 +1017,10 @@ export default function OfferSheetForm() {
           <Share2 className="mr-2 h-5 w-5" /> {t({ en: 'Share', el: 'Κοινοποίηση' })}
         </Button>
         
+        <Button type="button" variant="outline" onClick={triggerImportFileDialog}>
+          <FileUp className="mr-2 h-5 w-5" /> {t({ en: 'Import Data', el: 'Εισαγωγή Δεδομένων' })}
+        </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -950,6 +1036,10 @@ export default function OfferSheetForm() {
               <ImageIconLucide className="mr-2 h-4 w-4" />
               {t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)' })}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportOfferDataAsJson}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>
+              {t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -960,3 +1050,4 @@ export default function OfferSheetForm() {
     </form>
   );
 }
+
