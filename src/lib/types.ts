@@ -17,7 +17,7 @@ export interface Product {
 export interface CustomerInfo {
   name: string;
   company: string;
-  contact: string; // This can be general contact like email or phone for customer
+  contact: string; 
   vatNumber?: string; 
   address?: string; 
   phone2?: string; 
@@ -27,8 +27,8 @@ export interface CustomerInfo {
 export interface SellerInfo {
   name: string;
   address: string;
-  email?: string; // Changed from contact
-  phone?: string; // Added
+  email?: string; 
+  phone?: string; 
   logoUrl?: string; 
   gemhNumber?: string;
 }
@@ -42,6 +42,7 @@ export interface OfferSheetData {
   termsAndConditions: string;
   currency: Currency;
   vatRate?: number; 
+  isFinalPriceVatInclusive?: boolean; // Added new field
 }
 
 export interface LocalUserProfile {
@@ -56,3 +57,4 @@ export interface SettingsData {
   preferredLanguage?: Language;
   localProfile?: LocalUserProfile; 
 }
+

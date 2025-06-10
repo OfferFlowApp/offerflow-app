@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,6 +96,7 @@ const initialOfferSheetData = (defaultCurrency: Currency): OfferSheetData => ({
   termsAndConditions: '',
   currency: defaultCurrency,
   vatRate: 0,
+  isFinalPriceVatInclusive: false, // Initialize new field
 });
 
 
@@ -252,6 +254,7 @@ export default function OfferSheetForm() {
   const { toast } = useToast();
   const [selectedSellerNameKey, setSelectedSellerNameKey] = React.useState<string>('');
   const [selectedSellerAddressKey, setSelectedSellerAddressKey] = React.useState<string>('');
+  const [isFinalPriceVatInclusive, setIsFinalPriceVatInclusive] = React.useState(false);
 
 
   React.useEffect(() => {
@@ -298,10 +301,16 @@ export default function OfferSheetForm() {
       },
       currency: userDefaultCurrency,
       vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
+      isFinalPriceVatInclusive: prev.isFinalPriceVatInclusive === undefined ? false : prev.isFinalPriceVatInclusive,
       products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
     }));
+    setIsFinalPriceVatInclusive(offerData.isFinalPriceVatInclusive || false);
 
-  }, []);
+  }, []); // Removed offerData.isFinalPriceVatInclusive from dependency array to avoid loop
+
+  React.useEffect(() => {
+    setOfferData(prev => ({ ...prev, isFinalPriceVatInclusive: isFinalPriceVatInclusive }));
+  }, [isFinalPriceVatInclusive]);
 
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => { 
@@ -411,22 +420,49 @@ export default function OfferSheetForm() {
 
   const calculateTotals = React.useCallback(() => {
     const currentVatRateAsDecimal = (offerData.vatRate || 0) / 100;
+    const totalOriginalPriceExclVat = offerData.products.reduce((sum, p) => sum + ((p.originalPrice || 0) * (p.quantity || 1)), 0);
 
-    const totalOriginalPrice = offerData.products.reduce((sum, p) => sum + ((p.originalPrice || 0) * (p.quantity || 1)), 0);
-    
-    const subtotalDiscounted = offerData.products.reduce((sum, p) => {
-      let unitDiscountedPriceExclVat = p.discountedPrice || 0;
-      if (p.discountedPriceType === 'inclusive' && currentVatRateAsDecimal > 0) {
-        unitDiscountedPriceExclVat = (p.discountedPrice || 0) / (1 + currentVatRateAsDecimal);
-      }
-      return sum + (unitDiscountedPriceExclVat * (p.quantity || 1));
-    }, 0);
+    let subtotalDiscountedNet = 0;
+    let vatAmountCalculated = 0;
+    let grandTotalCalculated = 0;
 
-    const vatAmount = subtotalDiscounted * currentVatRateAsDecimal;
-    const grandTotal = subtotalDiscounted + vatAmount;
+    if (isFinalPriceVatInclusive) {
+        // Grand total is the sum of (discounted prices as entered * quantity)
+        grandTotalCalculated = offerData.products.reduce((sum, p) => sum + ((p.discountedPrice || 0) * (p.quantity || 1)), 0);
+        
+        // Subtotal (excl. VAT) is backed out from the grand total
+        subtotalDiscountedNet = currentVatRateAsDecimal > 0 
+            ? grandTotalCalculated / (1 + currentVatRateAsDecimal) 
+            : grandTotalCalculated;
+        
+        // VAT amount is the difference
+        vatAmountCalculated = grandTotalCalculated - subtotalDiscountedNet;
+    } else {
+        // Subtotal (excl. VAT) is calculated by summing up net discounted prices (respecting individual product VAT type)
+        subtotalDiscountedNet = offerData.products.reduce((sum, p) => {
+            let unitDiscountedPrice = p.discountedPrice || 0;
+            let priceExclVatForProduct = unitDiscountedPrice;
+            if (p.discountedPriceType === 'inclusive' && currentVatRateAsDecimal > 0) {
+                priceExclVatForProduct = unitDiscountedPrice / (1 + currentVatRateAsDecimal);
+            }
+            return sum + (priceExclVatForProduct * (p.quantity || 1));
+        }, 0);
+        
+        // VAT amount is calculated on this net subtotal
+        vatAmountCalculated = subtotalDiscountedNet * currentVatRateAsDecimal;
+        
+        // Grand total is net subtotal + VAT amount
+        grandTotalCalculated = subtotalDiscountedNet + vatAmountCalculated;
+    }
 
-    return { totalOriginalPrice, subtotalDiscounted, vatAmount, grandTotal };
-  }, [offerData.products, offerData.vatRate]);
+    return { 
+        totalOriginalPrice: totalOriginalPriceExclVat, 
+        subtotalDiscounted: subtotalDiscountedNet, 
+        vatAmount: vatAmountCalculated, 
+        grandTotal: grandTotalCalculated 
+    };
+  }, [offerData.products, offerData.vatRate, isFinalPriceVatInclusive]);
+
 
   const currentCalculatedTotals = calculateTotals();
   const currentCurrencySymbol = getCurrencySymbol(offerData.currency);
@@ -434,12 +470,13 @@ export default function OfferSheetForm() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const offerDataWithTotals = {
+    const offerDataWithTotalsAndFlag = {
         ...offerData,
+        isFinalPriceVatInclusive: isFinalPriceVatInclusive, // Ensure the latest checkbox state is saved
         calculatedTotals: currentCalculatedTotals,
     };
-    console.log("Offer Sheet Data:", offerDataWithTotals);
-    localStorage.setItem(`offerSheet-${Date.now()}`, JSON.stringify(offerDataWithTotals));
+    console.log("Offer Sheet Data:", offerDataWithTotalsAndFlag);
+    localStorage.setItem(`offerSheet-${Date.now()}`, JSON.stringify(offerDataWithTotalsAndFlag));
     toast({
       title: t({ en: "Offer Sheet Saved (Simulated)", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε (Προσομοίωση)" }),
       description: t({ en: "Your offer sheet data has been logged and saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς καταγράφηκαν και αποθηκεύτηκαν στο localStorage." }),
@@ -464,6 +501,10 @@ export default function OfferSheetForm() {
 
     toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
 
+    // Pass the latest isFinalPriceVatInclusive state to PdfPageLayout
+    const currentOfferDataForPdf = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
+
+
     for (let i = 0; i < totalPages; i++) {
       const pageNum = i + 1;
       const startIndex = i * PRODUCTS_PER_PAGE;
@@ -480,12 +521,12 @@ export default function OfferSheetForm() {
       root.render(
         <React.StrictMode> 
           <PdfPageLayout
-            offerData={offerData}
+            offerData={currentOfferDataForPdf} // Use updated offerData for PDF
             productsOnPage={productsOnPage}
             pageNum={pageNum}
             totalPages={totalPages}
             currencySymbol={currentCurrencySymbol}
-            calculatedTotals={currentCalculatedTotals}
+            calculatedTotals={currentCalculatedTotals} // These totals are already correct
             creationDate={creationDate}
             t={t}
           />
@@ -547,10 +588,11 @@ export default function OfferSheetForm() {
     
     const root = ReactDOM.createRoot(tempPdfPageContainer);
     const productsForFirstPage = offerData.products.slice(0, 3); 
+    const currentOfferDataForJpeg = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
     
     root.render(
       <PdfPageLayout
-        offerData={offerData}
+        offerData={currentOfferDataForJpeg}
         productsOnPage={productsForFirstPage} 
         pageNum={1}
         totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} 
@@ -783,6 +825,18 @@ export default function OfferSheetForm() {
             <span className="text-muted-foreground">{t({ en: 'Subtotal (Discounted, excl. VAT):', el: 'Μερικό Σύνολο (με Έκπτωση, χωρίς ΦΠΑ):' })}</span>
             <span className="font-semibold">{currentCurrencySymbol}{currentCalculatedTotals.subtotalDiscounted.toFixed(2)}</span>
           </div>
+          
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox
+              id="isFinalPriceVatInclusive"
+              checked={isFinalPriceVatInclusive}
+              onCheckedChange={(checked) => setIsFinalPriceVatInclusive(checked as boolean)}
+            />
+            <Label htmlFor="isFinalPriceVatInclusive" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {t({ en: 'Prices include VAT', el: 'Οι τιμές περιλαμβάνουν ΦΠΑ' })}
+            </Label>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="vatRate">{t({ en: 'VAT Rate (%)', el: 'Ποσοστό ΦΠΑ (%)' })}</Label>
             <div className="flex items-center">
@@ -845,4 +899,3 @@ export default function OfferSheetForm() {
     </form>
   );
 }
-
