@@ -17,19 +17,20 @@ export interface Product {
 export interface CustomerInfo {
   name: string;
   company: string;
-  contact: string;
+  contact: string; // This can be general contact like email or phone for customer
   vatNumber?: string; 
   address?: string; 
   phone2?: string; 
-  gemhNumber?: string; // Added for client
+  gemhNumber?: string;
 }
 
 export interface SellerInfo {
   name: string;
   address: string;
-  contact: string;
+  email?: string; // Changed from contact
+  phone?: string; // Added
   logoUrl?: string; 
-  gemhNumber?: string; // Added for seller
+  gemhNumber?: string;
 }
 
 export interface OfferSheetData {

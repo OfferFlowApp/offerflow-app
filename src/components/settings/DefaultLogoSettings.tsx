@@ -28,12 +28,15 @@ const PREDEFINED_SELLER_ADDRESSES = [
 ];
 const OTHER_SELLER_ADDRESS_VALUE = 'other_seller_address';
 const DEFAULT_SELLER_GEMH = '071970120000';
+const DEFAULT_SELLER_EMAIL = 'epiplagiorgaras@gmail.com';
+const DEFAULT_SELLER_PHONE = '2241021087';
 
 export default function DefaultLogoSettings() {
   const [defaultSellerInfo, setDefaultSellerInfo] = useState<Partial<SellerInfo>>({
     name: PREDEFINED_SELLER_NAMES[0] || '',
     address: PREDEFINED_SELLER_ADDRESSES[0] || '',
-    contact: '',
+    email: DEFAULT_SELLER_EMAIL,
+    phone: DEFAULT_SELLER_PHONE,
     logoUrl: undefined,
     gemhNumber: DEFAULT_SELLER_GEMH,
   });
@@ -52,16 +55,18 @@ export default function DefaultLogoSettings() {
         let sellerNameFromStorage: string | undefined = undefined;
         let sellerLogoFromStorage: string | undefined = undefined;
         let sellerAddressFromStorage: string | undefined = undefined;
-        let sellerContactFromStorage: string | undefined = undefined;
+        let sellerEmailFromStorage: string | undefined = undefined;
+        let sellerPhoneFromStorage: string | undefined = undefined;
         let sellerGemhFromStorage: string | undefined = undefined;
 
         if (parsedSettings.defaultSellerInfo) {
             sellerNameFromStorage = parsedSettings.defaultSellerInfo.name;
             sellerLogoFromStorage = parsedSettings.defaultSellerInfo.logoUrl;
             sellerAddressFromStorage = parsedSettings.defaultSellerInfo.address;
-            sellerContactFromStorage = parsedSettings.defaultSellerInfo.contact;
+            sellerEmailFromStorage = parsedSettings.defaultSellerInfo.email;
+            sellerPhoneFromStorage = parsedSettings.defaultSellerInfo.phone;
             sellerGemhFromStorage = parsedSettings.defaultSellerInfo.gemhNumber;
-        } else if (parsedSettings.defaultLogoUrl) { // Legacy support
+        } else if (parsedSettings.defaultLogoUrl) { // Legacy support for only logo
             sellerLogoFromStorage = parsedSettings.defaultLogoUrl;
         }
         
@@ -75,7 +80,8 @@ export default function DefaultLogoSettings() {
             name: effectiveName,
             logoUrl: sellerLogoFromStorage,
             address: effectiveAddress,
-            contact: sellerContactFromStorage || '',
+            email: sellerEmailFromStorage || DEFAULT_SELLER_EMAIL,
+            phone: sellerPhoneFromStorage || DEFAULT_SELLER_PHONE,
             gemhNumber: sellerGemhFromStorage || DEFAULT_SELLER_GEMH,
         });
         setSelectedDefaultSellerNameKey(keyForNameSelect);
@@ -93,18 +99,23 @@ export default function DefaultLogoSettings() {
             ...prev, 
             name: fallbackName, 
             address: fallbackAddress, 
+            email: DEFAULT_SELLER_EMAIL,
+            phone: DEFAULT_SELLER_PHONE,
             gemhNumber: DEFAULT_SELLER_GEMH 
         }));
         setSelectedDefaultSellerNameKey(fallbackName || OTHER_SELLER_NAME_VALUE);
         setSelectedDefaultSellerAddressKey(fallbackAddress || OTHER_SELLER_ADDRESS_VALUE);
       }
     } else {
+      // No settings found, use hardcoded defaults
       const initialName = PREDEFINED_SELLER_NAMES[0] || '';
       const initialAddress = PREDEFINED_SELLER_ADDRESSES[0] || '';
       setDefaultSellerInfo(prev => ({
           ...prev, 
           name: initialName, 
-          address: initialAddress, 
+          address: initialAddress,
+          email: DEFAULT_SELLER_EMAIL,
+          phone: DEFAULT_SELLER_PHONE,
           gemhNumber: DEFAULT_SELLER_GEMH
       }));
       setSelectedDefaultSellerNameKey(initialName || OTHER_SELLER_NAME_VALUE);
@@ -134,6 +145,7 @@ export default function DefaultLogoSettings() {
     if (value !== OTHER_SELLER_NAME_VALUE) {
       setDefaultSellerInfo(prev => ({ ...prev, name: value }));
     } else {
+      // If "Other" is selected and the current name is one of the predefined ones, clear it to allow custom input.
       if (PREDEFINED_SELLER_NAMES.includes(defaultSellerInfo.name || '')) {
         setDefaultSellerInfo(prev => ({ ...prev, name: '' }));
       }
@@ -149,7 +161,7 @@ export default function DefaultLogoSettings() {
     if (value !== OTHER_SELLER_ADDRESS_VALUE) {
       setDefaultSellerInfo(prev => ({ ...prev, address: value }));
     } else {
-      if (PREDEFINED_SELLER_ADDRESSES.includes(defaultSellerInfo.address || '')) {
+       if (PREDEFINED_SELLER_ADDRESSES.includes(defaultSellerInfo.address || '')) {
         setDefaultSellerInfo(prev => ({ ...prev, address: '' }));
       }
     }
@@ -171,10 +183,21 @@ export default function DefaultLogoSettings() {
         }
     }
 
+    // Ensure that if "Other" was selected but input was empty, we don't save an empty string if a default exists
+    const finalSellerInfoToSave = { ...defaultSellerInfo };
+    if (selectedDefaultSellerNameKey === OTHER_SELLER_NAME_VALUE && !finalSellerInfoToSave.name) {
+      // This case is tricky; if they selected "Other" and left it blank, what should happen?
+      // For now, it saves blank. Could be improved to fall back to first predefined if desired.
+    }
+    if (selectedDefaultSellerAddressKey === OTHER_SELLER_ADDRESS_VALUE && !finalSellerInfoToSave.address) {
+      // Similar to name
+    }
+
+
     const settingsToSave: SettingsData = {
         ...existingSettings,
-        defaultSellerInfo: defaultSellerInfo,
-        defaultLogoUrl: defaultSellerInfo.logoUrl, 
+        defaultSellerInfo: finalSellerInfoToSave,
+        defaultLogoUrl: finalSellerInfoToSave.logoUrl, // Keep for legacy if OfferSheetForm directly uses it
     };
     localStorage.setItem('offerSheetSettings', JSON.stringify(settingsToSave));
     toast({
@@ -212,7 +235,7 @@ export default function DefaultLogoSettings() {
                 <Label htmlFor="customDefaultSellerName" className="text-sm font-normal">{t({ en: 'Custom Default Seller Name', el: 'Προσαρμοσμένο Προεπιλεγμένο Όνομα Πωλητή' })}</Label>
                 <Input
                   id="customDefaultSellerName"
-                  name="name"
+                  name="name" // Should match key in defaultSellerInfo
                   value={defaultSellerInfo.name || ''}
                   onChange={handleCustomDefaultSellerNameChange}
                   placeholder={t({en: "Enter custom default seller name", el: "Εισαγάγετε προσαρμοσμένο προεπιλεγμένο όνομα πωλητή"})}
@@ -239,7 +262,7 @@ export default function DefaultLogoSettings() {
                 <Label htmlFor="customDefaultSellerAddress" className="text-sm font-normal">{t({ en: 'Custom Default Seller Address', el: 'Προσαρμοσμένη Προεπιλεγμένη Διεύθυνση Πωλητή' })}</Label>
                 <Textarea
                   id="customDefaultSellerAddress"
-                  name="address"
+                  name="address" // Should match key in defaultSellerInfo
                   value={defaultSellerInfo.address || ''}
                   onChange={handleCustomDefaultSellerAddressChange}
                   placeholder={t({en: "Enter custom default seller address", el: "Εισαγάγετε προσαρμοσμένη προεπιλεγμένη διεύθυνση πωλητή"})}
@@ -249,8 +272,12 @@ export default function DefaultLogoSettings() {
         </div>
 
         <div className="space-y-2">
-            <Label htmlFor="defaultSellerContact">{t({en: "Default Seller Contact (Email/Phone)", el: "Προεπιλεγμένη Επικοινωνία Πωλητή (Email/Τηλέφωνο)"})}</Label>
-            <Input id="defaultSellerContact" name="contact" value={defaultSellerInfo.contact || ''} onChange={handleInfoChange} placeholder={t({en: "info@yourcompany.com", el: "info@yourcompany.com"})}/>
+            <Label htmlFor="defaultSellerEmail">{t({en: "Default Seller Email", el: "Προεπιλεγμένο Email Πωλητή"})}</Label>
+            <Input id="defaultSellerEmail" name="email" value={defaultSellerInfo.email || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_EMAIL}/>
+        </div>
+        <div className="space-y-2">
+            <Label htmlFor="defaultSellerPhone">{t({en: "Default Seller Phone", el: "Προεπιλεγμένο Τηλέφωνο Πωλητή"})}</Label>
+            <Input id="defaultSellerPhone" name="phone" value={defaultSellerInfo.phone || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_PHONE}/>
         </div>
         <div className="space-y-2">
             <Label htmlFor="defaultSellerGemh">{t({en: "Default Seller ΓΕΜΗ Number", el: "Προεπιλεγμένος Αριθμός ΓΕΜΗ Πωλητή"})}</Label>

@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo } from '@/lib/types';
+import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,8 @@ const PREDEFINED_SELLER_ADDRESSES = [
 ];
 const OTHER_SELLER_ADDRESS_VALUE = 'other_seller_address';
 const DEFAULT_SELLER_GEMH = '071970120000';
+const DEFAULT_SELLER_EMAIL = 'epiplagiorgaras@gmail.com';
+const DEFAULT_SELLER_PHONE = '2241021087';
 
 
 const initialProduct: Product = {
@@ -68,7 +70,8 @@ const initialCustomerInfo: CustomerInfo = {
 const initialSellerInfo: SellerInfo = {
   name: PREDEFINED_SELLER_NAMES[0] || '', 
   address: PREDEFINED_SELLER_ADDRESSES[0] || '',
-  contact: '',
+  email: DEFAULT_SELLER_EMAIL,
+  phone: DEFAULT_SELLER_PHONE,
   logoUrl: undefined,
   gemhNumber: DEFAULT_SELLER_GEMH,
 };
@@ -102,7 +105,7 @@ interface ProductItemProps {
   updateProduct: (index: number, updatedProduct: Product) => void;
   removeProduct: (index: number) => void;
   moveProduct: (dragIndex: number, hoverIndex: number) => void;
-  t: (translations: { [key in 'en' | 'el']?: string } | string, fallback?: string) => string;
+  t: (translations: { [key in Language]?: string } | string, fallback?: string) => string;
 }
 
 const ItemTypes = {
@@ -261,10 +264,10 @@ export default function OfferSheetForm() {
         const parsedSettings = JSON.parse(savedSettings);
         if (parsedSettings.defaultSellerInfo) {
           userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
-        } else if (parsedSettings.defaultLogoUrl) { // Legacy support
+        } else if (parsedSettings.defaultLogoUrl) { // Legacy support for only logo
           userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
         }
-        if (parsedSettings.defaultCurrency === 'EUR') {
+        if (parsedSettings.defaultCurrency === 'EUR') { // Only EUR supported
           userDefaultCurrency = parsedSettings.defaultCurrency;
         }
       } catch (error) {
@@ -288,12 +291,13 @@ export default function OfferSheetForm() {
       sellerInfo: {
         name: effectiveSellerName,
         address: effectiveSellerAddress,
-        contact: userDefaultSellerInfo?.contact || baseSellerInfo.contact,
+        email: userDefaultSellerInfo?.email || baseSellerInfo.email,
+        phone: userDefaultSellerInfo?.phone || baseSellerInfo.phone,
         logoUrl: userDefaultSellerInfo?.logoUrl || baseSellerInfo.logoUrl,
         gemhNumber: userDefaultSellerInfo?.gemhNumber || baseSellerInfo.gemhNumber,
       },
       currency: userDefaultCurrency,
-      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate, // Keep existing VAT rate if form is re-rendering
+      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
       products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
     }));
 
@@ -323,7 +327,7 @@ export default function OfferSheetForm() {
     if (value !== OTHER_SELLER_NAME_VALUE) {
       setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: value } }));
     } else {
-      if (PREDEFINED_SELLER_NAMES.includes(offerData.sellerInfo.name)) {
+      if (PREDEFINED_SELLER_NAMES.includes(offerData.sellerInfo.name || '')) {
         setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: '' } }));
       }
     }
@@ -341,7 +345,7 @@ export default function OfferSheetForm() {
     if (value !== OTHER_SELLER_ADDRESS_VALUE) {
       setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, address: value } }));
     } else {
-      if (PREDEFINED_SELLER_ADDRESSES.includes(offerData.sellerInfo.address)) {
+      if (PREDEFINED_SELLER_ADDRESSES.includes(offerData.sellerInfo.address || '')) {
         setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, address: '' } }));
       }
     }
@@ -456,7 +460,7 @@ export default function OfferSheetForm() {
     const PRODUCTS_PER_PAGE = 3; 
     const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const creationDate = new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}));
+    const creationDate = new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string);
 
     toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
 
@@ -552,7 +556,7 @@ export default function OfferSheetForm() {
         totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} 
         currencySymbol={currentCurrencySymbol}
         calculatedTotals={currentCalculatedTotals}
-        creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}))}
+        creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}
         t={t}
       />
     );
@@ -645,10 +649,13 @@ export default function OfferSheetForm() {
               </div>
             )}
           </div>
-
-           <div className="space-y-2">
-            <Label htmlFor="sellerContact">{t({ en: 'Seller Contact (Email/Phone)', el: 'Επικοινωνία Πωλητή (Email/Τηλέφωνο)' })}</Label>
-            <Input id="sellerContact" name="contact" value={offerData.sellerInfo.contact} onChange={handleSellerInfoChange} placeholder="sales@yourcompany.com" />
+          <div className="space-y-2">
+            <Label htmlFor="sellerEmail">{t({ en: 'Seller Email', el: 'Email Πωλητή' })}</Label>
+            <Input id="sellerEmail" name="email" type="email" value={offerData.sellerInfo.email || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_EMAIL} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sellerPhone">{t({ en: 'Seller Phone', el: 'Τηλέφωνο Πωλητή' })}</Label>
+            <Input id="sellerPhone" name="phone" type="tel" value={offerData.sellerInfo.phone || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_PHONE} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="sellerGemhNumber">{t({ en: 'Seller ΓΕΜΗ Number', el: 'Αριθμός ΓΕΜΗ Πωλητή' })}</Label>
@@ -695,11 +702,11 @@ export default function OfferSheetForm() {
             <Input id="customerGemhNumber" name="gemhNumber" value={offerData.customerInfo.gemhNumber || ''} onChange={handleCustomerInfoChange} placeholder="123456789012" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="customerContact">{t({ en: 'Client Email', el: 'Email Επικοινωνίας Πελάτη' })}</Label>
-            <Input id="customerContact" name="contact" type="email" value={offerData.customerInfo.contact} onChange={handleCustomerInfoChange} placeholder="john.doe@example.com" />
+            <Label htmlFor="customerContact">{t({ en: 'Client Email/Contact', el: 'Email/Επικοινωνία Πελάτη' })}</Label>
+            <Input id="customerContact" name="contact" type="text" value={offerData.customerInfo.contact} onChange={handleCustomerInfoChange} placeholder="john.doe@example.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="customerPhone2">{t({ en: 'Client Phone', el: 'Τηλέφωνο Πελάτη' })}</Label>
+            <Label htmlFor="customerPhone2">{t({ en: 'Client Phone (Optional)', el: 'Τηλέφωνο Πελάτη (Προαιρετικό)' })}</Label>
             <Input id="customerPhone2" name="phone2" value={offerData.customerInfo.phone2 || ''} onChange={handleCustomerInfoChange} placeholder="555-0202" />
           </div>
            <div className="space-y-2 md:col-span-2">
@@ -717,7 +724,7 @@ export default function OfferSheetForm() {
                    <SelectItem key={code} value={code}>
                      <div className="flex items-center">
                        <IconComponent className="h-4 w-4 mr-2" />
-                       {t({en: label, el: label})}
+                       {t({en: label, el: label} as any)}
                      </div>
                    </SelectItem>
                 ))}

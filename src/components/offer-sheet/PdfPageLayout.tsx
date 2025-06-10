@@ -42,7 +42,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
 
   return (
     <div
-      className="bg-white text-black p-6 font-['Roboto']"
+      className="bg-white text-black p-6 font-body"
       style={{ 
         width: '210mm', 
         minHeight: '297mm', 
@@ -51,6 +51,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
         fontFamily: 'Roboto, sans-serif' 
       }}
     >
+      {/* Header */}
       <header className="flex justify-between items-start pb-4 border-b border-gray-300">
         <div className="w-2/5">
           {sellerInfo.logoUrl ? (
@@ -70,7 +71,8 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
            <div className="text-xs mt-1">
             <p className="font-bold text-sm">{sellerInfo.name || t({en: 'Your Company Name', el: 'Όνομα Εταιρείας'})}</p>
             <p className="whitespace-pre-line">{sellerInfo.address || t({en: '123 Seller St, City', el: 'Οδός Πωλητή 123, Πόλη'})}</p>
-            <p>{sellerInfo.contact || t({en: 'seller@example.com', el: 'seller@example.com'})}</p>
+            {sellerInfo.email && <p>{sellerInfo.email}</p>}
+            {sellerInfo.phone && <p>{sellerInfo.phone}</p>}
             {sellerInfo.gemhNumber && <p>{t({en: 'GEMH No.:', el: 'Γ.Ε.ΜΗ.:'})} {sellerInfo.gemhNumber}</p>}
           </div>
         </div>
@@ -81,7 +83,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
           {customerInfo.company && <p><span className="font-semibold">{t({en: "Company:", el: "Εταιρεία:"})}</span> {customerInfo.company}</p>}
           {customerInfo.vatNumber && <p><span className="font-semibold">{t({en: "VAT No.:", el: "ΑΦΜ:"})}</span> {customerInfo.vatNumber}</p>}
           {customerInfo.gemhNumber && <p><span className="font-semibold">{t({en: "GEMH No.:", el: "Γ.Ε.ΜΗ.:'})}</span> {customerInfo.gemhNumber}</p>}
-          {customerInfo.contact && <p><span className="font-semibold">{t({en: "Email:", el: "Email:"})}</span> {customerInfo.contact}</p>}
+          {customerInfo.contact && <p><span className="font-semibold">{t({en: "Email/Contact:", el: "Email/Επικοινωνία:"})}</span> {customerInfo.contact}</p>}
           {customerInfo.phone2 && <p><span className="font-semibold">{t({en: "Phone:", el: "Τηλέφωνο:"})}</span> {customerInfo.phone2}</p>}
           {customerInfo.address && <p className="whitespace-pre-line"><span className="font-semibold">{t({en: "Address:", el: "Διεύθυνση:"})}</span> {customerInfo.address}</p>}
         </div>
@@ -89,12 +91,13 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
         <div className="w-1/5 text-xs text-right">
           <h1 className="font-bold text-lg mb-2 uppercase">{t({en: "Offer", el: "Προσφορά"})}</h1>
           <p>{t({en: "Date:", el: "Ημερομηνία:"})} {creationDate}</p>
-          {validityStartDate && <p>{t({en: "Valid From:", el: "Ισχύει από:"})} {new Date(validityStartDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}))}</p>}
-          {validityEndDate && <p>{t({en: "Valid Until:", el: "Ισχύει έως:"})} {new Date(validityEndDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}))}</p>}
+          {validityStartDate && <p>{t({en: "Valid From:", el: "Ισχύει από:"})} {new Date(validityStartDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}</p>}
+          {validityEndDate && <p>{t({en: "Valid Until:", el: "Ισχύει έως:"})} {new Date(validityEndDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}</p>}
            <p className="font-semibold mt-2">{t({en: "Page", el: "Σελίδα"})} {pageNum} / {totalPages}</p>
         </div>
       </header>
 
+      {/* Products Table */}
       <main className="flex-grow py-4">
         <table className="w-full border-collapse text-xs">
             <thead>
@@ -145,6 +148,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
         </table>
       </main>
 
+      {/* Footer - Only on last page */}
       {pageNum === totalPages && (
         <footer className="pt-4 border-t border-gray-300 text-xs mt-auto">
           <div className="flex justify-between">
