@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+// import Image from 'next/image'; // Removed Image import
 import { Separator } from '@/components/ui/separator';
 import { useLocalization } from '@/hooks/useLocalization';
 import type { Language } from '@/lib/types';
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle } from 'lucide-react'; 
+import { Languages, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -39,7 +39,8 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-8 flex items-center">
-          <Image src="/offerflow-logo.png" alt="OfferFlow Logo" width={144} height={36} priority data-ai-hint="app logo"/>
+          {/* Replaced Image with text */}
+          <span className="text-2xl font-bold text-primary">Giorgaras Furniture</span>
         </Link>
         <nav className="flex items-center space-x-6 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-primary">
