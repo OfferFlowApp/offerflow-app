@@ -52,6 +52,7 @@ const PdfPageLayout: FC<PdfPageLayoutProps> = ({
             <p className="font-bold text-sm">{sellerInfo.name || t({en: 'Your Company Name', el: 'Όνομα Εταιρείας'})}</p>
             <p className="whitespace-pre-line">{sellerInfo.address || t({en: '123 Seller St, City', el: 'Οδός Πωλητή 123, Πόλη'})}</p>
             <p>{sellerInfo.contact || t({en: 'seller@example.com', el: 'seller@example.com'})}</p>
+            {sellerInfo.gemhNumber && <p>{t({en: 'GEMH No.:', el: 'Γ.Ε.ΜΗ.:'})} {sellerInfo.gemhNumber}</p>}
           </div>
         </div>
 
@@ -60,6 +61,7 @@ const PdfPageLayout: FC<PdfPageLayoutProps> = ({
           <p><span className="font-semibold">{t({en: "Name:", el: "Όνομα:"})}</span> {customerInfo.name}</p>
           {customerInfo.company && <p><span className="font-semibold">{t({en: "Company:", el: "Εταιρεία:"})}</span> {customerInfo.company}</p>}
           {customerInfo.vatNumber && <p><span className="font-semibold">{t({en: "VAT No.:", el: "ΑΦΜ:"})}</span> {customerInfo.vatNumber}</p>}
+          {customerInfo.gemhNumber && <p><span className="font-semibold">{t({en: "GEMH No.:", el: "Γ.Ε.ΜΗ.:'})}</span> {customerInfo.gemhNumber}</p>}
           {customerInfo.contact && <p><span className="font-semibold">{t({en: "Email:", el: "Email:"})}</span> {customerInfo.contact}</p>}
           {customerInfo.phone2 && <p><span className="font-semibold">{t({en: "Phone:", el: "Τηλέφωνο:"})}</span> {customerInfo.phone2}</p>}
           {customerInfo.address && <p className="whitespace-pre-line"><span className="font-semibold">{t({en: "Address:", el: "Διεύθυνση:"})}</span> {customerInfo.address}</p>}

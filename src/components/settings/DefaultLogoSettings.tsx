@@ -22,16 +22,24 @@ const PREDEFINED_SELLER_NAMES = [
 ];
 const OTHER_SELLER_NAME_VALUE = 'other_seller_name';
 
+const PREDEFINED_SELLER_ADDRESSES = [
+  'ΚΑΝΑΔΑ 11 ΡΟΔΟΣ',
+  'KANADA 11 RHODES',
+];
+const OTHER_SELLER_ADDRESS_VALUE = 'other_seller_address';
+const DEFAULT_SELLER_GEMH = '071970120000';
 
 export default function DefaultLogoSettings() {
   const [defaultSellerInfo, setDefaultSellerInfo] = useState<Partial<SellerInfo>>({
     name: PREDEFINED_SELLER_NAMES[0] || '',
-    address: '',
+    address: PREDEFINED_SELLER_ADDRESSES[0] || '',
     contact: '',
     logoUrl: undefined,
+    gemhNumber: DEFAULT_SELLER_GEMH,
   });
   const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
   const [selectedDefaultSellerNameKey, setSelectedDefaultSellerNameKey] = useState<string>(PREDEFINED_SELLER_NAMES[0] || OTHER_SELLER_NAME_VALUE);
+  const [selectedDefaultSellerAddressKey, setSelectedDefaultSellerAddressKey] = useState<string>(PREDEFINED_SELLER_ADDRESSES[0] || OTHER_SELLER_ADDRESS_VALUE);
   const { toast } = useToast();
   const { t } = useLocalization();
 
@@ -45,42 +53,62 @@ export default function DefaultLogoSettings() {
         let sellerLogoFromStorage: string | undefined = undefined;
         let sellerAddressFromStorage: string | undefined = undefined;
         let sellerContactFromStorage: string | undefined = undefined;
+        let sellerGemhFromStorage: string | undefined = undefined;
 
         if (parsedSettings.defaultSellerInfo) {
             sellerNameFromStorage = parsedSettings.defaultSellerInfo.name;
             sellerLogoFromStorage = parsedSettings.defaultSellerInfo.logoUrl;
             sellerAddressFromStorage = parsedSettings.defaultSellerInfo.address;
             sellerContactFromStorage = parsedSettings.defaultSellerInfo.contact;
+            sellerGemhFromStorage = parsedSettings.defaultSellerInfo.gemhNumber;
         } else if (parsedSettings.defaultLogoUrl) { // Legacy support
             sellerLogoFromStorage = parsedSettings.defaultLogoUrl;
         }
         
         const effectiveName = sellerNameFromStorage || PREDEFINED_SELLER_NAMES[0] || '';
-        const keyForSelect = PREDEFINED_SELLER_NAMES.includes(effectiveName) ? effectiveName : OTHER_SELLER_NAME_VALUE;
+        const keyForNameSelect = PREDEFINED_SELLER_NAMES.includes(effectiveName) ? effectiveName : OTHER_SELLER_NAME_VALUE;
         
+        const effectiveAddress = sellerAddressFromStorage || PREDEFINED_SELLER_ADDRESSES[0] || '';
+        const keyForAddressSelect = PREDEFINED_SELLER_ADDRESSES.includes(effectiveAddress) ? effectiveAddress : OTHER_SELLER_ADDRESS_VALUE;
+
         setDefaultSellerInfo({
             name: effectiveName,
             logoUrl: sellerLogoFromStorage,
-            address: sellerAddressFromStorage || '',
+            address: effectiveAddress,
             contact: sellerContactFromStorage || '',
+            gemhNumber: sellerGemhFromStorage || DEFAULT_SELLER_GEMH,
         });
-        setSelectedDefaultSellerNameKey(keyForSelect);
+        setSelectedDefaultSellerNameKey(keyForNameSelect);
+        setSelectedDefaultSellerAddressKey(keyForAddressSelect);
+
         if (sellerLogoFromStorage) {
             setLogoPreview(sellerLogoFromStorage);
         }
 
       } catch (e) {
         console.error("Failed to parse default seller settings", e);
-         // Fallback to first predefined name if parsing fails or no name is set
         const fallbackName = PREDEFINED_SELLER_NAMES[0] || '';
-        setDefaultSellerInfo(prev => ({...prev, name: fallbackName }));
+        const fallbackAddress = PREDEFINED_SELLER_ADDRESSES[0] || '';
+        setDefaultSellerInfo(prev => ({
+            ...prev, 
+            name: fallbackName, 
+            address: fallbackAddress, 
+            gemhNumber: DEFAULT_SELLER_GEMH 
+        }));
         setSelectedDefaultSellerNameKey(fallbackName || OTHER_SELLER_NAME_VALUE);
+        setSelectedDefaultSellerAddressKey(fallbackAddress || OTHER_SELLER_ADDRESS_VALUE);
       }
     } else {
-       // No settings saved, use first predefined name
       const initialName = PREDEFINED_SELLER_NAMES[0] || '';
-      setDefaultSellerInfo(prev => ({...prev, name: initialName}));
+      const initialAddress = PREDEFINED_SELLER_ADDRESSES[0] || '';
+      setDefaultSellerInfo(prev => ({
+          ...prev, 
+          name: initialName, 
+          address: initialAddress, 
+          gemhNumber: DEFAULT_SELLER_GEMH
+      }));
       setSelectedDefaultSellerNameKey(initialName || OTHER_SELLER_NAME_VALUE);
+      setSelectedDefaultSellerAddressKey(initialAddress || OTHER_SELLER_ADDRESS_VALUE);
     }
   }, []);
 
@@ -106,7 +134,6 @@ export default function DefaultLogoSettings() {
     if (value !== OTHER_SELLER_NAME_VALUE) {
       setDefaultSellerInfo(prev => ({ ...prev, name: value }));
     } else {
-      // If "Other" is selected and current name is predefined, clear it for custom input
       if (PREDEFINED_SELLER_NAMES.includes(defaultSellerInfo.name || '')) {
         setDefaultSellerInfo(prev => ({ ...prev, name: '' }));
       }
@@ -116,6 +143,22 @@ export default function DefaultLogoSettings() {
   const handleCustomDefaultSellerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setDefaultSellerInfo(prev => ({ ...prev, name: e.target.value }));
   };
+  
+  const handleDefaultSellerAddressSelectionChange = (value: string) => {
+    setSelectedDefaultSellerAddressKey(value);
+    if (value !== OTHER_SELLER_ADDRESS_VALUE) {
+      setDefaultSellerInfo(prev => ({ ...prev, address: value }));
+    } else {
+      if (PREDEFINED_SELLER_ADDRESSES.includes(defaultSellerInfo.address || '')) {
+        setDefaultSellerInfo(prev => ({ ...prev, address: '' }));
+      }
+    }
+  };
+
+  const handleCustomDefaultSellerAddressChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setDefaultSellerInfo(prev => ({ ...prev, address: e.target.value }));
+  };
+
 
   const handleSaveSettings = () => {
     const existingSettingsRaw = localStorage.getItem('offerSheetSettings');
@@ -169,6 +212,7 @@ export default function DefaultLogoSettings() {
                 <Label htmlFor="customDefaultSellerName" className="text-sm font-normal">{t({ en: 'Custom Default Seller Name', el: 'Προσαρμοσμένο Προεπιλεγμένο Όνομα Πωλητή' })}</Label>
                 <Input
                   id="customDefaultSellerName"
+                  name="name"
                   value={defaultSellerInfo.name || ''}
                   onChange={handleCustomDefaultSellerNameChange}
                   placeholder={t({en: "Enter custom default seller name", el: "Εισαγάγετε προσαρμοσμένο προεπιλεγμένο όνομα πωλητή"})}
@@ -176,20 +220,48 @@ export default function DefaultLogoSettings() {
               </div>
             )}
         </div>
+        
+        <div>
+            <Label htmlFor="defaultSellerAddressSelect">{t({en: "Default Seller Address", el: "Προεπιλεγμένη Διεύθυνση Πωλητή"})}</Label>
+            <Select value={selectedDefaultSellerAddressKey} onValueChange={handleDefaultSellerAddressSelectionChange}>
+              <SelectTrigger id="defaultSellerAddressSelect">
+                <SelectValue placeholder={t({ en: "Select or type default seller address", el: "Επιλέξτε ή πληκτρολογήστε προεπιλεγμένη διεύθυνση πωλητή" })} />
+              </SelectTrigger>
+              <SelectContent>
+                {PREDEFINED_SELLER_ADDRESSES.map(addr => (
+                  <SelectItem key={addr} value={addr}>{addr}</SelectItem>
+                ))}
+                <SelectItem value={OTHER_SELLER_ADDRESS_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
+              </SelectContent>
+            </Select>
+            {selectedDefaultSellerAddressKey === OTHER_SELLER_ADDRESS_VALUE && (
+              <div className="mt-2 space-y-1">
+                <Label htmlFor="customDefaultSellerAddress" className="text-sm font-normal">{t({ en: 'Custom Default Seller Address', el: 'Προσαρμοσμένη Προεπιλεγμένη Διεύθυνση Πωλητή' })}</Label>
+                <Textarea
+                  id="customDefaultSellerAddress"
+                  name="address"
+                  value={defaultSellerInfo.address || ''}
+                  onChange={handleCustomDefaultSellerAddressChange}
+                  placeholder={t({en: "Enter custom default seller address", el: "Εισαγάγετε προσαρμοσμένη προεπιλεγμένη διεύθυνση πωλητή"})}
+                />
+              </div>
+            )}
+        </div>
+
         <div className="space-y-2">
             <Label htmlFor="defaultSellerContact">{t({en: "Default Seller Contact (Email/Phone)", el: "Προεπιλεγμένη Επικοινωνία Πωλητή (Email/Τηλέφωνο)"})}</Label>
             <Input id="defaultSellerContact" name="contact" value={defaultSellerInfo.contact || ''} onChange={handleInfoChange} placeholder={t({en: "info@yourcompany.com", el: "info@yourcompany.com"})}/>
         </div>
         <div className="space-y-2">
-            <Label htmlFor="defaultSellerAddress">{t({en: "Default Seller Address", el: "Προεπιλεγμένη Διεύθυνση Πωλητή"})}</Label>
-            <Textarea id="defaultSellerAddress" name="address" value={defaultSellerInfo.address || ''} onChange={handleInfoChange} placeholder={t({en: "123 Business Park, City, Country", el: "Βιομηχανικό Πάρκο 123, Πόλη, Χώρα"})}/>
+            <Label htmlFor="defaultSellerGemh">{t({en: "Default Seller ΓΕΜΗ Number", el: "Προεπιλεγμένος Αριθμός ΓΕΜΗ Πωλητή"})}</Label>
+            <Input id="defaultSellerGemh" name="gemhNumber" value={defaultSellerInfo.gemhNumber || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_GEMH}/>
         </div>
       </div>
       
       <div className="flex flex-col items-start space-y-4">
         <Label htmlFor="defaultLogoUpload" className="text-base">{t({en: "Default Company Logo", el: "Προεπιλεγμένο Λογότυπο Εταιρείας"})}</Label>
         {logoPreview ? (
-          <Image src={logoPreview} alt="Default Logo Preview" width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
+          <Image src={logoPreview} alt={t({en:"Default Logo Preview", el:"Προεπισκόπηση Προεπιλεγμένου Λογότυπου"})} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
         ) : (
           <div className="w-40 h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
             <UploadCloud className="h-16 w-16" />

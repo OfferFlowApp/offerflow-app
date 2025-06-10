@@ -9,7 +9,7 @@ export interface Product {
   quantity: number;
   originalPrice: number; 
   discountedPrice: number; 
-  discountedPriceType: 'exclusive' | 'inclusive'; // Added: default to 'exclusive'
+  discountedPriceType: 'exclusive' | 'inclusive';
   description: string;
   imageUrl?: string;
 }
@@ -21,6 +21,7 @@ export interface CustomerInfo {
   vatNumber?: string; 
   address?: string; 
   phone2?: string; 
+  gemhNumber?: string; // Added for client
 }
 
 export interface SellerInfo {
@@ -28,6 +29,7 @@ export interface SellerInfo {
   address: string;
   contact: string;
   logoUrl?: string; 
+  gemhNumber?: string; // Added for seller
 }
 
 export interface OfferSheetData {
@@ -43,7 +45,7 @@ export interface OfferSheetData {
 
 export interface LocalUserProfile {
   username?: string;
-  userCodes?: string; // For storing some codes or notes
+  userCodes?: string; 
 }
 
 export interface SettingsData {
@@ -51,5 +53,5 @@ export interface SettingsData {
   defaultSellerInfo?: Partial<SellerInfo>;
   defaultCurrency?: Currency;
   preferredLanguage?: Language;
-  localProfile?: LocalUserProfile; // Can store the local profile here too if combined
+  localProfile?: LocalUserProfile; 
 }

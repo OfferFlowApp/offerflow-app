@@ -20,12 +20,12 @@ import {
 import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
-import { useDrag, useDrop, type XYCoord } from 'react-dnd'; // DndProvider is in AppProviders
+import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
 import update from 'immutability-helper';
 import { useLocalization } from '@/hooks/useLocalization';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import PdfPageLayout from './PdfPageLayout'; // Import the new layout component
+import PdfPageLayout from './PdfPageLayout'; 
 import ReactDOM from 'react-dom/client';
 
 const PREDEFINED_SELLER_NAMES = [
@@ -36,14 +36,21 @@ const PREDEFINED_SELLER_NAMES = [
 ];
 const OTHER_SELLER_NAME_VALUE = 'other_seller_name';
 
+const PREDEFINED_SELLER_ADDRESSES = [
+  'ΚΑΝΑΔΑ 11 ΡΟΔΟΣ',
+  'KANADA 11 RHODES',
+];
+const OTHER_SELLER_ADDRESS_VALUE = 'other_seller_address';
+const DEFAULT_SELLER_GEMH = '071970120000';
+
 
 const initialProduct: Product = {
   id: '',
   title: '',
   quantity: 1, 
-  originalPrice: 0, // Unit price
-  discountedPrice: 0, // Unit price
-  discountedPriceType: 'exclusive', // Default to exclusive
+  originalPrice: 0, 
+  discountedPrice: 0, 
+  discountedPriceType: 'exclusive', 
   description: '',
   imageUrl: undefined,
 };
@@ -51,17 +58,19 @@ const initialProduct: Product = {
 const initialCustomerInfo: CustomerInfo = {
   name: '',
   company: '',
-  contact: '', // Primary contact (email/phone)
+  contact: '', 
   vatNumber: '',
   address: '',
   phone2: '',
+  gemhNumber: '',
 };
 
 const initialSellerInfo: SellerInfo = {
-  name: PREDEFINED_SELLER_NAMES[0] || '', // Default to first predefined or empty
-  address: '',
+  name: PREDEFINED_SELLER_NAMES[0] || '', 
+  address: PREDEFINED_SELLER_ADDRESSES[0] || '',
   contact: '',
   logoUrl: undefined,
+  gemhNumber: DEFAULT_SELLER_GEMH,
 };
 
 const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType, label: string }> = {
@@ -69,7 +78,7 @@ const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.
 };
 
 const getCurrencySymbol = (currency: Currency): string => {
-  return currencyMetadata[currency]?.symbol || '€'; // Default to Euro symbol
+  return currencyMetadata[currency]?.symbol || '€'; 
 };
 
 const BASE_DEFAULT_CURRENCY: Currency = 'EUR';
@@ -223,7 +232,7 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
             <Input id={`productImage-${index}`} type="file" accept="image/*" onChange={handleProductImageUpload} className="file:text-primary file:font-medium" />
             {product.imageUrl && (
               <div className="mt-2">
-                <Image src={product.imageUrl} alt={t({ en: "Product Preview", el: "Προεπισκόπηση Προϊόντος" })} width={100} height={100} className="rounded-md object-cover" data-ai-hint="product image" />
+                <Image src={product.imageUrl} alt={t({ en: "Product Preview", el: "Προεπισκόπηση Προϊόντος" })} width={100} height={100} className="rounded-md object-cover" data-ai-hint="product image"/>
               </div>
             )}
           </div>
@@ -239,10 +248,10 @@ export default function OfferSheetForm() {
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const { toast } = useToast();
   const [selectedSellerNameKey, setSelectedSellerNameKey] = React.useState<string>('');
+  const [selectedSellerAddressKey, setSelectedSellerAddressKey] = React.useState<string>('');
 
 
   React.useEffect(() => {
-    let userDefaultSellerLogo: string | undefined = undefined;
     let userDefaultSellerInfo: Partial<SellerInfo> | undefined = undefined;
     let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY;
 
@@ -250,14 +259,10 @@ export default function OfferSheetForm() {
     if (savedSettings) {
       try {
         const parsedSettings = JSON.parse(savedSettings);
-        if (parsedSettings.defaultLogoUrl) { // Legacy support for old logo saving
-          userDefaultSellerLogo = parsedSettings.defaultLogoUrl;
-        }
         if (parsedSettings.defaultSellerInfo) {
           userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
-          if (parsedSettings.defaultSellerInfo.logoUrl && !userDefaultSellerLogo) { // Prioritize new structure if available
-             userDefaultSellerLogo = parsedSettings.defaultSellerInfo.logoUrl;
-          }
+        } else if (parsedSettings.defaultLogoUrl) { // Legacy support
+          userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
         }
         if (parsedSettings.defaultCurrency === 'EUR') {
           userDefaultCurrency = parsedSettings.defaultCurrency;
@@ -267,30 +272,28 @@ export default function OfferSheetForm() {
       }
     }
     
-    let initialSellerName = userDefaultSellerInfo?.name || PREDEFINED_SELLER_NAMES[0] || '';
-    let keyForSelect = PREDEFINED_SELLER_NAMES.includes(initialSellerName) ? initialSellerName : OTHER_SELLER_NAME_VALUE;
+    const baseSellerInfo = initialOfferSheetData(userDefaultCurrency).sellerInfo;
 
-    if (!userDefaultSellerInfo?.name && PREDEFINED_SELLER_NAMES.length > 0) {
-        keyForSelect = PREDEFINED_SELLER_NAMES[0];
-        initialSellerName = PREDEFINED_SELLER_NAMES[0];
-    } else if (!userDefaultSellerInfo?.name) { // No default name and no predefined names (edge case)
-        keyForSelect = OTHER_SELLER_NAME_VALUE;
-        initialSellerName = '';
-    }
+    let effectiveSellerName = userDefaultSellerInfo?.name || baseSellerInfo.name;
+    let keyForNameSelect = PREDEFINED_SELLER_NAMES.includes(effectiveSellerName) ? effectiveSellerName : OTHER_SELLER_NAME_VALUE;
     
-    setSelectedSellerNameKey(keyForSelect);
+    let effectiveSellerAddress = userDefaultSellerInfo?.address || baseSellerInfo.address;
+    let keyForAddressSelect = PREDEFINED_SELLER_ADDRESSES.includes(effectiveSellerAddress) ? effectiveSellerAddress : OTHER_SELLER_ADDRESS_VALUE;
+
+    setSelectedSellerNameKey(keyForNameSelect);
+    setSelectedSellerAddressKey(keyForAddressSelect);
 
     setOfferData(prev => ({
       ...initialOfferSheetData(userDefaultCurrency), 
       sellerInfo: {
-        ...initialSellerInfo,
-        logoUrl: userDefaultSellerLogo || initialSellerInfo.logoUrl,
-        name: initialSellerName,
-        address: userDefaultSellerInfo?.address || initialSellerInfo.address,
-        contact: userDefaultSellerInfo?.contact || initialSellerInfo.contact,
+        name: effectiveSellerName,
+        address: effectiveSellerAddress,
+        contact: userDefaultSellerInfo?.contact || baseSellerInfo.contact,
+        logoUrl: userDefaultSellerInfo?.logoUrl || baseSellerInfo.logoUrl,
+        gemhNumber: userDefaultSellerInfo?.gemhNumber || baseSellerInfo.gemhNumber,
       },
       currency: userDefaultCurrency,
-      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
+      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate, // Keep existing VAT rate if form is re-rendering
       products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
     }));
 
@@ -320,7 +323,6 @@ export default function OfferSheetForm() {
     if (value !== OTHER_SELLER_NAME_VALUE) {
       setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: value } }));
     } else {
-      // If "Other" is selected and current name is predefined, clear it for custom input
       if (PREDEFINED_SELLER_NAMES.includes(offerData.sellerInfo.name)) {
         setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: '' } }));
       }
@@ -328,10 +330,27 @@ export default function OfferSheetForm() {
   };
 
   const handleCustomSellerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    // This only applies if selectedSellerNameKey === OTHER_SELLER_NAME_VALUE
     setOfferData(prev => ({
       ...prev,
       sellerInfo: { ...prev.sellerInfo, name: e.target.value },
+    }));
+  };
+
+  const handleSellerAddressSelectionChange = (value: string) => {
+    setSelectedSellerAddressKey(value);
+    if (value !== OTHER_SELLER_ADDRESS_VALUE) {
+      setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, address: value } }));
+    } else {
+      if (PREDEFINED_SELLER_ADDRESSES.includes(offerData.sellerInfo.address)) {
+        setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, address: '' } }));
+      }
+    }
+  };
+
+  const handleCustomSellerAddressChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setOfferData(prev => ({
+      ...prev,
+      sellerInfo: { ...prev.sellerInfo, address: e.target.value },
     }));
   };
 
@@ -591,6 +610,7 @@ export default function OfferSheetForm() {
                 <Label htmlFor="customSellerName" className="text-sm font-normal">{t({ en: 'Custom Seller Name', el: 'Προσαρμοσμένο Όνομα Πωλητή' })}</Label>
                 <Input
                   id="customSellerName"
+                  name="name"
                   value={offerData.sellerInfo.name}
                   onChange={handleCustomSellerNameChange}
                   placeholder={t({ en: "Enter custom seller name", el: "Εισαγάγετε προσαρμοσμένο όνομα πωλητή" })}
@@ -598,14 +618,43 @@ export default function OfferSheetForm() {
               </div>
             )}
           </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="sellerAddressSelect">{t({ en: 'Seller Address', el: 'Διεύθυνση Πωλητή' })}</Label>
+            <Select value={selectedSellerAddressKey} onValueChange={handleSellerAddressSelectionChange}>
+              <SelectTrigger id="sellerAddressSelect">
+                <SelectValue placeholder={t({ en: "Select or type seller address", el: "Επιλέξτε ή πληκτρολογήστε διεύθυνση πωλητή" })} />
+              </SelectTrigger>
+              <SelectContent>
+                {PREDEFINED_SELLER_ADDRESSES.map(addr => (
+                  <SelectItem key={addr} value={addr}>{addr}</SelectItem>
+                ))}
+                <SelectItem value={OTHER_SELLER_ADDRESS_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
+              </SelectContent>
+            </Select>
+            {selectedSellerAddressKey === OTHER_SELLER_ADDRESS_VALUE && (
+              <div className="mt-2 space-y-1">
+                <Label htmlFor="customSellerAddress" className="text-sm font-normal">{t({ en: 'Custom Seller Address', el: 'Προσαρμοσμένη Διεύθυνση Πωλητή' })}</Label>
+                <Textarea
+                  id="customSellerAddress"
+                  name="address"
+                  value={offerData.sellerInfo.address}
+                  onChange={handleCustomSellerAddressChange}
+                  placeholder={t({ en: "123 Business Rd, Suite 400, City, Country", el: "Οδός Επιχείρησης 123, Γραφείο 400, Πόλη, Χώρα" })}
+                />
+              </div>
+            )}
+          </div>
+
            <div className="space-y-2">
             <Label htmlFor="sellerContact">{t({ en: 'Seller Contact (Email/Phone)', el: 'Επικοινωνία Πωλητή (Email/Τηλέφωνο)' })}</Label>
             <Input id="sellerContact" name="contact" value={offerData.sellerInfo.contact} onChange={handleSellerInfoChange} placeholder="sales@yourcompany.com" />
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="sellerAddress">{t({ en: 'Seller Address', el: 'Διεύθυνση Πωλητή' })}</Label>
-            <Textarea id="sellerAddress" name="address" value={offerData.sellerInfo.address} onChange={handleSellerInfoChange} placeholder="123 Business Rd, Suite 400, City, Country" />
+          <div className="space-y-2">
+            <Label htmlFor="sellerGemhNumber">{t({ en: 'Seller ΓΕΜΗ Number', el: 'Αριθμός ΓΕΜΗ Πωλητή' })}</Label>
+            <Input id="sellerGemhNumber" name="gemhNumber" value={offerData.sellerInfo.gemhNumber || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_GEMH} />
           </div>
+
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="logoUpload">{t({ en: 'Seller Logo', el: 'Λογότυπο Πωλητή' })}</Label>
             <div className="flex flex-col items-start space-y-2">
@@ -640,6 +689,10 @@ export default function OfferSheetForm() {
            <div className="space-y-2">
             <Label htmlFor="customerVatNumber">{t({ en: 'Client VAT Number', el: 'ΑΦΜ Πελάτη' })}</Label>
             <Input id="customerVatNumber" name="vatNumber" value={offerData.customerInfo.vatNumber || ''} onChange={handleCustomerInfoChange} placeholder="EL123456789" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="customerGemhNumber">{t({ en: 'Client ΓΕΜΗ Number', el: 'Αριθμός ΓΕΜΗ Πελάτη' })}</Label>
+            <Input id="customerGemhNumber" name="gemhNumber" value={offerData.customerInfo.gemhNumber || ''} onChange={handleCustomerInfoChange} placeholder="123456789012" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="customerContact">{t({ en: 'Client Email', el: 'Email Επικοινωνίας Πελάτη' })}</Label>
