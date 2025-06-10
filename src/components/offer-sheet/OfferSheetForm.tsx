@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language } from '@/lib/types';
+import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language, SettingsData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,9 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PdfPageLayout from './PdfPageLayout'; 
 import ReactDOM from 'react-dom/client';
+import { useSearchParams } from 'next/navigation'; // For loading by ID
+
+const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
 const PREDEFINED_SELLER_NAMES = [
   'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ',
@@ -96,7 +99,7 @@ const initialOfferSheetData = (defaultCurrency: Currency): OfferSheetData => ({
   termsAndConditions: '',
   currency: defaultCurrency,
   vatRate: 0,
-  isFinalPriceVatInclusive: false, // Initialize new field
+  isFinalPriceVatInclusive: false,
 });
 
 
@@ -250,63 +253,118 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
 
 export default function OfferSheetForm() {
   const { t } = useLocalization();
+  const searchParams = useSearchParams();
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const { toast } = useToast();
   const [selectedSellerNameKey, setSelectedSellerNameKey] = React.useState<string>('');
   const [selectedSellerAddressKey, setSelectedSellerAddressKey] = React.useState<string>('');
   const [isFinalPriceVatInclusive, setIsFinalPriceVatInclusive] = React.useState(false);
+  const [currentOfferId, setCurrentOfferId] = React.useState<string | null>(null);
 
 
   React.useEffect(() => {
-    let userDefaultSellerInfo: Partial<SellerInfo> | undefined = undefined;
-    let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY;
-
-    const savedSettings = localStorage.getItem('offerSheetSettings');
-    if (savedSettings) {
-      try {
-        const parsedSettings = JSON.parse(savedSettings);
-        if (parsedSettings.defaultSellerInfo) {
-          userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
-        } else if (parsedSettings.defaultLogoUrl) { // Legacy support for only logo
-          userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
+    const initializeNewOfferSheet = () => {
+      let userDefaultSellerInfo: Partial<SellerInfo> | undefined = undefined;
+      let userDefaultCurrency: Currency = BASE_DEFAULT_CURRENCY;
+      const savedSettingsRaw = localStorage.getItem('offerSheetSettings');
+      
+      if (savedSettingsRaw) {
+        try {
+          const parsedSettings: SettingsData = JSON.parse(savedSettingsRaw);
+          if (parsedSettings.defaultSellerInfo) {
+            userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
+          } else if (parsedSettings.defaultLogoUrl) {
+            userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
+          }
+          if (parsedSettings.defaultCurrency === 'EUR') {
+            userDefaultCurrency = parsedSettings.defaultCurrency;
+          }
+        } catch (error) {
+          console.error("Failed to parse settings from localStorage", error);
         }
-        if (parsedSettings.defaultCurrency === 'EUR') { // Only EUR supported
-          userDefaultCurrency = parsedSettings.defaultCurrency;
-        }
-      } catch (error) {
-        console.error("Failed to parse settings from localStorage", error);
       }
+      
+      const baseInitialData = initialOfferSheetData(userDefaultCurrency);
+      const effectiveSellerInfo = {
+        ...baseInitialData.sellerInfo,
+        ...(userDefaultSellerInfo || {}),
+      };
+
+      setSelectedSellerNameKey(
+        PREDEFINED_SELLER_NAMES.includes(effectiveSellerInfo.name) ? effectiveSellerInfo.name : OTHER_SELLER_NAME_VALUE
+      );
+      setSelectedSellerAddressKey(
+        PREDEFINED_SELLER_ADDRESSES.includes(effectiveSellerInfo.address) ? effectiveSellerInfo.address : OTHER_SELLER_ADDRESS_VALUE
+      );
+      
+      setOfferData({
+        ...baseInitialData,
+        sellerInfo: effectiveSellerInfo,
+        currency: userDefaultCurrency,
+        vatRate: baseInitialData.vatRate, // Retain default or potentially loaded from settings
+        isFinalPriceVatInclusive: baseInitialData.isFinalPriceVatInclusive,
+        products: baseInitialData.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
+      });
+      setIsFinalPriceVatInclusive(baseInitialData.isFinalPriceVatInclusive || false);
+      setCurrentOfferId(null); // Explicitly null for new offers
+    };
+
+    const loadOfferSheet = (id: string) => {
+      setCurrentOfferId(id);
+      const item = localStorage.getItem(OFFER_SHEET_STORAGE_PREFIX + id);
+      if (item) {
+        try {
+          const loadedData: OfferSheetData = JSON.parse(item);
+          
+          // Ensure all nested objects are properly initialized if partially missing in saved data
+          const customerInfo = { ...initialCustomerInfo, ...(loadedData.customerInfo || {}) };
+          const sellerInfo = { ...initialSellerInfo, ...(loadedData.sellerInfo || {}) };
+          const products = (loadedData.products || []).map(p => ({ ...initialProduct, ...p, discountedPriceType: p.discountedPriceType || 'exclusive' }));
+
+          const fullLoadedData: OfferSheetData = {
+            ...initialOfferSheetData(loadedData.currency || BASE_DEFAULT_CURRENCY),
+            ...loadedData,
+            customerInfo,
+            sellerInfo,
+            products,
+            // Dates might be stringified, ensure they are Date objects or undefined
+            validityStartDate: loadedData.validityStartDate ? new Date(loadedData.validityStartDate) : undefined,
+            validityEndDate: loadedData.validityEndDate ? new Date(loadedData.validityEndDate) : undefined,
+          };
+          
+          setOfferData(fullLoadedData);
+
+          setSelectedSellerNameKey(
+            PREDEFINED_SELLER_NAMES.includes(fullLoadedData.sellerInfo.name)
+              ? fullLoadedData.sellerInfo.name
+              : OTHER_SELLER_NAME_VALUE
+          );
+          setSelectedSellerAddressKey(
+            PREDEFINED_SELLER_ADDRESSES.includes(fullLoadedData.sellerInfo.address)
+              ? fullLoadedData.sellerInfo.address
+              : OTHER_SELLER_ADDRESS_VALUE
+          );
+          setIsFinalPriceVatInclusive(fullLoadedData.isFinalPriceVatInclusive || false);
+          toast({ title: t({en: "Offer Sheet Loaded", el: "Το Δελτίο Προσφοράς Φορτώθηκε"}), description: `${t({en: "Loaded offer for", el: "Φορτώθηκε προσφορά για"})} ${fullLoadedData.customerInfo.name || t({en: "Unknown Customer", el: "Άγνωστος Πελάτης"})}.` });
+        } catch (e) {
+          console.error("Failed to parse loaded offer sheet:", e);
+          toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Could not load the offer sheet.", el: "Δεν ήταν δυνατή η φόρτωση του δελτίου προσφοράς."}), variant: "destructive" });
+          initializeNewOfferSheet(); 
+        }
+      } else {
+        toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Offer sheet not found.", el: "Το δελτίο προσφοράς δεν βρέθηκε."}), variant: "destructive" });
+        initializeNewOfferSheet(); 
+      }
+    };
+
+    const offerIdFromUrl = searchParams.get('id');
+    if (offerIdFromUrl) {
+      loadOfferSheet(offerIdFromUrl);
+    } else {
+      initializeNewOfferSheet();
     }
-    
-    const baseSellerInfo = initialOfferSheetData(userDefaultCurrency).sellerInfo;
-
-    let effectiveSellerName = userDefaultSellerInfo?.name || baseSellerInfo.name;
-    let keyForNameSelect = PREDEFINED_SELLER_NAMES.includes(effectiveSellerName) ? effectiveSellerName : OTHER_SELLER_NAME_VALUE;
-    
-    let effectiveSellerAddress = userDefaultSellerInfo?.address || baseSellerInfo.address;
-    let keyForAddressSelect = PREDEFINED_SELLER_ADDRESSES.includes(effectiveSellerAddress) ? effectiveSellerAddress : OTHER_SELLER_ADDRESS_VALUE;
-
-    setSelectedSellerNameKey(keyForNameSelect);
-    setSelectedSellerAddressKey(keyForAddressSelect);
-
-    setOfferData(prev => ({
-      ...initialOfferSheetData(userDefaultCurrency), 
-      sellerInfo: {
-        name: effectiveSellerName,
-        address: effectiveSellerAddress,
-        email: userDefaultSellerInfo?.email || baseSellerInfo.email,
-        phone: userDefaultSellerInfo?.phone || baseSellerInfo.phone,
-        logoUrl: userDefaultSellerInfo?.logoUrl || baseSellerInfo.logoUrl,
-        gemhNumber: userDefaultSellerInfo?.gemhNumber || baseSellerInfo.gemhNumber,
-      },
-      currency: userDefaultCurrency,
-      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
-      isFinalPriceVatInclusive: prev.isFinalPriceVatInclusive === undefined ? false : prev.isFinalPriceVatInclusive,
-      products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
-    }));
-    setIsFinalPriceVatInclusive(offerData.isFinalPriceVatInclusive || false);
-
-  }, []); // Removed offerData.isFinalPriceVatInclusive from dependency array to avoid loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, t]); // toast is stable, t updates with language but initialization should be fine
 
   React.useEffect(() => {
     setOfferData(prev => ({ ...prev, isFinalPriceVatInclusive: isFinalPriceVatInclusive }));
@@ -427,18 +485,14 @@ export default function OfferSheetForm() {
     let grandTotalCalculated = 0;
 
     if (isFinalPriceVatInclusive) {
-        // Grand total is the sum of (discounted prices as entered * quantity)
         grandTotalCalculated = offerData.products.reduce((sum, p) => sum + ((p.discountedPrice || 0) * (p.quantity || 1)), 0);
         
-        // Subtotal (excl. VAT) is backed out from the grand total
         subtotalDiscountedNet = currentVatRateAsDecimal > 0 
             ? grandTotalCalculated / (1 + currentVatRateAsDecimal) 
             : grandTotalCalculated;
         
-        // VAT amount is the difference
         vatAmountCalculated = grandTotalCalculated - subtotalDiscountedNet;
     } else {
-        // Subtotal (excl. VAT) is calculated by summing up net discounted prices (respecting individual product VAT type)
         subtotalDiscountedNet = offerData.products.reduce((sum, p) => {
             let unitDiscountedPrice = p.discountedPrice || 0;
             let priceExclVatForProduct = unitDiscountedPrice;
@@ -448,10 +502,7 @@ export default function OfferSheetForm() {
             return sum + (priceExclVatForProduct * (p.quantity || 1));
         }, 0);
         
-        // VAT amount is calculated on this net subtotal
         vatAmountCalculated = subtotalDiscountedNet * currentVatRateAsDecimal;
-        
-        // Grand total is net subtotal + VAT amount
         grandTotalCalculated = subtotalDiscountedNet + vatAmountCalculated;
     }
 
@@ -472,16 +523,21 @@ export default function OfferSheetForm() {
     e.preventDefault();
     const offerDataWithTotalsAndFlag = {
         ...offerData,
-        isFinalPriceVatInclusive: isFinalPriceVatInclusive, // Ensure the latest checkbox state is saved
+        isFinalPriceVatInclusive: isFinalPriceVatInclusive,
         calculatedTotals: currentCalculatedTotals,
     };
-    console.log("Offer Sheet Data:", offerDataWithTotalsAndFlag);
-    localStorage.setItem(`offerSheet-${Date.now()}`, JSON.stringify(offerDataWithTotalsAndFlag));
+    
+    const saveId = currentOfferId || Date.now().toString();
+    localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataWithTotalsAndFlag));
+
     toast({
-      title: t({ en: "Offer Sheet Saved (Simulated)", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε (Προσομοίωση)" }),
-      description: t({ en: "Your offer sheet data has been logged and saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς καταγράφηκαν και αποθηκεύτηκαν στο localStorage." }),
+      title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }),
+      description: t({ en: "Your offer sheet data has been saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν στο localStorage." }),
       variant: "default",
     });
+    if (!currentOfferId) { // If it was a new offer, set its ID now
+        setCurrentOfferId(saveId);
+    }
   };
   
   const triggerDownload = (dataUrl: string, filename: string) => {
@@ -501,7 +557,6 @@ export default function OfferSheetForm() {
 
     toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
 
-    // Pass the latest isFinalPriceVatInclusive state to PdfPageLayout
     const currentOfferDataForPdf = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
 
 
@@ -521,12 +576,12 @@ export default function OfferSheetForm() {
       root.render(
         <React.StrictMode> 
           <PdfPageLayout
-            offerData={currentOfferDataForPdf} // Use updated offerData for PDF
+            offerData={currentOfferDataForPdf}
             productsOnPage={productsOnPage}
             pageNum={pageNum}
             totalPages={totalPages}
             currencySymbol={currentCurrencySymbol}
-            calculatedTotals={currentCalculatedTotals} // These totals are already correct
+            calculatedTotals={currentCalculatedTotals}
             creationDate={creationDate}
             t={t}
           />
@@ -775,11 +830,17 @@ export default function OfferSheetForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="validityStartDate">{t({ en: 'Offer Valid From', el: 'Έναρξη Ισχύος Προσφοράς' })}</Label>
-            <DatePicker date={offerData.validityStartDate} onDateChange={(date) => setOfferData({ ...offerData, validityStartDate: date })} />
+            <DatePicker 
+              date={offerData.validityStartDate ? new Date(offerData.validityStartDate) : undefined} 
+              onDateChange={(date) => setOfferData({ ...offerData, validityStartDate: date })} 
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="validityEndDate">{t({ en: 'Offer Valid Until', el: 'Λήξη Ισχύος Προσφοράς' })}</Label>
-            <DatePicker date={offerData.validityEndDate} onDateChange={(date) => setOfferData({ ...offerData, validityEndDate: date })} />
+            <DatePicker 
+              date={offerData.validityEndDate ? new Date(offerData.validityEndDate) : undefined} 
+              onDateChange={(date) => setOfferData({ ...offerData, validityEndDate: date })} 
+            />
           </div>
         </CardContent>
       </Card>

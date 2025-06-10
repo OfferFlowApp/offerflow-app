@@ -4,46 +4,70 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2 } from 'lucide-react'; 
+import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useState, useEffect, useMemo } from 'react';
+import type { OfferSheetData } from '@/lib/types';
+
+const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
+
+interface DisplayOfferInfo {
+  id: string; // Timestamp from localStorage key
+  customerName: string;
+  customerCompany?: string;
+  customerContact?: string;
+  formattedDate: string;
+  offerSheetName: string; // Derived name for the offer
+}
 
 export default function HomePage() {
   const { t, language } = useLocalization(); 
-
-  // Updated to have non-localized names to show persistence
-  const lastProjectsStaticData = useMemo(() => [
-    { id: 'proj1', name: 'Johnson Property Offer', date: '2023-05-15' }, // Example in English
-    { id: 'proj2', name: 'Προσφορά Διαμερίσματος Lakeside', date: '2023-04-28' }, // Example in Greek
-    { id: 'proj3', name: 'Downtown Loft Offer', date: '2023-03-12' },
-    { id: 'proj4', name: 'Angebot für Riverfront Anwesen', date: '2023-02-05' }, // Example in German
-  ], []);
-
-  const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
+  const [recentOffers, setRecentOffers] = useState<DisplayOfferInfo[]>([]);
 
   useEffect(() => {
-    const newFormattedDates: Record<string, string> = {};
-    lastProjectsStaticData.forEach(project => {
-      newFormattedDates[project.id] = new Date(project.date).toLocaleDateString(language, { // Date formatting still uses current app language
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    });
-    setFormattedDates(newFormattedDates);
-  }, [language, lastProjectsStaticData]);
+    if (typeof window !== 'undefined') {
+      const loadedOffers: DisplayOfferInfo[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(OFFER_SHEET_STORAGE_PREFIX)) {
+          try {
+            const item = localStorage.getItem(key);
+            if (item) {
+              const offerData: OfferSheetData = JSON.parse(item);
+              const timestampStr = key.substring(OFFER_SHEET_STORAGE_PREFIX.length);
+              const timestamp = parseInt(timestampStr, 10);
 
-
-  const projectsToDisplay = useMemo(() => {
-    return lastProjectsStaticData.map(p => ({
-      ...p,
-      // Name is now directly used, not translated by t()
-      formattedDate: formattedDates[p.id] || '...', 
-    }));
-  }, [lastProjectsStaticData, formattedDates]);
+              if (!isNaN(timestamp)) {
+                const date = new Date(timestamp);
+                const offerSheetName = offerData.customerInfo.name || offerData.customerInfo.company || t({en: "Unnamed Offer", el: "Ανώνυμη Προσφορά"});
+                
+                loadedOffers.push({
+                  id: timestampStr,
+                  customerName: offerData.customerInfo.name,
+                  customerCompany: offerData.customerInfo.company,
+                  customerContact: offerData.customerInfo.contact,
+                  formattedDate: date.toLocaleDateString(language, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  }),
+                  offerSheetName: offerSheetName,
+                });
+              }
+            }
+          } catch (e) {
+            console.error("Failed to parse offer sheet from localStorage:", key, e);
+          }
+        }
+      }
+      // Sort by most recent first
+      loadedOffers.sort((a, b) => parseInt(b.id, 10) - parseInt(a.id, 10));
+      setRecentOffers(loadedOffers.slice(0, 5)); // Show latest 5, for example
+    }
+  }, [language, t]);
 
 
   return (
@@ -66,24 +90,37 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-6 text-center text-muted-foreground">
             {t({ en: 'Recent Offer Sheets', el: 'Πρόσφατες Προσφορές' })}
           </h2>
-          {projectsToDisplay.length > 0 ? (
+          {recentOffers.length > 0 ? (
             <div className="space-y-4 max-w-2xl mx-auto">
-              {projectsToDisplay.map((project) => (
-                <Link href={`/offer-sheet/edit?id=${project.id}`} key={project.id} className="block">
+              {recentOffers.map((offer) => (
+                <Link href={`/offer-sheet/edit?id=${offer.id}`} key={offer.id} className="block">
                   <Card className="hover:shadow-lg transition-shadow duration-300 group bg-card rounded-xl border">
                     <CardContent className="p-5 flex items-center justify-between">
-                      <div>
-                        {/* Use project.name directly */}
-                        <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">{project.name}</h3>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex-grow overflow-hidden">
+                        <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors truncate" title={offer.offerSheetName}>
+                          {offer.offerSheetName}
+                        </h3>
+                        {offer.customerCompany && offer.customerCompany !== offer.customerName && (
+                          <p className="text-sm text-muted-foreground flex items-center">
+                            <Briefcase className="h-4 w-4 mr-2 shrink-0" />
+                            <span className="truncate" title={offer.customerCompany}>{offer.customerCompany}</span>
+                          </p>
+                        )}
+                         {!offer.customerCompany && offer.customerName && (
+                            <p className="text-sm text-muted-foreground flex items-center">
+                                <User className="h-4 w-4 mr-2 shrink-0" />
+                                <span className="truncate" title={offer.customerName}>{offer.customerName}</span>
+                            </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
                           {t({ en: 'Created on', el: 'Δημιουργήθηκε στις' })}{' '}
-                          {project.formattedDate}
+                          {offer.formattedDate}
                         </p>
                       </div>
                       <Button
                         variant="default"
                         size="icon"
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-10 w-10 shrink-0 shadow"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-10 w-10 shrink-0 shadow ml-4"
                         aria-label={t({ en: 'Open offer', el: 'Άνοιγμα προσφοράς' })}
                       >
                         <ChevronRight className="h-5 w-5" />
