@@ -21,7 +21,7 @@ interface PdfPageLayoutProps {
   t: (translations: { [key in Language]?: string } | string, fallback?: string) => string;
 }
 
-const PdfPageLayout = ({
+const PdfPageLayout: React.FC<PdfPageLayoutProps> = ({
   offerData,
   productsOnPage,
   pageNum,
@@ -30,7 +30,7 @@ const PdfPageLayout = ({
   calculatedTotals,
   creationDate,
   t,
-}: PdfPageLayoutProps): JSX.Element => {
+}) => {
   const { 
     customerInfo, 
     sellerInfo, 
@@ -60,6 +60,7 @@ const PdfPageLayout = ({
                width={120} 
                height={60} 
                className="max-h-20 object-contain mb-2"
+               data-ai-hint="company logo"
              />
           ) : (
             <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
@@ -122,6 +123,7 @@ const PdfPageLayout = ({
                                   width={80} 
                                   height={80} 
                                   className="w-full h-auto object-contain max-h-20 border" 
+                                  data-ai-hint="product image"
                                 />
                                 ) : (
                                 <div className="w-full h-20 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
@@ -175,5 +177,3 @@ const PdfPageLayout = ({
 };
 
 export default PdfPageLayout;
-
-    
