@@ -1,10 +1,11 @@
+
 "use client";
 
 import type { ChangeEvent } from 'react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Save, Euro, DollarSign, PoundSterling } from 'lucide-react';
+import { Save, Euro } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import type { SettingsData, Currency } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,8 +13,6 @@ import { useLocalization } from '@/hooks/useLocalization';
 
 const currencyOptions: { value: Currency, label: string, IconComponent: React.ElementType }[] = [
   { value: 'EUR', label: 'Euro (€)', IconComponent: Euro },
-  { value: 'USD', label: 'US Dollar ($)', IconComponent: DollarSign },
-  { value: 'GBP', label: 'British Pound (£)', IconComponent: PoundSterling },
 ];
 
 export default function DefaultCurrencySettings() {
@@ -23,20 +22,22 @@ export default function DefaultCurrencySettings() {
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('offerSheetSettings');
+    let newDefaultCurrency: Currency = 'EUR'; // Default to EUR
     if (savedSettings) {
       const parsedSettings: SettingsData = JSON.parse(savedSettings);
-      if (parsedSettings.defaultCurrency) {
-        setDefaultCurrency(parsedSettings.defaultCurrency);
-      } else {
-        setDefaultCurrency('EUR'); // Default to EUR if not set
+      // If a default currency is saved and it's EUR, use it. Otherwise, stick to EUR.
+      if (parsedSettings.defaultCurrency === 'EUR') {
+        newDefaultCurrency = parsedSettings.defaultCurrency;
       }
-    } else {
-        setDefaultCurrency('EUR'); // Default to EUR if no settings yet
     }
+    setDefaultCurrency(newDefaultCurrency);
   }, []);
 
   const handleCurrencyChange = (value: string) => {
-    setDefaultCurrency(value as Currency);
+    // Only EUR is an option
+    if (value === 'EUR') {
+      setDefaultCurrency(value as Currency);
+    }
   };
 
   const handleSaveSettings = () => {
@@ -45,7 +46,9 @@ export default function DefaultCurrencySettings() {
     if (savedSettings) {
       currentSettings = JSON.parse(savedSettings);
     }
-    const settingsToSave: SettingsData = { ...currentSettings, defaultCurrency };
+    // Ensure only EUR is saved if defaultCurrency is somehow undefined, or stick to selected EUR
+    const currencyToSave = defaultCurrency === 'EUR' ? 'EUR' : 'EUR'; 
+    const settingsToSave: SettingsData = { ...currentSettings, defaultCurrency: currencyToSave };
     localStorage.setItem('offerSheetSettings', JSON.stringify(settingsToSave));
     toast({
       title: t({ en: "Settings Saved", el: "Οι ρυθμίσεις αποθηκεύτηκαν" }),

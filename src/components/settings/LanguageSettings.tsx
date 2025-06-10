@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Save } from 'lucide-react'; // Removed Languages icon as it's not used here
+import { Save } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import type { SettingsData, Language } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,8 +14,6 @@ import { useLocalization } from '@/hooks/useLocalization';
 const languageOptions: { value: Language, label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'el', label: 'Ελληνικά (Greek)' },
-  { value: 'de', label: 'Deutsch (German)' },
-  { value: 'fr', label: 'Français (French)' },
 ];
 
 export default function LanguageSettings() {
@@ -52,7 +50,6 @@ export default function LanguageSettings() {
       description: t({ en: "Your preferred language has been updated.", el: "Η προτιμώμενη γλώσσα σας ενημερώθηκε." }),
       variant: "default",
     });
-    // The reload is handled by setAppLanguage now
   };
   
   if (!selectedLanguage) {

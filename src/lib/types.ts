@@ -1,6 +1,6 @@
 
-export type Currency = 'EUR' | 'USD' | 'GBP';
-export type Language = 'en' | 'el' | 'de' | 'fr';
+export type Currency = 'EUR';
+export type Language = 'en' | 'el';
 export type Theme = 'light' | 'dark';
 
 export interface Product {
@@ -53,4 +53,3 @@ export interface SettingsData {
   preferredLanguage?: Language;
   localProfile?: LocalUserProfile; // Can store the local profile here too if combined
 }
-

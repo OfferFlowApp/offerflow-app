@@ -18,14 +18,14 @@ export default function SettingsPage() {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-10 text-center font-headline text-primary">
-           {t({ en: "Application Settings", el: "Ρυθμίσεις Εφαρμογής", de: "Anwendungseinstellungen", fr: "Paramètres de l'application"})}
+           {t({ en: "Application Settings", el: "Ρυθμίσεις Εφαρμογής"})}
         </h1>
         <div className="max-w-2xl mx-auto space-y-8">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">{t({ en: "Branding Settings", el: "Ρυθμίσεις Επωνυμίας", de: "Branding-Einstellungen", fr: "Paramètres de Marque" })}</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Branding Settings", el: "Ρυθμίσεις Επωνυμίας" })}</CardTitle>
               <CardDescription>
-                {t({ en: "Set a default logo that will be automatically added to new offer sheets.", el: "Ορίστε ένα προεπιλεγμένο λογότυπο που θα προστίθεται αυτόματα σε νέα δελτία προσφοράς.", de: "Legen Sie ein Standardlogo fest, das automatisch zu neuen Angebotsblättern hinzugefügt wird.", fr: "Définissez un logo par défaut qui sera automatiquement ajouté aux nouvelles fiches d'offre." })}
+                {t({ en: "Set a default logo that will be automatically added to new offer sheets.", el: "Ορίστε ένα προεπιλεγμένο λογότυπο που θα προστίθεται αυτόματα σε νέα δελτία προσφοράς." })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -37,9 +37,9 @@ export default function SettingsPage() {
 
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">{t({ en: "Localization", el: "Τοπικοποίηση", de: "Lokalisierung", fr: "Localisation" })}</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Localization", el: "Τοπικοποίηση" })}</CardTitle>
               <CardDescription>
-                {t({ en: "Set your preferred language and default currency.", el: "Ορίστε την προτιμώμενη γλώσσα και το προεπιλεγμένο νόμισμά σας.", de: "Stellen Sie Ihre bevorzugte Sprache und Standardwährung ein.", fr: "Définissez votre langue préférée et votre devise par défaut." })}
+                {t({ en: "Set your preferred language and default currency.", el: "Ορίστε την προτιμώμενη γλώσσα και το προεπιλεγμένο νόμισμά σας." })}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -53,9 +53,9 @@ export default function SettingsPage() {
 
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">{t({ en: "Subscription & Billing (Placeholder)", el: "Συνδρομή & Χρέωση (Placeholder)", de: "Abonnement & Abrechnung (Platzhalter)", fr: "Abonnement & Facturation (Placeholder)" })}</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Subscription & Billing (Placeholder)", el: "Συνδρομή & Χρέωση (Placeholder)" })}</CardTitle>
               <CardDescription>
-                {t({ en: "Manage your subscription plan and billing details. (This section is a non-functional placeholder).", el: "Διαχειριστείτε το πρόγραμμα συνδρομής και τα στοιχεία χρέωσής σας. (Αυτή η ενότητα είναι ένας μη λειτουργικός placeholder).", de: "Verwalten Sie Ihren Abonnementplan und Ihre Rechnungsdetails. (Dieser Abschnitt ist ein nicht funktionsfähiger Platzhalter).", fr: "Gérez votre plan d'abonnement et vos informations de facturation. (Cette section est un espace réservé non fonctionnel)." })}
+                {t({ en: "Manage your subscription plan and billing details. (This section is a non-functional placeholder).", el: "Διαχειριστείτε το πρόγραμμα συνδρομής και τα στοιχεία χρέωσής σας. (Αυτή η ενότητα είναι ένας μη λειτουργικός placeholder)." })}
               </CardDescription>
             </CardHeader>
             <CardContent>

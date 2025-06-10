@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Language } from '@/lib/types';
 
 const DEFAULT_LANGUAGE: Language = 'en';
-const SUPPORTED_LANGUAGES: Language[] = ['en', 'el', 'de', 'fr'];
+const SUPPORTED_LANGUAGES: Language[] = ['en', 'el'];
 
 export function useLocalization() {
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
@@ -42,11 +42,24 @@ export function useLocalization() {
         return translations;
       }
       
-      return translations[language] || translations[DEFAULT_LANGUAGE] || fallback || 'Translation N/A';
+      // Attempt to get translation for current language
+      let translation = translations[language];
+      
+      // Fallback to default language if current language translation is missing
+      if (translation === undefined) {
+        translation = translations[DEFAULT_LANGUAGE];
+      }
+      
+      // Fallback to the 'en' key if it exists and default language also missing
+      if (translation === undefined && translations.en) {
+        translation = translations.en;
+      }
+
+      // Final fallback
+      return translation || fallback || 'Translation N/A';
     },
     [language] // t function updates if language state changes
   );
 
   return { language, setAppLanguage, t, supportedLanguages: SUPPORTED_LANGUAGES };
 }
-
