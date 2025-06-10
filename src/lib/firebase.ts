@@ -1,78 +1,59 @@
 
-import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-// import { getFirestore } from 'firebase/firestore';
-// import { getStorage } from 'firebase/storage';
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:4007764419.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:2211470066.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:2345893357.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:3533030798.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:3441666344.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:454443529.
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:343169924.
 
-const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  // measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // Optional
+// Firebase is currently not configured for this application.
+// All Firebase services are non-functional.
+
+// Mock Firebase services
+const mockAuth = {
+  onAuthStateChanged: (): (() => void) => {
+    // Immediately call the callback with null user and set loading to false
+    // This simulates the behavior of Firebase when no user is logged in.
+    // In a real scenario, the callback provided to onAuthStateChanged would be called.
+    // For this mock, we assume the callback is (user) => { setCurrentUser(user); setLoading(false); }
+    // So, we effectively do nothing as AuthContext will handle initial state.
+    return () => {}; // Return an unsubscribe function
+  },
+  signOut: async (): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      console.warn("Firebase Auth: signOut called, but Firebase is disabled.");
+    }
+  },
+  createUserWithEmailAndPassword: async (): Promise<{ user: null }> => {
+     if (typeof window !== 'undefined') {
+      console.warn("Firebase Auth: createUserWithEmailAndPassword called, but Firebase is disabled.");
+    }
+    return { user: null };
+  },
+  signInWithEmailAndPassword: async (): Promise<{ user: null }> => {
+    if (typeof window !== 'undefined') {
+      console.warn("Firebase Auth: signInWithEmailAndPassword called, but Firebase is disabled.");
+    }
+    return { user: null };
+  },
 };
 
-// Environment variable validation
-const requiredEnvVars = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
-  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-  'NEXT_PUBLIC_FIREBASE_APP_ID',
-];
+const mockDb = {}; 
+const mockStorage = {}; 
+const mockApp = {}; 
 
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+export const app = mockApp;
+// Cast to any to satisfy consumers that expect a Firebase Auth object
+export const auth = mockAuth as any; 
+export const db = mockDb as any;
+export const storage = mockStorage as any;
 
-if (missingEnvVars.length > 0 && typeof window !== 'undefined') { // Only run this check client-side or be careful with server components
-  console.error(
-    `CRITICAL FIREBASE CONFIG ERROR: The following required environment variables are MISSING or UNDEFINED: \n    - ${missingEnvVars.join(
-      '\n    - '
-    )}`
+if (typeof window !== 'undefined') {
+  console.warn(
+    "FIREBASE DISABLED: Firebase is not being initialized. " +
+    "Authentication, Firestore, and Storage services will not function. " +
+    "Data will be saved locally where applicable. " +
+    "To enable Firebase, ensure '.env.local' is correctly configured with your Firebase project credentials and restart the server."
   );
-  // Optionally, throw an error or display a more prominent message to the user
-  // For now, we'll let the app try to initialize and potentially fail more gracefully later,
-  // but this console error is important.
 }
-
-if (missingEnvVars.length > 0 && process.env.NODE_ENV !== 'production' && typeof window === 'undefined') {
-    // During build or server-side rendering, if critical vars are missing, it's a problem.
-    // In a real app, you might throw here to fail the build if not in a Vercel-like env where env vars are set differently.
-    // For now, this specific error is thrown client-side in AuthContext or if Firebase fails to init.
-}
-
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-// const db = getFirestore(app);
-// const storage = getStorage(app);
-
-// Check if all required config values are present for Firebase to initialize
-// This is a more direct check after trying to read process.env
-const configValues = [
-  firebaseConfig.apiKey,
-  firebaseConfig.authDomain,
-  firebaseConfig.projectId,
-  firebaseConfig.storageBucket,
-  firebaseConfig.messagingSenderId,
-  firebaseConfig.appId,
-];
-
-if (configValues.some(value => !value) && typeof window !== 'undefined') {
-   // This error will be more visible to the user.
-   throw new Error(
-     `CRITICAL FIREBASE CONFIG ERROR: The following required environment variables are MISSING or UNDEFINED: 
-    ${missingEnvVars.join('\n    - ')}
-
-    Please ensure ALL these variables are correctly set in your '.env.local' file, located in the project root directory. 
-    You can find these values in your Firebase project settings (Project Settings > General > Your apps > Web app config).
-    
-    IMPORTANT: After adding or modifying the '.env.local' file, YOU MUST RESTART your Next.js development server for changes to take effect.`
-   );
-}
-
-
-export { app, auth };
-// export { app, auth, db, storage };
