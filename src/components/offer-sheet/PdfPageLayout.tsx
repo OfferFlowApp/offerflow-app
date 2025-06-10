@@ -18,6 +18,7 @@ interface PdfPageLayoutProps {
     grandTotal: number;
   };
   creationDate: string;
+  t: (translations: { [key in 'en' | 'el']?: string } | string, fallback?: string) => string;
 }
 
 const PdfPageLayout: FC<PdfPageLayoutProps> = ({
@@ -28,96 +29,122 @@ const PdfPageLayout: FC<PdfPageLayoutProps> = ({
   currencySymbol,
   calculatedTotals,
   creationDate,
+  t,
 }) => {
-  const { customerInfo, sellerInfo, validityStartDate, validityEndDate, termsAndConditions } = offerData;
+  const { customerInfo, sellerInfo, validityStartDate, validityEndDate, termsAndConditions, vatRate } = offerData;
 
   return (
     <div
       className="bg-white text-black p-6 font-['Roboto']"
-      style={{ width: '210mm', minHeight: '297mm', display: 'flex', flexDirection: 'column' }}
+      style={{ width: '210mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', fontFamily: 'Roboto, sans-serif' }}
     >
       {/* Header */}
       <header className="flex justify-between items-start pb-4 border-b border-gray-300">
         <div className="w-2/5">
-          <Image src="/offerflow-logo.png" alt="OfferFlow" width={150} height={36} className="mb-2" data-ai-hint="app logo"/>
-          <p className="text-xs italic mb-3">Work Faster-Sell Smarter</p>
-          {sellerInfo.logoUrl && (
-            <Image src={sellerInfo.logoUrl} alt="Seller Logo" width={100} height={50} className="max-h-16 object-contain mb-2 border p-1" data-ai-hint="company logo"/>
+          {sellerInfo.logoUrl ? (
+             <Image src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} width={120} height={60} className="max-h-20 object-contain mb-2" data-ai-hint="company logo"/>
+          ) : (
+            <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
+                {t({en: "No Logo", el: "Χωρίς Λογότυπο"})}
+            </div>
           )}
            <div className="text-xs mt-1">
-            <p className="font-bold">{sellerInfo.name || 'Your Company Name'}</p>
-            <p>{sellerInfo.address || '123 Seller St, City'}</p>
-            <p>{sellerInfo.contact || 'seller@example.com'}</p>
+            <p className="font-bold text-sm">{sellerInfo.name || t({en: 'Your Company Name', el: 'Όνομα Εταιρείας'})}</p>
+            <p className="whitespace-pre-line">{sellerInfo.address || t({en: '123 Seller St, City', el: 'Οδός Πωλητή 123, Πόλη'})}</p>
+            <p>{sellerInfo.contact || t({en: 'seller@example.com', el: 'seller@example.com'})}</p>
           </div>
         </div>
 
-        <div className="w-2/5 text-xs">
-          <h2 className="font-bold mb-1 text-sm">Client Information</h2>
-          <p><span className="font-semibold">Name:</span> {customerInfo.name}</p>
-          <p><span className="font-semibold">Company:</span> {customerInfo.company}</p>
-          <p><span className="font-semibold">VAT Number:</span> {customerInfo.vatNumber}</p>
-          <p><span className="font-semibold">Email:</span> {customerInfo.contact}</p>
-          {/* <p><span className="font-semibold">Phone:</span> {customerInfo.phone}</p> Assuming contact field is email/main phone */}
-          {customerInfo.phone2 && <p><span className="font-semibold">Phone 2:</span> {customerInfo.phone2}</p>}
-          <p><span className="font-semibold">Address:</span> {customerInfo.address}</p>
+        <div className="w-2/5 text-xs pl-2">
+          <h2 className="font-bold mb-1 text-sm">{t({en: "Client Information", el: "Στοιχεία Πελάτη"})}</h2>
+          <p><span className="font-semibold">{t({en: "Name:", el: "Όνομα:"})}</span> {customerInfo.name}</p>
+          {customerInfo.company && <p><span className="font-semibold">{t({en: "Company:", el: "Εταιρεία:"})}</span> {customerInfo.company}</p>}
+          {customerInfo.vatNumber && <p><span className="font-semibold">{t({en: "VAT No.:", el: "ΑΦΜ:"})}</span> {customerInfo.vatNumber}</p>}
+          {customerInfo.contact && <p><span className="font-semibold">{t({en: "Email:", el: "Email:"})}</span> {customerInfo.contact}</p>}
+          {customerInfo.phone2 && <p><span className="font-semibold">{t({en: "Phone:", el: "Τηλέφωνο:"})}</span> {customerInfo.phone2}</p>}
+          {customerInfo.address && <p className="whitespace-pre-line"><span className="font-semibold">{t({en: "Address:", el: "Διεύθυνση:"})}</span> {customerInfo.address}</p>}
         </div>
 
         <div className="w-1/5 text-xs text-right">
-          <p className="font-bold text-sm mb-2">Page {pageNum}/{totalPages}</p>
-          <p>Date: {creationDate}</p>
-          {validityStartDate && <p>Valid From: {new Date(validityStartDate).toLocaleDateString()}</p>}
-          {validityEndDate && <p>Valid Until: {new Date(validityEndDate).toLocaleDateString()}</p>}
+          <h1 className="font-bold text-lg mb-2 uppercase">{t({en: "Offer", el: "Προσφορά"})}</h1>
+          <p>{t({en: "Date:", el: "Ημερομηνία:"})} {creationDate}</p>
+          {validityStartDate && <p>{t({en: "Valid From:", el: "Ισχύει από:"})} {new Date(validityStartDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}))}</p>}
+          {validityEndDate && <p>{t({en: "Valid Until:", el: "Ισχύει έως:"})} {new Date(validityEndDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}))}</p>}
+           <p className="font-semibold mt-2">{t({en: "Page", el: "Σελίδα"})} {pageNum} / {totalPages}</p>
         </div>
       </header>
 
-      {/* Products */}
+      {/* Products Table */}
       <main className="flex-grow py-4">
-        {productsOnPage.map((product) => (
-          <div key={product.id} className="flex mb-3 pb-3 border-b border-gray-200 last:border-b-0">
-            <div className="w-1/4 pr-3">
-              {product.imageUrl ? (
-                <Image src={product.imageUrl} alt={product.title} width={100} height={100} className="w-full h-auto object-contain max-h-28 border" data-ai-hint="product image" />
-              ) : (
-                <div className="w-full h-28 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
-                  No Image
-                </div>
-              )}
-            </div>
-            <div className="w-3/4">
-              <h3 className="font-bold text-base mb-1">{product.title}</h3>
-              <p className="text-xs mb-2 whitespace-pre-line">{product.description}</p>
-              <div className="grid grid-cols-3 text-xs items-center">
-                <span>Qty: {product.quantity}</span>
-                <span>Price/Unit: {currencySymbol}{product.discountedPrice.toFixed(2)}</span>
-                <span className="font-bold text-right">Total: {currencySymbol}{(product.quantity * product.discountedPrice).toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+        <table className="w-full border-collapse text-xs">
+            <thead>
+                <tr className="border-b border-gray-400">
+                    <th className="w-1/6 text-left font-bold p-1">{t({en: "Image", el: "Εικόνα"})}</th>
+                    <th className="w-2/6 text-left font-bold p-1">{t({en: "Product / Description", el: "Προϊόν / Περιγραφή"})}</th>
+                    <th className="w-1/12 text-center font-bold p-1">{t({en: "Qty", el: "Ποσ."})}</th>
+                    <th className="w-1/6 text-right font-bold p-1">{t({en: "Unit Price", el: "Τιμή Μον."})} ({currencySymbol})</th>
+                    <th className="w-1/6 text-right font-bold p-1">{t({en: "Total Price", el: "Συνολ. Τιμή"})} ({currencySymbol})</th>
+                </tr>
+            </thead>
+            <tbody>
+                {productsOnPage.map((product) => {
+                    const unitPriceToDisplay = product.discountedPriceType === 'inclusive' && vatRate && vatRate > 0
+                        ? product.discountedPrice / (1 + vatRate / 100)
+                        : product.discountedPrice;
+                    const lineTotal = (product.quantity || 1) * unitPriceToDisplay;
+
+                    return (
+                        <tr key={product.id} className="border-b border-gray-200 align-top">
+                            <td className="p-1">
+                                {product.imageUrl ? (
+                                <Image src={product.imageUrl} alt={product.title} width={80} height={80} className="w-full h-auto object-contain max-h-20 border" data-ai-hint="product image" />
+                                ) : (
+                                <div className="w-full h-20 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
+                                    {t({en: "No Image", el: "Χωρίς Εικόνα"})}
+                                </div>
+                                )}
+                            </td>
+                            <td className="p-1">
+                                <h3 className="font-bold text-sm mb-0.5">{product.title}</h3>
+                                <p className="text-xs whitespace-pre-line">{product.description}</p>
+                            </td>
+                            <td className="text-center p-1">{product.quantity}</td>
+                            <td className="text-right p-1">{unitPriceToDisplay.toFixed(2)}</td>
+                            <td className="text-right p-1 font-semibold">{lineTotal.toFixed(2)}</td>
+                        </tr>
+                    );
+                })}
+            </tbody>
+        </table>
       </main>
 
       {/* Footer - Only on last page */}
       {pageNum === totalPages && (
         <footer className="pt-4 border-t border-gray-300 text-xs mt-auto">
           <div className="flex justify-between">
-            <div className="w-3/5 pr-2">
-              <h4 className="font-bold mb-1 text-sm">Comments / Terms & Conditions:</h4>
-              <p className="whitespace-pre-line">{termsAndConditions}</p>
+            <div className="w-3/5 pr-4">
+              <h4 className="font-bold mb-1 text-sm">{t({en: "Comments / Terms & Conditions:", el: "Σχόλια / Όροι & Προϋποθέσεις:"})}</h4>
+              <p className="whitespace-pre-line text-xs">{termsAndConditions}</p>
             </div>
-            <div className="w-2/5 text-right">
-              <p>Original Total Price: {currencySymbol}{calculatedTotals.totalOriginalPrice.toFixed(2)}</p>
-              <p className="font-bold text-sm">Discounted Total Price (excl. VAT): {currencySymbol}{calculatedTotals.subtotalDiscounted.toFixed(2)}</p>
-              {offerData.vatRate !== undefined && offerData.vatRate > 0 && (
+            <div className="w-2/5 text-right text-xs">
+              <p>{t({en: "Total Original (Excl. VAT):", el: "Συνολική Αρχική (Εκτός ΦΠΑ):"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.totalOriginalPrice.toFixed(2)}</span></p>
+              <p className="font-bold">{t({en: "Subtotal (Excl. VAT):", el: "Μερικό Σύνολο (Εκτός ΦΠΑ):"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.subtotalDiscounted.toFixed(2)}</span></p>
+              {vatRate !== undefined && vatRate > 0 && (
                 <>
-                  <p>VAT ({offerData.vatRate}%): {currencySymbol}{calculatedTotals.vatAmount.toFixed(2)}</p>
-                  <p className="font-bold text-base">Grand Total (incl. VAT): {currencySymbol}{calculatedTotals.grandTotal.toFixed(2)}</p>
+                  <p>{t({en: "VAT", el: "ΦΠΑ"})} ({vatRate}%): <span className="font-semibold">{currencySymbol}{calculatedTotals.vatAmount.toFixed(2)}</span></p>
+                  <p className="font-bold text-sm mt-1">{t({en: "Grand Total (Incl. VAT):", el: "Γενικό Σύνολο (Με ΦΠΑ):"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.grandTotal.toFixed(2)}</span></p>
                 </>
               )}
+               {vatRate === undefined || vatRate === 0 && (
+                 <p className="font-bold text-sm mt-1">{t({en: "Grand Total:", el: "Γενικό Σύνολο:"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.grandTotal.toFixed(2)}</span></p>
+               )}
             </div>
+          </div>
+           <div className="text-center mt-6 text-gray-500 text-[10px]">
+             {t({en: "Thank you for your business!", el: "Ευχαριστούμε για την προτίμησή σας!"})}
           </div>
         </footer>
       )}
-       {/* Ensure content pushes footer down if page is not full, but only if it's not the last page potentially */}
        {pageNum !== totalPages && <div style={{ flexGrow: 1 }}></div>}
     </div>
   );

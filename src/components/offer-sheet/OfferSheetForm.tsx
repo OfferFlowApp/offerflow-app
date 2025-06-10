@@ -28,6 +28,14 @@ import html2canvas from 'html2canvas';
 import PdfPageLayout from './PdfPageLayout'; // Import the new layout component
 import ReactDOM from 'react-dom/client';
 
+const PREDEFINED_SELLER_NAMES = [
+  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ',
+  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - MEDIA STROM',
+  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - DROMEAS',
+  'GIORGARAS FURNITURE',
+];
+const OTHER_SELLER_NAME_VALUE = 'other_seller_name';
+
 
 const initialProduct: Product = {
   id: '',
@@ -50,7 +58,7 @@ const initialCustomerInfo: CustomerInfo = {
 };
 
 const initialSellerInfo: SellerInfo = {
-  name: '',
+  name: PREDEFINED_SELLER_NAMES[0] || '', // Default to first predefined or empty
   address: '',
   contact: '',
   logoUrl: undefined,
@@ -230,6 +238,8 @@ export default function OfferSheetForm() {
   const { t } = useLocalization();
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const { toast } = useToast();
+  const [selectedSellerNameKey, setSelectedSellerNameKey] = React.useState<string>('');
+
 
   React.useEffect(() => {
     let userDefaultSellerLogo: string | undefined = undefined;
@@ -240,11 +250,14 @@ export default function OfferSheetForm() {
     if (savedSettings) {
       try {
         const parsedSettings = JSON.parse(savedSettings);
-        if (parsedSettings.defaultLogoUrl) {
+        if (parsedSettings.defaultLogoUrl) { // Legacy support for old logo saving
           userDefaultSellerLogo = parsedSettings.defaultLogoUrl;
         }
         if (parsedSettings.defaultSellerInfo) {
           userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
+          if (parsedSettings.defaultSellerInfo.logoUrl && !userDefaultSellerLogo) { // Prioritize new structure if available
+             userDefaultSellerLogo = parsedSettings.defaultSellerInfo.logoUrl;
+          }
         }
         if (parsedSettings.defaultCurrency === 'EUR') {
           userDefaultCurrency = parsedSettings.defaultCurrency;
@@ -254,18 +267,31 @@ export default function OfferSheetForm() {
       }
     }
     
+    let initialSellerName = userDefaultSellerInfo?.name || PREDEFINED_SELLER_NAMES[0] || '';
+    let keyForSelect = PREDEFINED_SELLER_NAMES.includes(initialSellerName) ? initialSellerName : OTHER_SELLER_NAME_VALUE;
+
+    if (!userDefaultSellerInfo?.name && PREDEFINED_SELLER_NAMES.length > 0) {
+        keyForSelect = PREDEFINED_SELLER_NAMES[0];
+        initialSellerName = PREDEFINED_SELLER_NAMES[0];
+    } else if (!userDefaultSellerInfo?.name) { // No default name and no predefined names (edge case)
+        keyForSelect = OTHER_SELLER_NAME_VALUE;
+        initialSellerName = '';
+    }
+    
+    setSelectedSellerNameKey(keyForSelect);
+
     setOfferData(prev => ({
       ...initialOfferSheetData(userDefaultCurrency), 
       sellerInfo: {
         ...initialSellerInfo,
         logoUrl: userDefaultSellerLogo || initialSellerInfo.logoUrl,
-        name: userDefaultSellerInfo?.name || initialSellerInfo.name,
+        name: initialSellerName,
         address: userDefaultSellerInfo?.address || initialSellerInfo.address,
         contact: userDefaultSellerInfo?.contact || initialSellerInfo.contact,
       },
       currency: userDefaultCurrency,
-      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate, // Ensure vatRate is initialized
-      products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'})) // Ensure new field has a default
+      vatRate: prev.vatRate === undefined ? 0 : prev.vatRate,
+      products: prev.products.map(p => ({...p, discountedPriceType: p.discountedPriceType || 'exclusive'}))
     }));
 
   }, []);
@@ -288,6 +314,27 @@ export default function OfferSheetForm() {
       sellerInfo: { ...prev.sellerInfo, [name]: value },
     }));
   };
+
+  const handleSellerNameSelectionChange = (value: string) => {
+    setSelectedSellerNameKey(value);
+    if (value !== OTHER_SELLER_NAME_VALUE) {
+      setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: value } }));
+    } else {
+      // If "Other" is selected and current name is predefined, clear it for custom input
+      if (PREDEFINED_SELLER_NAMES.includes(offerData.sellerInfo.name)) {
+        setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: '' } }));
+      }
+    }
+  };
+
+  const handleCustomSellerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // This only applies if selectedSellerNameKey === OTHER_SELLER_NAME_VALUE
+    setOfferData(prev => ({
+      ...prev,
+      sellerInfo: { ...prev.sellerInfo, name: e.target.value },
+    }));
+  };
+
 
   const handleCustomerInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -346,11 +393,9 @@ export default function OfferSheetForm() {
     
     const subtotalDiscounted = offerData.products.reduce((sum, p) => {
       let unitDiscountedPriceExclVat = p.discountedPrice || 0;
-      // If price includes VAT and there's a VAT rate, calculate the price excluding VAT
       if (p.discountedPriceType === 'inclusive' && currentVatRateAsDecimal > 0) {
         unitDiscountedPriceExclVat = (p.discountedPrice || 0) / (1 + currentVatRateAsDecimal);
       }
-      // Otherwise, the entered discounted price is already excluding VAT (or VAT rate is 0)
       return sum + (unitDiscountedPriceExclVat * (p.quantity || 1));
     }, 0);
 
@@ -392,7 +437,7 @@ export default function OfferSheetForm() {
     const PRODUCTS_PER_PAGE = 3; 
     const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const creationDate = new Date().toLocaleDateString();
+    const creationDate = new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}));
 
     toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
 
@@ -419,6 +464,7 @@ export default function OfferSheetForm() {
             currencySymbol={currentCurrencySymbol}
             calculatedTotals={currentCalculatedTotals}
             creationDate={creationDate}
+            t={t}
           />
         </React.StrictMode>
       );
@@ -487,7 +533,8 @@ export default function OfferSheetForm() {
         totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} 
         currencySymbol={currentCurrencySymbol}
         calculatedTotals={currentCalculatedTotals}
-        creationDate={new Date().toLocaleDateString()}
+        creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}))}
+        t={t}
       />
     );
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -526,9 +573,30 @@ export default function OfferSheetForm() {
           <CardTitle className="font-headline text-2xl">{t({ en: 'Seller Information & Logo', el: 'Πληροφορίες Πωλητή & Λογότυπο' })}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="sellerName">{t({ en: 'Seller Company Name', el: 'Όνομα Εταιρείας Πωλητή' })}</Label>
-            <Input id="sellerName" name="name" value={offerData.sellerInfo.name} onChange={handleSellerInfoChange} placeholder="Your Company Inc." />
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="sellerNameSelect">{t({ en: 'Seller Company Name', el: 'Όνομα Εταιρείας Πωλητή' })}</Label>
+            <Select value={selectedSellerNameKey} onValueChange={handleSellerNameSelectionChange}>
+              <SelectTrigger id="sellerNameSelect">
+                <SelectValue placeholder={t({ en: "Select or type seller name", el: "Επιλέξτε ή πληκτρολογήστε όνομα πωλητή" })} />
+              </SelectTrigger>
+              <SelectContent>
+                {PREDEFINED_SELLER_NAMES.map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+                <SelectItem value={OTHER_SELLER_NAME_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
+              </SelectContent>
+            </Select>
+            {selectedSellerNameKey === OTHER_SELLER_NAME_VALUE && (
+              <div className="mt-2 space-y-1">
+                <Label htmlFor="customSellerName" className="text-sm font-normal">{t({ en: 'Custom Seller Name', el: 'Προσαρμοσμένο Όνομα Πωλητή' })}</Label>
+                <Input
+                  id="customSellerName"
+                  value={offerData.sellerInfo.name}
+                  onChange={handleCustomSellerNameChange}
+                  placeholder={t({ en: "Enter custom seller name", el: "Εισαγάγετε προσαρμοσμένο όνομα πωλητή" })}
+                />
+              </div>
+            )}
           </div>
            <div className="space-y-2">
             <Label htmlFor="sellerContact">{t({ en: 'Seller Contact (Email/Phone)', el: 'Επικοινωνία Πωλητή (Email/Τηλέφωνο)' })}</Label>

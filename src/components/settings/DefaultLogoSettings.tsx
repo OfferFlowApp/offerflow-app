@@ -9,18 +9,29 @@ import { Label } from '@/components/ui/label';
 import { UploadCloud, Save } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
-import type { SettingsData, SellerInfo } from '@/lib/types'; // Updated type import
+import type { SettingsData, SellerInfo } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocalization } from '@/hooks/useLocalization';
+
+const PREDEFINED_SELLER_NAMES = [
+  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ',
+  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - MEDIA STROM',
+  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - DROMEAS',
+  'GIORGARAS FURNITURE',
+];
+const OTHER_SELLER_NAME_VALUE = 'other_seller_name';
+
 
 export default function DefaultLogoSettings() {
   const [defaultSellerInfo, setDefaultSellerInfo] = useState<Partial<SellerInfo>>({
-    name: '',
+    name: PREDEFINED_SELLER_NAMES[0] || '',
     address: '',
     contact: '',
     logoUrl: undefined,
   });
   const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
+  const [selectedDefaultSellerNameKey, setSelectedDefaultSellerNameKey] = useState<string>(PREDEFINED_SELLER_NAMES[0] || OTHER_SELLER_NAME_VALUE);
   const { toast } = useToast();
   const { t } = useLocalization();
 
@@ -28,17 +39,48 @@ export default function DefaultLogoSettings() {
   useEffect(() => {
     const savedSettings = localStorage.getItem('offerSheetSettings');
     if (savedSettings) {
-      const parsedSettings: SettingsData = JSON.parse(savedSettings);
-      if (parsedSettings.defaultLogoUrl) { // Legacy support
-        setDefaultSellerInfo(prev => ({...prev, logoUrl: parsedSettings.defaultLogoUrl}));
-        setLogoPreview(parsedSettings.defaultLogoUrl);
-      }
-      if (parsedSettings.defaultSellerInfo) {
-        setDefaultSellerInfo(prev => ({...prev, ...parsedSettings.defaultSellerInfo}));
-        if (parsedSettings.defaultSellerInfo.logoUrl) {
-          setLogoPreview(parsedSettings.defaultSellerInfo.logoUrl);
+      try {
+        const parsedSettings: SettingsData = JSON.parse(savedSettings);
+        let sellerNameFromStorage: string | undefined = undefined;
+        let sellerLogoFromStorage: string | undefined = undefined;
+        let sellerAddressFromStorage: string | undefined = undefined;
+        let sellerContactFromStorage: string | undefined = undefined;
+
+        if (parsedSettings.defaultSellerInfo) {
+            sellerNameFromStorage = parsedSettings.defaultSellerInfo.name;
+            sellerLogoFromStorage = parsedSettings.defaultSellerInfo.logoUrl;
+            sellerAddressFromStorage = parsedSettings.defaultSellerInfo.address;
+            sellerContactFromStorage = parsedSettings.defaultSellerInfo.contact;
+        } else if (parsedSettings.defaultLogoUrl) { // Legacy support
+            sellerLogoFromStorage = parsedSettings.defaultLogoUrl;
         }
+        
+        const effectiveName = sellerNameFromStorage || PREDEFINED_SELLER_NAMES[0] || '';
+        const keyForSelect = PREDEFINED_SELLER_NAMES.includes(effectiveName) ? effectiveName : OTHER_SELLER_NAME_VALUE;
+        
+        setDefaultSellerInfo({
+            name: effectiveName,
+            logoUrl: sellerLogoFromStorage,
+            address: sellerAddressFromStorage || '',
+            contact: sellerContactFromStorage || '',
+        });
+        setSelectedDefaultSellerNameKey(keyForSelect);
+        if (sellerLogoFromStorage) {
+            setLogoPreview(sellerLogoFromStorage);
+        }
+
+      } catch (e) {
+        console.error("Failed to parse default seller settings", e);
+         // Fallback to first predefined name if parsing fails or no name is set
+        const fallbackName = PREDEFINED_SELLER_NAMES[0] || '';
+        setDefaultSellerInfo(prev => ({...prev, name: fallbackName }));
+        setSelectedDefaultSellerNameKey(fallbackName || OTHER_SELLER_NAME_VALUE);
       }
+    } else {
+       // No settings saved, use first predefined name
+      const initialName = PREDEFINED_SELLER_NAMES[0] || '';
+      setDefaultSellerInfo(prev => ({...prev, name: initialName}));
+      setSelectedDefaultSellerNameKey(initialName || OTHER_SELLER_NAME_VALUE);
     }
   }, []);
 
@@ -46,8 +88,9 @@ export default function DefaultLogoSettings() {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-        setDefaultSellerInfo(prev => ({...prev, logoUrl: reader.result as string}));
+        const result = reader.result as string;
+        setLogoPreview(result);
+        setDefaultSellerInfo(prev => ({...prev, logoUrl: result}));
       };
       reader.readAsDataURL(e.target.files[0]);
     }
@@ -56,10 +99,25 @@ export default function DefaultLogoSettings() {
   const handleInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
     setDefaultSellerInfo(prev => ({...prev, [name]: value}));
-  }
+  };
+
+  const handleDefaultSellerNameSelectionChange = (value: string) => {
+    setSelectedDefaultSellerNameKey(value);
+    if (value !== OTHER_SELLER_NAME_VALUE) {
+      setDefaultSellerInfo(prev => ({ ...prev, name: value }));
+    } else {
+      // If "Other" is selected and current name is predefined, clear it for custom input
+      if (PREDEFINED_SELLER_NAMES.includes(defaultSellerInfo.name || '')) {
+        setDefaultSellerInfo(prev => ({ ...prev, name: '' }));
+      }
+    }
+  };
+
+  const handleCustomDefaultSellerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setDefaultSellerInfo(prev => ({ ...prev, name: e.target.value }));
+  };
 
   const handleSaveSettings = () => {
-    // Retrieve existing settings to merge, preserve other settings like currency/language
     const existingSettingsRaw = localStorage.getItem('offerSheetSettings');
     let existingSettings: SettingsData = {};
     if (existingSettingsRaw) {
@@ -73,7 +131,7 @@ export default function DefaultLogoSettings() {
     const settingsToSave: SettingsData = {
         ...existingSettings,
         defaultSellerInfo: defaultSellerInfo,
-        defaultLogoUrl: defaultSellerInfo.logoUrl, // Keep for backward compatibility or if other parts still use it
+        defaultLogoUrl: defaultSellerInfo.logoUrl, 
     };
     localStorage.setItem('offerSheetSettings', JSON.stringify(settingsToSave));
     toast({
@@ -92,16 +150,37 @@ export default function DefaultLogoSettings() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-            <Label htmlFor="defaultSellerName">{t({en: "Default Seller Name", el: "Προεπιλεγμένο Όνομα Πωλητή"})}</Label>
-            <Input id="defaultSellerName" name="name" value={defaultSellerInfo.name || ''} onChange={handleInfoChange} placeholder={t({en: "Your Company LLC", el: "Η Εταιρεία Σας ΕΠΕ"})}/>
+      <div className="space-y-4">
+        <div>
+            <Label htmlFor="defaultSellerNameSelect">{t({en: "Default Seller Name", el: "Προεπιλεγμένο Όνομα Πωλητή"})}</Label>
+            <Select value={selectedDefaultSellerNameKey} onValueChange={handleDefaultSellerNameSelectionChange}>
+              <SelectTrigger id="defaultSellerNameSelect">
+                <SelectValue placeholder={t({ en: "Select or type default seller name", el: "Επιλέξτε ή πληκτρολογήστε προεπιλεγμένο όνομα πωλητή" })} />
+              </SelectTrigger>
+              <SelectContent>
+                {PREDEFINED_SELLER_NAMES.map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+                <SelectItem value={OTHER_SELLER_NAME_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
+              </SelectContent>
+            </Select>
+            {selectedDefaultSellerNameKey === OTHER_SELLER_NAME_VALUE && (
+              <div className="mt-2 space-y-1">
+                <Label htmlFor="customDefaultSellerName" className="text-sm font-normal">{t({ en: 'Custom Default Seller Name', el: 'Προσαρμοσμένο Προεπιλεγμένο Όνομα Πωλητή' })}</Label>
+                <Input
+                  id="customDefaultSellerName"
+                  value={defaultSellerInfo.name || ''}
+                  onChange={handleCustomDefaultSellerNameChange}
+                  placeholder={t({en: "Enter custom default seller name", el: "Εισαγάγετε προσαρμοσμένο προεπιλεγμένο όνομα πωλητή"})}
+                />
+              </div>
+            )}
         </div>
         <div className="space-y-2">
             <Label htmlFor="defaultSellerContact">{t({en: "Default Seller Contact (Email/Phone)", el: "Προεπιλεγμένη Επικοινωνία Πωλητή (Email/Τηλέφωνο)"})}</Label>
             <Input id="defaultSellerContact" name="contact" value={defaultSellerInfo.contact || ''} onChange={handleInfoChange} placeholder={t({en: "info@yourcompany.com", el: "info@yourcompany.com"})}/>
         </div>
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
             <Label htmlFor="defaultSellerAddress">{t({en: "Default Seller Address", el: "Προεπιλεγμένη Διεύθυνση Πωλητή"})}</Label>
             <Textarea id="defaultSellerAddress" name="address" value={defaultSellerInfo.address || ''} onChange={handleInfoChange} placeholder={t({en: "123 Business Park, City, Country", el: "Βιομηχανικό Πάρκο 123, Πόλη, Χώρα"})}/>
         </div>
