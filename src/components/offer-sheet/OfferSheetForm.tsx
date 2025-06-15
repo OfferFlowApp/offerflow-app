@@ -123,7 +123,7 @@ interface DragItem {
   type: string
 }
 
-const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencySymbol, updateProduct, removeProduct, moveProduct, t }) => {
+const ProductItemCard: React.FC<ProductItemProps> = React.memo(({ product, index, currencySymbol, updateProduct, removeProduct, moveProduct, t }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: any }>({
     accept: ItemTypes.PRODUCT,
@@ -248,7 +248,8 @@ const ProductItemCard: React.FC<ProductItemProps> = ({ product, index, currencyS
       </Card>
     </div>
   );
-};
+});
+ProductItemCard.displayName = 'ProductItemCard';
 
 
 export default function OfferSheetForm() {
@@ -435,23 +436,27 @@ export default function OfferSheetForm() {
     }));
   };
   
-  const addProduct = () => {
-    setOfferData({
-      ...offerData,
-      products: [...offerData.products, { ...initialProduct, id: `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, quantity: 1, discountedPriceType: 'exclusive' }],
+  const addProduct = React.useCallback(() => {
+    setOfferData(prevOfferData => ({
+      ...prevOfferData,
+      products: [...prevOfferData.products, { ...initialProduct, id: `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, quantity: 1, discountedPriceType: 'exclusive' }],
+    }));
+  }, []);
+
+  const updateProduct = React.useCallback((index: number, updatedProduct: Product) => {
+    setOfferData(prevOfferData => {
+      const newProducts = [...prevOfferData.products];
+      newProducts[index] = updatedProduct;
+      return { ...prevOfferData, products: newProducts };
     });
-  };
+  }, []);
 
-  const updateProduct = (index: number, updatedProduct: Product) => {
-    const newProducts = [...offerData.products];
-    newProducts[index] = updatedProduct;
-    setOfferData({ ...offerData, products: newProducts });
-  };
-
-  const removeProduct = (index: number) => {
-    const newProducts = offerData.products.filter((_, i) => i !== index);
-    setOfferData({ ...offerData, products: newProducts });
-  };
+  const removeProduct = React.useCallback((index: number) => {
+    setOfferData(prevOfferData => {
+      const newProducts = prevOfferData.products.filter((_, i) => i !== index);
+      return { ...prevOfferData, products: newProducts };
+    });
+  }, []);
   
   const moveProduct = React.useCallback((dragIndex: number, hoverIndex: number) => {
     setOfferData((prevOfferData) =>
@@ -525,7 +530,6 @@ export default function OfferSheetForm() {
     const offerDataToSave = {
         ...offerData,
         isFinalPriceVatInclusive: isFinalPriceVatInclusive,
-        // calculatedTotals: currentCalculatedTotals, // Not storing calculated totals, they are derived
     };
     
     const saveId = currentOfferId || Date.now().toString();
@@ -548,7 +552,7 @@ export default function OfferSheetForm() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(dataUrl); // Clean up blob URL
+    URL.revokeObjectURL(dataUrl); 
   };
 
   const exportAsPdf = async () => {
@@ -680,7 +684,7 @@ export default function OfferSheetForm() {
   const exportOfferDataAsJson = () => {
     const dataToExport = {
       ...offerData,
-      isFinalPriceVatInclusive: isFinalPriceVatInclusive, // Ensure this flag is included
+      isFinalPriceVatInclusive: isFinalPriceVatInclusive, 
     };
     const jsonString = JSON.stringify(dataToExport, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -705,16 +709,14 @@ export default function OfferSheetForm() {
           throw new Error(t({en: "File content is not readable text.", el: "Το περιεχόμενο του αρχείου δεν είναι αναγνώσιμο κείμενο."}));
         }
         const importedRawData = JSON.parse(text);
-
-        // Basic validation for imported data structure
+        
         if (!importedRawData.customerInfo || !importedRawData.products || typeof importedRawData.currency === 'undefined') {
              throw new Error(t({en: "Invalid JSON structure for offer sheet.", el: "Μη έγκυρη δομή JSON για δελτίο προσφοράς."}));
         }
         
-        // Coerce into OfferSheetData, ensuring all fields, especially new ones, are present or defaulted
         const importedOfferData: OfferSheetData = {
-          ...initialOfferSheetData(importedRawData.currency || BASE_DEFAULT_CURRENCY), // Start with a valid base
-          ...importedRawData, // Spread imported data
+          ...initialOfferSheetData(importedRawData.currency || BASE_DEFAULT_CURRENCY), 
+          ...importedRawData, 
           customerInfo: { ...initialCustomerInfo, ...(importedRawData.customerInfo || {}) },
           sellerInfo: { ...initialSellerInfo, ...(importedRawData.sellerInfo || {}) },
           products: (importedRawData.products || []).map((p: any) => ({ ...initialProduct, ...p, id: p.id || `product-${Date.now()}-${Math.random().toString(36).slice(2,7)}` , discountedPriceType: p.discountedPriceType || 'exclusive' })),
@@ -725,9 +727,8 @@ export default function OfferSheetForm() {
         
         setOfferData(importedOfferData);
         setIsFinalPriceVatInclusive(importedOfferData.isFinalPriceVatInclusive || false);
-        setCurrentOfferId(null); // Treat imported offer as a new one on this device
+        setCurrentOfferId(null); 
 
-        // Update seller name/address dropdown keys based on imported data
         setSelectedSellerNameKey(
             PREDEFINED_SELLER_NAMES.includes(importedOfferData.sellerInfo.name)
             ? importedOfferData.sellerInfo.name
@@ -747,7 +748,6 @@ export default function OfferSheetForm() {
     };
     reader.readAsText(file);
     
-    // Reset file input to allow importing the same file again if needed
     if (importFileRef.current) {
       importFileRef.current.value = "";
     }
