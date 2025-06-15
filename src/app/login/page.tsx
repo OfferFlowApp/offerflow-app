@@ -51,7 +51,7 @@ export default function LoginPage() {
       await signInWithEmail(email, password);
       // AuthContext handles navigation and toasts
     } catch (err: any) {
-      // Error handling is mostly within AuthContext
+      // Error handling is mostly within AuthContext, which now also handles general errors
     }
   };
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
       await signInWithGoogle();
       // AuthContext handles navigation and toasts
     } catch (err: any) {
-      // Error handling is mostly within AuthContext
+       // Error handling is mostly within AuthContext
     }
   };
 

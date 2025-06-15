@@ -59,7 +59,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
 
   const signUpWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
-    if (!auth || typeof auth.createUserWithEmailAndPassword !== 'function') {
+    if (!auth || typeof createUserWithEmailAndPassword !== 'function') {
       toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Account creation is currently unavailable.", el: "Η δημιουργία λογαριασμού δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
       return null;
     }
@@ -79,7 +79,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const signInWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
-    if (!auth || typeof auth.signInWithEmailAndPassword !== 'function') {
+    if (!auth || typeof signInWithEmailAndPassword !== 'function') {
       toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Login is currently unavailable.", el: "Η σύνδεση δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
       return null;
     }
@@ -99,7 +99,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
-    if (!auth || typeof auth.signInWithPopup !== 'function') {
+    if (!auth || typeof signInWithPopup !== 'function' || typeof GoogleAuthProvider !== 'function') {
       toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Google Sign-In is currently unavailable.", el: "Η σύνδεση με Google δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
       return null;
     }
@@ -120,7 +120,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const logOut = async () => {
-    if (!auth || typeof auth.signOut !== 'function') {
+    if (!auth || typeof signOut !== 'function') {
       setCurrentUser(null);
       setLoading(false); 
       router.push('/login'); 
@@ -155,4 +155,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

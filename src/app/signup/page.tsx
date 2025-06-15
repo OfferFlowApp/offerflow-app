@@ -56,7 +56,7 @@ export default function SignupPage() {
       await signUpWithEmail(email, password);
       // AuthContext handles navigation and toasts
     } catch (err: any) {
-      // Error handling is mostly within AuthContext
+       // Error handling is mostly within AuthContext
     }
   };
 
