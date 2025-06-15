@@ -3,8 +3,14 @@
 
 import type { ReactNode, FC } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User as FirebaseUser } from 'firebase/auth'; // Keep type for consistency
-import { auth } from '@/lib/firebase'; // Will import the mock
+import {
+  type User as FirebaseUser,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase'; // Will import the REAL one now
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useLocalization } from '@/hooks/useLocalization';
@@ -21,59 +27,104 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
   const { t } = useLocalization();
 
   useEffect(() => {
-    // Since Firebase is mocked, onAuthStateChanged will likely do nothing or call back with null.
-    // We'll just set loading to false.
-    const unsubscribe = auth.onAuthStateChanged((user: FirebaseUser | null) => {
-      setCurrentUser(user); // Will be null from mock
+    // Check if the auth object from firebase.ts is a 'real' one or a dummy
+    // A simple check could be for the presence of a specific function like 'currentUser' property or 'onAuthStateChanged' method.
+    // Object.keys(auth).length === 0 might not be robust if firebase.ts returns a more complex dummy.
+    // A better check is if auth.clientInitialized is available and true, or if critical methods exist.
+    // For simplicity, we'll assume if auth.onAuthStateChanged is not a real function, firebase is not configured.
+    if (!auth || typeof auth.onAuthStateChanged !== 'function') {
+      if (typeof window !== 'undefined') {
+        // This warning is now primarily in firebase.ts if env vars are missing
+        // console.warn("AuthContext: Firebase Auth service appears unconfigured. User authentication will not function.");
+      }
+      setCurrentUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
+      setCurrentUser(user);
       setLoading(false);
     });
-     // Ensure loading is set to false even if onAuthStateChanged doesn't fire as expected with a mock
-    if (loading) {
-        setLoading(false);
-    }
+
     return () => {
       if (typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
-  }, [loading]);
+  }, []);
 
-  const showAuthDisabledToast = () => {
-    toast({
-      title: t({en: "Online Accounts Disabled", el: "Οι Online Λογαριασμοί είναι Απενεργοποιημένοι"}),
-      description: t({en: "User registration and login are currently unavailable. Data is saved locally.", el: "Η εγγραφή και σύνδεση χρηστών δεν είναι διαθέσιμες. Τα δεδομένα αποθηκεύονται τοπικά."}),
-      variant: "default"
-    });
-  };
 
   const signUpWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
-    showAuthDisabledToast();
-    setLoading(false); // Ensure loading state is consistent
-    return null;
+    if (!auth || typeof auth.createUserWithEmailAndPassword !== 'function') {
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Account creation is currently unavailable.", el: "Η δημιουργία λογαριασμού δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
+      return null;
+    }
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle setCurrentUser
+      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Successfully signed up!", el: "Επιτυχής εγγραφή!"}) });
+      router.push('/'); 
+      return userCredential.user;
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      toast({ title: t({en: "Sign Up Failed", el: "Η Εγγραφή Απέτυχε"}), description: error.message || t({en: "Could not create account.", el: "Δεν ήταν δυνατή η δημιουργία λογαριασμού."}), variant: "destructive" });
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   const signInWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
-    showAuthDisabledToast();
-    setLoading(false); // Ensure loading state is consistent
-    return null;
+    if (!auth || typeof auth.signInWithEmailAndPassword !== 'function') {
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Login is currently unavailable.", el: "Η σύνδεση δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
+      return null;
+    }
+    setLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle setCurrentUser
+      toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
+      router.push('/');
+      return userCredential.user;
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      toast({ title: t({en: "Sign In Failed", el: "Η Σύνδεση Απέτυχε"}), description: error.message || t({en: "Could not sign in. Please check your credentials.", el: "Δεν ήταν δυνατή η σύνδεση. Παρακαλώ ελέγξτε τα στοιχεία σας."}), variant: "destructive" });
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logOut = async () => {
-    showAuthDisabledToast();
-    setCurrentUser(null); // Explicitly set to null
-    setLoading(false); // Ensure loading state is consistent
-    // No redirect needed if login isn't a primary function
+    if (!auth || typeof auth.signOut !== 'function') {
+       // Even if auth isn't fully working, clear local state.
+      setCurrentUser(null);
+      setLoading(false); // Ensure loading state is consistent
+      router.push('/login'); // Go to login page
+      return;
+    }
+    try {
+      await signOut(auth);
+      // onAuthStateChanged will handle setCurrentUser(null)
+      toast({ title: t({en: "Signed Out", el: "Αποσυνδεθήκατε"}), description: t({en: "Successfully signed out.", el: "Επιτυχής αποσύνδεση."})});
+      router.push('/login'); // Redirect to login page after logout
+    } catch (error: any) {
+      console.error("Sign out error:", error);
+      toast({ title: t({en: "Sign Out Failed", el: "Η Αποσύνδεση Απέτυχε"}), description: error.message || t({en: "Could not sign out.", el: "Δεν ήταν δυνατή η αποσύνδεση."}), variant: "destructive" });
+    }
   };
 
   const value = {
-    currentUser, // Will always be null
-    loading,     // Will quickly become false
+    currentUser,
+    loading,
     logOut,
     signUpWithEmail,
     signInWithEmail,

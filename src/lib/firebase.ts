@@ -1,59 +1,59 @@
 
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:4007764419.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:2211470066.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:2345893357.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:3533030798.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:3441666344.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:454443529.
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:343169924.
+// Import the functions you need from the SDKs you need
+import {initializeApp, getApps, getApp, type FirebaseApp} from 'firebase/app';
+import {getAuth, type Auth} from 'firebase/auth';
+import {getFirestore, type Firestore} from 'firebase/firestore';
+import {getStorage, type FirebaseStorage} from 'firebase/storage';
 
-// Firebase is currently not configured for this application.
-// All Firebase services are non-functional.
-
-// Mock Firebase services
-const mockAuth = {
-  onAuthStateChanged: (): (() => void) => {
-    // Immediately call the callback with null user and set loading to false
-    // This simulates the behavior of Firebase when no user is logged in.
-    // In a real scenario, the callback provided to onAuthStateChanged would be called.
-    // For this mock, we assume the callback is (user) => { setCurrentUser(user); setLoading(false); }
-    // So, we effectively do nothing as AuthContext will handle initial state.
-    return () => {}; // Return an unsubscribe function
-  },
-  signOut: async (): Promise<void> => {
-    if (typeof window !== 'undefined') {
-      console.warn("Firebase Auth: signOut called, but Firebase is disabled.");
-    }
-  },
-  createUserWithEmailAndPassword: async (): Promise<{ user: null }> => {
-     if (typeof window !== 'undefined') {
-      console.warn("Firebase Auth: createUserWithEmailAndPassword called, but Firebase is disabled.");
-    }
-    return { user: null };
-  },
-  signInWithEmailAndPassword: async (): Promise<{ user: null }> => {
-    if (typeof window !== 'undefined') {
-      console.warn("Firebase Auth: signInWithEmailAndPassword called, but Firebase is disabled.");
-    }
-    return { user: null };
-  },
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const mockDb = {}; 
-const mockStorage = {}; 
-const mockApp = {}; 
+// Initialize Firebase
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
 
-export const app = mockApp;
-// Cast to any to satisfy consumers that expect a Firebase Auth object
-export const auth = mockAuth as any; 
-export const db = mockDb as any;
-export const storage = mockStorage as any;
-
-if (typeof window !== 'undefined') {
-  console.warn(
-    "FIREBASE DISABLED: Firebase is not being initialized. " +
-    "Authentication, Firestore, and Storage services will not function. " +
-    "Data will be saved locally where applicable. " +
-    "To enable Firebase, ensure '.env.local' is correctly configured with your Firebase project credentials and restart the server."
-  );
+if (
+  !firebaseConfig.apiKey ||
+  !firebaseConfig.authDomain ||
+  !firebaseConfig.projectId ||
+  !firebaseConfig.appId
+) {
+  if (typeof window !== 'undefined') {
+    console.warn(
+      'FIREBASE NOT CONFIGURED: Essential Firebase environment variables are missing. ' +
+        "Please ensure NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, " +
+        "NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID are set in your .env.local file. " +
+        'Firebase services will be non-functional. Some features like authentication will be disabled.'
+    );
+  }
+  // Provide non-functional mocks if config is missing to prevent app crashes
+  app = {} as FirebaseApp;
+  auth = {} as Auth;
+  db = {} as Firestore;
+  storage = {} as FirebaseStorage;
+} else {
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  if (typeof window !== 'undefined') {
+      console.log("Firebase initialized successfully.");
+  }
 }
+
+export { app, auth, db, storage };
