@@ -9,8 +9,10 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // Will import the REAL one now
+import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useLocalization } from '@/hooks/useLocalization';
@@ -21,6 +23,7 @@ interface AuthContextType {
   logOut: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<FirebaseUser | null>;
   signInWithEmail: (email: string, password: string) => Promise<FirebaseUser | null>;
+  signInWithGoogle: () => Promise<FirebaseUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,14 +36,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { t } = useLocalization();
 
   useEffect(() => {
-    // Check if the auth object from firebase.ts is a 'real' one or a dummy
-    // A simple check could be for the presence of a specific function like 'currentUser' property or 'onAuthStateChanged' method.
-    // Object.keys(auth).length === 0 might not be robust if firebase.ts returns a more complex dummy.
-    // A better check is if auth.clientInitialized is available and true, or if critical methods exist.
-    // For simplicity, we'll assume if auth.onAuthStateChanged is not a real function, firebase is not configured.
     if (!auth || typeof auth.onAuthStateChanged !== 'function') {
       if (typeof window !== 'undefined') {
-        // This warning is now primarily in firebase.ts if env vars are missing
         // console.warn("AuthContext: Firebase Auth service appears unconfigured. User authentication will not function.");
       }
       setCurrentUser(null);
@@ -69,7 +66,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle setCurrentUser
       toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Successfully signed up!", el: "Επιτυχής εγγραφή!"}) });
       router.push('/'); 
       return userCredential.user;
@@ -90,7 +86,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle setCurrentUser
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
       router.push('/');
       return userCredential.user;
@@ -103,19 +98,38 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
+  const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
+    if (!auth || typeof auth.signInWithPopup !== 'function') {
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Google Sign-In is currently unavailable.", el: "Η σύνδεση με Google δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
+      return null;
+    }
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
+      router.push('/');
+      return result.user;
+    } catch (error: any) {
+      console.error("Google Sign-In error:", error);
+      toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: error.message || t({en: "Could not sign in with Google.", el: "Δεν ήταν δυνατή η σύνδεση με Google."}), variant: "destructive" });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logOut = async () => {
     if (!auth || typeof auth.signOut !== 'function') {
-       // Even if auth isn't fully working, clear local state.
       setCurrentUser(null);
-      setLoading(false); // Ensure loading state is consistent
-      router.push('/login'); // Go to login page
+      setLoading(false); 
+      router.push('/login'); 
       return;
     }
     try {
       await signOut(auth);
-      // onAuthStateChanged will handle setCurrentUser(null)
       toast({ title: t({en: "Signed Out", el: "Αποσυνδεθήκατε"}), description: t({en: "Successfully signed out.", el: "Επιτυχής αποσύνδεση."})});
-      router.push('/login'); // Redirect to login page after logout
+      router.push('/login'); 
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast({ title: t({en: "Sign Out Failed", el: "Η Αποσύνδεση Απέτυχε"}), description: error.message || t({en: "Could not sign out.", el: "Δεν ήταν δυνατή η αποσύνδεση."}), variant: "destructive" });
@@ -128,6 +142,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     logOut,
     signUpWithEmail,
     signInWithEmail,
+    signInWithGoogle,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -140,3 +155,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
