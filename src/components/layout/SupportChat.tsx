@@ -62,9 +62,10 @@ export default function SupportChat() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('div > div'); // Target the viewport
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
+      // A more reliable way to get the scrollable viewport within ScrollArea
+      const scrollableViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+      if (scrollableViewport) {
+        scrollableViewport.scrollTop = scrollableViewport.scrollHeight;
       }
     }
   }, [messages]);
@@ -92,9 +93,10 @@ export default function SupportChat() {
       )}
 
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-80 h-[28rem] shadow-xl z-50 flex flex-col rounded-lg border bg-card">
+        <Card className="fixed bottom-6 right-6 w-80 sm:w-96 h-[28rem] sm:h-[32rem] shadow-xl z-[100] flex flex-col rounded-lg border bg-card">
           <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
-            <CardTitle className="text-lg font-semibold text-primary">
+            <CardTitle className="text-lg font-semibold text-primary flex items-center">
+              <Bot className="h-5 w-5 mr-2" />
               {t({ en: 'OfferFlow Support', el: 'Υποστήριξη OfferFlow' })}
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={toggleChat} className="h-8 w-8">
@@ -112,24 +114,25 @@ export default function SupportChat() {
                     }`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                      className={`max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm ${
                         msg.sender === 'user'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {msg.text.split('\\n').map((line, index) => (
-                        <span key={index}>
+                      {/* Handle potential multi-line responses from AI */}
+                      {msg.text.split('\n').map((line, index, arr) => (
+                        <React.Fragment key={index}>
                           {line}
-                          {index < msg.text.split('\\n').length - 1 && <br />}
-                        </span>
+                          {index < arr.length - 1 && <br />}
+                        </React.Fragment>
                       ))}
                     </div>
                   </div>
                 ))}
                  {isLoading && (
                     <div className="flex justify-start">
-                        <div className="max-w-[80%] rounded-lg px-3 py-2 text-sm bg-muted text-muted-foreground flex items-center">
+                        <div className="max-w-[85%] rounded-lg px-3 py-2 text-sm bg-muted text-muted-foreground flex items-center shadow-sm">
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             {t({en: "Thinking...", el: "Σκέφτομαι..."})}
                         </div>
@@ -138,7 +141,7 @@ export default function SupportChat() {
               </div>
             </ScrollArea>
           </CardContent>
-          <CardFooter className="p-3 border-t">
+          <CardFooter className="p-3 border-t bg-background/95">
             <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
               <Input
                 type="text"
@@ -147,8 +150,9 @@ export default function SupportChat() {
                 placeholder={t({ en: 'Ask a question...', el: 'Ρωτήστε κάτι...' })}
                 className="flex-grow text-sm"
                 disabled={isLoading}
+                autoFocus
               />
-              <Button type="submit" size="icon" className="h-9 w-9 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+              <Button type="submit" size="icon" className="h-9 w-9 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading || !inputValue.trim()}>
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </form>
