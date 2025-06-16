@@ -48,7 +48,7 @@ export default function SupportChat() {
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error('Error calling support flow:', error);
+      console.error('Error calling support flow client-side:', error); // Log the full error
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: t({ en: 'Sorry, I encountered an error. Please try again.', el: 'Συγγνώμη, παρουσιάστηκε σφάλμα. Παρακαλώ προσπαθήστε ξανά.' }),
@@ -62,7 +62,6 @@ export default function SupportChat() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      // A more reliable way to get the scrollable viewport within ScrollArea
       const scrollableViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (scrollableViewport) {
         scrollableViewport.scrollTop = scrollableViewport.scrollHeight;
@@ -70,7 +69,6 @@ export default function SupportChat() {
     }
   }, [messages]);
   
-  // Initial welcome message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
@@ -120,7 +118,6 @@ export default function SupportChat() {
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {/* Handle potential multi-line responses from AI */}
                       {msg.text.split('\n').map((line, index, arr) => (
                         <React.Fragment key={index}>
                           {line}

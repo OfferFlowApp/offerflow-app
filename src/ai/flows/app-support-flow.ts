@@ -15,6 +15,7 @@ import { htmlToText } from 'html-to-text';
 // This is a placeholder for fetching and processing your help page content.
 // In a real scenario, you might fetch this from a file, database, or a CMS.
 async function getHelpContentAsText(): Promise<string> {
+  console.log('[appSupportFlow] Starting getHelpContentAsText');
   // This is a more detailed summary based on src/app/help/page.tsx
   const rawHelpContent = `
     OfferFlow User Guide: Create, manage, and share professional offer sheets.
@@ -76,9 +77,12 @@ async function getHelpContentAsText(): Promise<string> {
     - Local Storage: Offer sheets and settings are saved in your browser's local storage. This means data is specific to the browser you are using and won't automatically sync across different devices or browsers unless you manually export/import JSON data.
     - Performance: If the app feels slow, ensure your internet connection is stable. Complex offer sheets with many high-resolution images might take longer to process for PDF/JPEG generation.
   `;
-  return htmlToText(rawHelpContent, {
-    wordwrap: 130, // Optional: helps with formatting for the LLM
+  const textContent = htmlToText(rawHelpContent, {
+    wordwrap: 130,
   });
+  console.log('[appSupportFlow] Help content length (text):', textContent.length);
+  // console.log('[appSupportFlow] Help content (first 500 chars):', textContent.substring(0, 500));
+  return textContent;
 }
 
 
@@ -93,6 +97,7 @@ const AppSupportOutputSchema = z.object({
 export type AppSupportOutput = z.infer<typeof AppSupportOutputSchema>;
 
 export async function askAppSupport(input: AppSupportInput): Promise<AppSupportOutput> {
+  console.log('[appSupportFlow] Received input for askAppSupport:', JSON.stringify(input));
   return appSupportChatFlow(input);
 }
 
@@ -124,25 +129,30 @@ const appSupportChatFlow = ai.defineFlow(
     outputSchema: AppSupportOutputSchema,
   },
   async (input) => {
+    console.log('[appSupportFlow] Starting appSupportChatFlow with question:', input.question);
     const helpText = await getHelpContentAsText();
-    // console.log("Help Text Provided to LLM:", helpText); // For debugging
-    // console.log("User Question:", input.question); // For debugging
-
-    const response = await prompt({ question: input.question, helpContent: helpText });
     
-    // console.log("LLM Full Response:", JSON.stringify(response, null, 2)); // For debugging the raw response
+    console.log('[appSupportFlow] Calling LLM prompt...');
+    try {
+      const response = await prompt({ question: input.question, helpContent: helpText });
+      console.log('[appSupportFlow] LLM response received. Full response object:', JSON.stringify(response, null, 2));
 
-    // Access the structured output using response.output
-    const structuredOutput = response.output;
+      const structuredOutput = response.output;
 
-    if (structuredOutput) {
-      return structuredOutput;
-    } else {
-      // console.error("LLM did not return a structured output or an error occurred during generation.");
-      // You could inspect response.candidates[0].finishReason and response.candidates[0].finishMessage for more details
-      // For example, if response.candidates[0].finishReason === 'SAFETY'
-      return { answer: "I'm sorry, I couldn't generate a specific answer for that. Please try rephrasing your question or check the Help page directly." };
+      if (structuredOutput && typeof structuredOutput.answer === 'string') {
+        console.log('[appSupportFlow] Successfully extracted structured output:', JSON.stringify(structuredOutput));
+        return structuredOutput;
+      } else {
+        console.error('[appSupportFlow] LLM did not return a valid structured output or answer field is missing/incorrect.');
+        console.log('[appSupportFlow] Finish Reason:', response.candidates[0]?.finishReason);
+        console.log('[appSupportFlow] Finish Message:', response.candidates[0]?.finishMessage);
+        return { answer: "I'm sorry, I couldn't formulate a specific answer for that. Please try rephrasing your question or check the Help page directly." };
+      }
+    } catch (error) {
+      console.error('[appSupportFlow] Error during LLM prompt execution:', error);
+      // Consider re-throwing or returning a more specific error structure if needed client-side
+      // For now, return a generic error message.
+      return { answer: "I'm sorry, an unexpected error occurred while trying to get an answer. Please try again later." };
     }
   }
 );
-
