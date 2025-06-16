@@ -113,9 +113,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return null;
     }
     
-    // More detailed check for auth object integrity
-    // Checking for internal properties like 'name' or 'app' might indicate if it's a valid Firebase Auth object
-    if (!auth.app || typeof auth.settings !== 'object') {
+    if (!auth.app || typeof auth.settings !== 'object' || !auth.currentUser === undefined) { // Basic check
         console.error("[AuthContext] Firebase Auth object (auth) appears to be invalid or not fully initialized before Google Sign-In.", auth);
         toast({ title: t({en: "Initialization Error", el: "Σφάλμα Αρχικοποίησης"}), description: t({en: "Authentication service is not ready.", el: "Η υπηρεσία αυθεντικοποίησης δεν είναι έτοιμη."}), variant: "destructive" });
         return null;
@@ -130,7 +128,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return result.user;
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
-      // The specific console.error for unauthorized-domain has been removed.
       toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: error.message || t({en: "Could not sign in with Google.", el: "Δεν ήταν δυνατή η σύνδεση με Google."}), variant: "destructive" });
       return null;
     } finally {
@@ -174,3 +171,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
