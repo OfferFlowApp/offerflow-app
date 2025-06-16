@@ -119,12 +119,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
       router.push('/');
       return result.user;
-    } catch (error: any) { // Added missing opening brace here
-      console.error("Google Sign-In error:", error);
-      // Log the specific hostname that Firebase considers unauthorized if the error is auth/unauthorized-domain
-      if (error.code === 'auth/unauthorized-domain' && typeof window !== 'undefined') {
-        console.error(`[AuthContext] Google Sign-In failed for domain: ${window.location.hostname}. Please ensure this domain is authorized in your Firebase project settings (Authentication -> Sign-in method -> Authorized domains) AND in your Google Cloud Console OAuth consent screen & client ID credentials.`);
-      }
+    } catch (error: any) {
+      console.error("Google Sign-In error:", error); // This will still log the raw Firebase error object
+      // The specific console.error for unauthorized-domain has been removed.
       toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: error.message || t({en: "Could not sign in with Google.", el: "Δεν ήταν δυνατή η σύνδεση με Google."}), variant: "destructive" });
       return null;
     } finally {
