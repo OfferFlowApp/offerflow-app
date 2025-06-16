@@ -1,5 +1,5 @@
 
-"use client"; // Added "use client" directive
+"use client"; 
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -7,9 +7,10 @@ import DefaultLogoSettings from '@/components/settings/DefaultLogoSettings';
 import DefaultCurrencySettings from '@/components/settings/DefaultCurrencySettings';
 import LanguageSettings from '@/components/settings/LanguageSettings';
 import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
+import DefaultTermsSettings from '@/components/settings/DefaultTermsSettings'; // Import new component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useLocalization } from '@/hooks/useLocalization'; // Import the hook
+import { useLocalization } from '@/hooks/useLocalization'; 
 
 
 export default function SettingsPage() {
@@ -25,9 +26,9 @@ export default function SettingsPage() {
         <div className="max-w-2xl mx-auto space-y-8">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">{t({ en: "Branding Settings", el: "Ρυθμίσεις Επωνυμίας" })}</CardTitle>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Branding & Seller Defaults", el: "Προεπιλογές Επωνυμίας & Πωλητή" })}</CardTitle>
               <CardDescription>
-                {t({ en: "Set a default logo that will be automatically added to new offer sheets.", el: "Ορίστε ένα προεπιλεγμένο λογότυπο που θα προστίθεται αυτόματα σε νέα δελτία προσφοράς." })}
+                {t({ en: "Set default seller information and logo for new offer sheets.", el: "Ορίστε προεπιλεγμένες πληροφορίες πωλητή και λογότυπο για νέα δελτία προσφοράς." })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -51,6 +52,20 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
           
+          <Separator />
+
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl">{t({ en: "Default Content", el: "Προεπιλεγμένο Περιεχόμενο" })}</CardTitle>
+              <CardDescription>
+                {t({ en: "Set default terms and conditions for new offer sheets.", el: "Ορίστε προεπιλεγμένους όρους και προϋποθέσεις για νέα δελτία προσφοράς." })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DefaultTermsSettings />
+            </CardContent>
+          </Card>
+
           <Separator />
 
           <Card className="shadow-lg">

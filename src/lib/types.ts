@@ -42,7 +42,7 @@ export interface OfferSheetData {
   termsAndConditions: string;
   currency: Currency;
   vatRate?: number; 
-  isFinalPriceVatInclusive?: boolean; // Added new field
+  isFinalPriceVatInclusive?: boolean;
 }
 
 export interface LocalUserProfile {
@@ -56,4 +56,5 @@ export interface SettingsData {
   defaultCurrency?: Currency;
   preferredLanguage?: Language;
   localProfile?: LocalUserProfile; 
+  defaultTermsAndConditions?: string;
 }
