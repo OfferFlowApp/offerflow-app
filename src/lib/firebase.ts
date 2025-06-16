@@ -36,7 +36,6 @@ if (
         "NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID are set in your .env.local file. " +
         'Firebase services will be non-functional. Some features like authentication will be disabled.'
     );
-    console.log('[Auth Debug] firebaseConfig used for initialization (incomplete):', JSON.parse(JSON.stringify(firebaseConfig)));
   }
   // Provide non-functional mocks if config is missing to prevent app crashes
   app = {} as FirebaseApp;
@@ -44,9 +43,6 @@ if (
   db = {} as Firestore;
   storage = {} as FirebaseStorage;
 } else {
-  if (typeof window !== 'undefined') {
-    console.log('[Auth Debug] firebaseConfig used for initialization:', JSON.parse(JSON.stringify(firebaseConfig)));
-  }
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
@@ -56,8 +52,9 @@ if (
   db = getFirestore(app);
   storage = getStorage(app);
   if (typeof window !== 'undefined') {
-      console.log("Firebase initialized successfully with project:", firebaseConfig.projectId);
+      // console.log("Firebase initialized successfully with project:", firebaseConfig.projectId); // Intentionally commented out for cleaner default logs
   }
 }
 
 export { app, auth, db, storage };
+
