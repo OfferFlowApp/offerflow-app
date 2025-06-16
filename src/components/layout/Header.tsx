@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard } from 'lucide-react';
+import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -43,22 +43,26 @@ export default function Header() {
         <Link href="/" className="mr-8 flex items-center">
           <span className="text-2xl font-bold text-primary">OfferSheet</span>
         </Link>
-        <nav className="flex items-center space-x-6 text-sm font-medium">
-          <Link href="/" className="transition-colors hover:text-primary">
-            <FileText className="mr-1 h-4 w-4 inline-block" />
+        <nav className="flex items-center space-x-4 text-sm font-medium">
+          <Link href="/" className="transition-colors hover:text-primary flex items-center">
+            <FileText className="mr-1 h-4 w-4" />
             {t({ en: 'Home', el: 'Αρχική' })}
           </Link>
-          <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary">
-            <FileText className="mr-1 h-4 w-4 inline-block" />
+          <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary flex items-center">
+            <FileText className="mr-1 h-4 w-4" />
             {t({ en: 'Create Offer', el: 'Δημιουργία' })}
           </Link>
-           <Link href="/pricing" className="transition-colors hover:text-primary">
-            <CreditCard className="mr-1 h-4 w-4 inline-block" />
+           <Link href="/pricing" className="transition-colors hover:text-primary flex items-center">
+            <CreditCard className="mr-1 h-4 w-4" />
             {t({ en: 'Pricing', el: 'Τιμολόγηση' })}
           </Link>
-          <Link href="/settings" className="transition-colors hover:text-primary">
-            <Settings className="mr-1 h-4 w-4 inline-block" />
+          <Link href="/settings" className="transition-colors hover:text-primary flex items-center">
+            <Settings className="mr-1 h-4 w-4" />
             {t({ en: 'Settings', el: 'Ρυθμίσεις' })}
+          </Link>
+          <Link href="/help" className="transition-colors hover:text-primary flex items-center">
+            <HelpCircle className="mr-1 h-4 w-4" />
+            {t({ en: 'Help', el: 'Βοήθεια' })}
           </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4">
@@ -105,3 +109,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
