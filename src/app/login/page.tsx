@@ -148,7 +148,7 @@ export default function LoginPage() {
 
             <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
               <GoogleIcon />
-              {t({en: "Sign in with Google", el: "Σύνδεση με Google"})}
+              {t({en: "Log in with Google", el: "Σύνδεση με Google"})}
             </Button>
 
             <p className="mt-6 text-center text-sm">
