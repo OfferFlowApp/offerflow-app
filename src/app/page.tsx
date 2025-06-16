@@ -99,12 +99,12 @@ export default function HomePage() {
               {[...Array(3)].map((_, index) => (
                 <Card key={index} className="bg-card rounded-xl border">
                   <CardContent className="p-5 flex items-center justify-between">
-                    <div className="flex-grow space-y-2">
-                      <Skeleton className="h-5 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
-                      <Skeleton className="h-3 w-1/3" />
+                    <div className="flex-grow overflow-hidden space-y-2 pr-4">
+                      <Skeleton className="h-6 w-3/4" /> {/* Offer Name */}
+                      <Skeleton className="h-4 w-1/2" /> {/* Customer/Company */}
+                      <Skeleton className="h-4 w-1/3" /> {/* Date */}
                     </div>
-                    <Skeleton className="h-10 w-10 rounded-full ml-4" />
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" /> {/* Button Icon */}
                   </CardContent>
                 </Card>
               ))}
