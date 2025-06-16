@@ -43,6 +43,10 @@ if (
   db = {} as Firestore;
   storage = {} as FirebaseStorage;
 } else {
+  if (typeof window !== 'undefined') {
+    // Log the config being used for debugging purposes
+    console.log('[Auth Debug] firebaseConfig used for initialization:', firebaseConfig);
+  }
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
@@ -51,9 +55,9 @@ if (
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
-  if (typeof window !== 'undefined') {
-      // console.log("Firebase initialized successfully with project:", firebaseConfig.projectId); // Intentionally commented out for cleaner default logs
-  }
+  // if (typeof window !== 'undefined') {
+  //     // console.log("Firebase initialized successfully with project:", firebaseConfig.projectId); // Intentionally commented out for cleaner default logs
+  // }
 }
 
 export { app, auth, db, storage };
