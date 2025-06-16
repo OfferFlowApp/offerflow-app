@@ -14,7 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useToast } from "@/hooks/use-toast";
 import type { LocalUserProfile } from '@/lib/types';
-import { Save, UserCircle } from 'lucide-react';
+import { Save, UserCircle, Loader2 } from 'lucide-react';
 
 const LOCAL_PROFILE_STORAGE_KEY = 'offerFlowLocalProfile';
 
@@ -26,6 +26,8 @@ export default function ProfilePage() {
   const [username, setUsername] = useState('');
   const [userCodes, setUserCodes] = useState('');
   const [isLocalProfileLoaded, setIsLocalProfileLoaded] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -50,15 +52,24 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (typeof window !== 'undefined') {
-      const profileToSave: LocalUserProfile = { username, userCodes };
-      localStorage.setItem(LOCAL_PROFILE_STORAGE_KEY, JSON.stringify(profileToSave));
-      toast({
-        title: t({ en: "Local Profile Saved", el: "Το Τοπικό Προφίλ Αποθηκεύτηκε" }),
-        description: t({ en: "Your information has been saved in this browser.", el: "Οι πληροφορίες σας αποθηκεύτηκαν σε αυτό το πρόγραμμα περιήγησης." }),
-        variant: "default",
-      });
+      setIsSavingProfile(true);
+      try {
+        // Simulate async operation for demo
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const profileToSave: LocalUserProfile = { username, userCodes };
+        localStorage.setItem(LOCAL_PROFILE_STORAGE_KEY, JSON.stringify(profileToSave));
+        toast({
+          title: t({ en: "Local Profile Saved", el: "Το Τοπικό Προφίλ Αποθηκεύτηκε" }),
+          description: t({ en: "Your information has been saved in this browser.", el: "Οι πληροφορίες σας αποθηκεύτηκαν σε αυτό το πρόγραμμα περιήγησης." }),
+          variant: "default",
+        });
+      } catch (error) {
+        toast({ title: t({en: "Save Error", el: "Σφάλμα Αποθήκευσης"}), description: t({en: "Could not save profile.", el: "Δεν ήταν δυνατή η αποθήκευση."}), variant: "destructive" });
+      } finally {
+        setIsSavingProfile(false);
+      }
     }
   };
   
@@ -67,7 +78,10 @@ export default function ProfilePage() {
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
-          <p>{t({en: "Loading profile...", el: "Φόρτωση προφίλ..."})}</p>
+          <div className="flex items-center space-x-2 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>{t({en: "Loading profile...", el: "Φόρτωση προφίλ..."})}</span>
+          </div>
         </main>
         <Footer />
       </div>
@@ -99,6 +113,7 @@ export default function ProfilePage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={t({en: "Enter your desired username", el: "Εισαγάγετε το επιθυμητό όνομα χρήστη"})}
+                disabled={isSavingProfile}
               />
             </div>
             <div className="space-y-2">
@@ -109,11 +124,12 @@ export default function ProfilePage() {
                 onChange={(e) => setUserCodes(e.target.value)}
                 placeholder={t({en: "Store any codes or notes here...", el: "Αποθηκεύστε τυχόν κωδικούς ή σημειώσεις εδώ..."})}
                 rows={4}
+                disabled={isSavingProfile}
               />
             </div>
-            <Button onClick={handleSaveProfile} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Save className="mr-2 h-5 w-5" />
-              {t({en: "Save to This Browser", el: "Αποθήκευση σε Αυτόν τον Περιηγητή"})}
+            <Button onClick={handleSaveProfile} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSavingProfile || authLoading}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              {isSavingProfile ? t({en: "Saving...", el: "Αποθήκευση..."}) : t({en: "Save to This Browser", el: "Αποθήκευση σε Αυτόν τον Περιηγητή"})}
             </Button>
             {/* Logout and Login to Sync buttons are removed */}
           </CardContent>
@@ -123,3 +139,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

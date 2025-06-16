@@ -4,13 +4,14 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase } from 'lucide-react'; 
+import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, Loader2 } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useState, useEffect, useMemo } from 'react';
 import type { OfferSheetData } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -26,14 +27,16 @@ interface DisplayOfferInfo {
 export default function HomePage() {
   const { t, language } = useLocalization(); 
   const [recentOffers, setRecentOffers] = useState<DisplayOfferInfo[]>([]);
+  const [isLoadingRecentOffers, setIsLoadingRecentOffers] = useState(true);
 
   useEffect(() => {
+    setIsLoadingRecentOffers(true);
     if (typeof window !== 'undefined') {
       const loadedOffers: DisplayOfferInfo[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(OFFER_SHEET_STORAGE_PREFIX)) {
-          try {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(OFFER_SHEET_STORAGE_PREFIX)) {
             const item = localStorage.getItem(key);
             if (item) {
               const offerData: OfferSheetData = JSON.parse(item);
@@ -58,15 +61,16 @@ export default function HomePage() {
                 });
               }
             }
-          } catch (e) {
-            console.error("Failed to parse offer sheet from localStorage:", key, e);
           }
         }
+      } catch (e) {
+        console.error("Failed to parse offer sheet from localStorage:", e);
       }
       // Sort by most recent first
       loadedOffers.sort((a, b) => parseInt(b.id, 10) - parseInt(a.id, 10));
-      setRecentOffers(loadedOffers.slice(0, 5)); // Show latest 5, for example
+      setRecentOffers(loadedOffers.slice(0, 5)); // Show latest 5
     }
+    setIsLoadingRecentOffers(false);
   }, [language, t]);
 
 
@@ -90,7 +94,22 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-6 text-center text-muted-foreground">
             {t({ en: 'Recent Offer Sheets', el: 'Πρόσφατες Προσφορές' })}
           </h2>
-          {recentOffers.length > 0 ? (
+          {isLoadingRecentOffers ? (
+            <div className="space-y-4 max-w-2xl mx-auto">
+              {[...Array(3)].map((_, index) => (
+                <Card key={index} className="bg-card rounded-xl border">
+                  <CardContent className="p-5 flex items-center justify-between">
+                    <div className="flex-grow space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-3 w-1/3" />
+                    </div>
+                    <Skeleton className="h-10 w-10 rounded-full ml-4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : recentOffers.length > 0 ? (
             <div className="space-y-4 max-w-2xl mx-auto">
               {recentOffers.map((offer) => (
                 <Link href={`/offer-sheet/edit?id=${offer.id}`} key={offer.id} className="block">
@@ -189,3 +208,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

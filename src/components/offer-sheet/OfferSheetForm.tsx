@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp } from 'lucide-react';
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
@@ -263,6 +263,13 @@ export default function OfferSheetForm() {
   const [isFinalPriceVatInclusive, setIsFinalPriceVatInclusive] = React.useState(false);
   const [currentOfferId, setCurrentOfferId] = React.useState<string | null>(null);
   const importFileRef = React.useRef<HTMLInputElement>(null);
+
+  // Loading states for actions
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isExportingPdf, setIsExportingPdf] = React.useState(false);
+  const [isExportingJpeg, setIsExportingJpeg] = React.useState(false);
+  const [isExportingJson, setIsExportingJson] = React.useState(false);
+  const [isSharing, setIsSharing] = React.useState(false);
 
 
   React.useEffect(() => {
@@ -531,23 +538,33 @@ export default function OfferSheetForm() {
   const currentCurrencySymbol = getCurrencySymbol(offerData.currency);
 
 
-  const handleSubmit = React.useCallback((e: FormEvent) => {
+  const handleSubmit = React.useCallback(async (e: FormEvent) => {
     e.preventDefault();
-    const offerDataToSave = {
-        ...offerData,
-        isFinalPriceVatInclusive: isFinalPriceVatInclusive,
-    };
-    
-    const saveId = currentOfferId || Date.now().toString();
-    localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
+    setIsSaving(true);
+    try {
+      const offerDataToSave = {
+          ...offerData,
+          isFinalPriceVatInclusive: isFinalPriceVatInclusive,
+      };
+      
+      // Simulate async operation for demo
+      await new Promise(resolve => setTimeout(resolve, 500)); 
 
-    toast({
-      title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }),
-      description: t({ en: "Your offer sheet data has been saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν στο localStorage." }),
-      variant: "default",
-    });
-    if (!currentOfferId) { 
-        setCurrentOfferId(saveId);
+      const saveId = currentOfferId || Date.now().toString();
+      localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
+
+      toast({
+        title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }),
+        description: t({ en: "Your offer sheet data has been saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν στο localStorage." }),
+        variant: "default",
+      });
+      if (!currentOfferId) { 
+          setCurrentOfferId(saveId);
+      }
+    } catch (error) {
+        toast({ title: t({en: "Save Error", el: "Σφάλμα Αποθήκευσης"}), description: t({en: "Could not save the offer sheet.", el: "Δεν ήταν δυνατή η αποθήκευση."}), variant: "destructive" });
+    } finally {
+        setIsSaving(false);
     }
   }, [offerData, isFinalPriceVatInclusive, currentOfferId, t, toast]);
   
@@ -561,7 +578,7 @@ export default function OfferSheetForm() {
     URL.revokeObjectURL(dataUrl); 
   };
 
-  const exportAsPdf = React.useCallback(async (returnAsBlob: boolean = false): Promise<Blob | null> => {
+  const exportAsPdfInternal = React.useCallback(async (returnAsBlob: boolean = false): Promise<Blob | null> => {
     const PRODUCTS_PER_PAGE = 3; 
     const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -649,61 +666,82 @@ export default function OfferSheetForm() {
     }
   }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast]);
 
-
-  const exportAsJpeg = React.useCallback(async () => {
-    const tempPdfPageContainer = document.createElement('div');
-    tempPdfPageContainer.style.position = 'absolute';
-    tempPdfPageContainer.style.left = '-210mm';
-    tempPdfPageContainer.style.width = '210mm';
-    document.body.appendChild(tempPdfPageContainer);
-    
-    const root = ReactDOM.createRoot(tempPdfPageContainer);
-    const productsForFirstPage = offerData.products.slice(0, 3); 
-    const currentOfferDataForJpeg = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
-    
-    root.render(
-      <PdfPageLayout
-        offerData={currentOfferDataForJpeg}
-        productsOnPage={productsForFirstPage} 
-        pageNum={1}
-        totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} 
-        currencySymbol={currentCurrencySymbol}
-        calculatedTotals={currentCalculatedTotals}
-        creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}
-        t={t}
-      />
-    );
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    toast({ title: t({en: "Generating JPEG...", el: "Δημιουργία JPEG..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
     try {
-      const canvas = await html2canvas(tempPdfPageContainer, { scale: 2, useCORS: true, windowWidth: tempPdfPageContainer.scrollWidth, windowHeight: tempPdfPageContainer.scrollHeight });
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      triggerDownload(dataUrl, 'offer-sheet-page1.jpg');
-      toast({ title: t({en: "JPEG Generated (Page 1)", el: "Το JPEG δημιουργήθηκε (Σελίδα 1)"}), description: t({en: "Your JPEG has been downloaded.", el: "Το JPEG σας έχει ληφθεί."}), variant: "default" });
+      await exportAsPdfInternal(false);
     } catch (error) {
-      console.error("Error generating JPEG:", error);
-      toast({ title: t({en: "JPEG Generation Failed", el: "Η δημιουργία JPEG απέτυχε"}), description: String(error), variant: "destructive" });
+        console.error("Error exporting PDF:", error);
     } finally {
+        setIsExportingPdf(false);
+    }
+  };
+
+  const handleExportJpeg = React.useCallback(async () => {
+    setIsExportingJpeg(true);
+    try {
+        const tempPdfPageContainer = document.createElement('div');
+        tempPdfPageContainer.style.position = 'absolute';
+        tempPdfPageContainer.style.left = '-210mm';
+        tempPdfPageContainer.style.width = '210mm';
+        document.body.appendChild(tempPdfPageContainer);
+        
+        const root = ReactDOM.createRoot(tempPdfPageContainer);
+        const productsForFirstPage = offerData.products.slice(0, 3); 
+        const currentOfferDataForJpeg = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
+        
+        root.render(
+          <PdfPageLayout
+            offerData={currentOfferDataForJpeg}
+            productsOnPage={productsForFirstPage} 
+            pageNum={1}
+            totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} 
+            currencySymbol={currentCurrencySymbol}
+            calculatedTotals={currentCalculatedTotals}
+            creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}
+            t={t}
+          />
+        );
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        toast({ title: t({en: "Generating JPEG...", el: "Δημιουργία JPEG..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
+        const canvas = await html2canvas(tempPdfPageContainer, { scale: 2, useCORS: true, windowWidth: tempPdfPageContainer.scrollWidth, windowHeight: tempPdfPageContainer.scrollHeight });
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        triggerDownload(dataUrl, 'offer-sheet-page1.jpg');
+        toast({ title: t({en: "JPEG Generated (Page 1)", el: "Το JPEG δημιουργήθηκε (Σελίδα 1)"}), description: t({en: "Your JPEG has been downloaded.", el: "Το JPEG σας έχει ληφθεί."}), variant: "default" });
         root.unmount();
         if (document.body.contains(tempPdfPageContainer)) {
              document.body.removeChild(tempPdfPageContainer);
         }
+    } catch (error) {
+      console.error("Error generating JPEG:", error);
+      toast({ title: t({en: "JPEG Generation Failed", el: "Η δημιουργία JPEG απέτυχε"}), description: String(error), variant: "destructive" });
+    } finally {
+        setIsExportingJpeg(false);
     }
   }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast]);
 
-  const exportOfferDataAsJson = React.useCallback(() => {
-    const dataToExport = {
-      ...offerData,
-      isFinalPriceVatInclusive: isFinalPriceVatInclusive, 
-    };
-    const jsonString = JSON.stringify(dataToExport, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const customerIdentifier = offerData.customerInfo.name || offerData.customerInfo.company || 'offer';
-    const filename = `offer-sheet-${customerIdentifier.replace(/\s+/g, '_')}-${Date.now()}.json`;
-    triggerDownload(url, filename);
-    toast({ title: t({en: "Data Exported", el: "Τα Δεδομένα Εξήχθησαν"}), description: t({en: "Offer sheet data downloaded as JSON.", el: "Τα δεδομένα του δελτίου προσφοράς λήφθηκαν ως JSON."}) });
+  const handleExportJson = React.useCallback(async () => {
+    setIsExportingJson(true);
+    try {
+        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate async
+        const dataToExport = {
+          ...offerData,
+          isFinalPriceVatInclusive: isFinalPriceVatInclusive, 
+        };
+        const jsonString = JSON.stringify(dataToExport, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const customerIdentifier = offerData.customerInfo.name || offerData.customerInfo.company || 'offer';
+        const filename = `offer-sheet-${customerIdentifier.replace(/\s+/g, '_')}-${Date.now()}.json`;
+        triggerDownload(url, filename);
+        toast({ title: t({en: "Data Exported", el: "Τα Δεδομένα Εξήχθησαν"}), description: t({en: "Offer sheet data downloaded as JSON.", el: "Τα δεδομένα του δελτίου προσφοράς λήφθηκαν ως JSON."}) });
+    } catch (error) {
+        console.error("Error exporting JSON:", error);
+        toast({ title: t({en: "Export Error", el: "Σφάλμα Εξαγωγής"}), description: t({en: "Could not export data.", el: "Δεν ήταν δυνατή η εξαγωγή."}), variant: "destructive" });
+    } finally {
+        setIsExportingJson(false);
+    }
   }, [offerData, isFinalPriceVatInclusive, t, toast]);
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -769,49 +807,58 @@ export default function OfferSheetForm() {
   }, []);
 
   const handleShare = React.useCallback(async () => {
-    const pdfBlob = await exportAsPdf(true);
-    if (!pdfBlob) {
-      toast({ title: t({en: "PDF Generation Failed", el: "Η Δημιουργία PDF Απέτυχε"}), description: t({en: "Could not generate PDF for sharing.", el: "Δεν ήταν δυνατή η δημιουργία PDF για κοινοποίηση."}), variant: "destructive"});
-      return;
-    }
+    setIsSharing(true);
+    try {
+        const pdfBlob = await exportAsPdfInternal(true);
+        if (!pdfBlob) {
+          toast({ title: t({en: "PDF Generation Failed", el: "Η Δημιουργία PDF Απέτυχε"}), description: t({en: "Could not generate PDF for sharing.", el: "Δεν ήταν δυνατή η δημιουργία PDF για κοινοποίηση."}), variant: "destructive"});
+          setIsSharing(false);
+          return;
+        }
 
-    const customerName = offerData.customerInfo.name || offerData.customerInfo.company || "Customer";
-    const pdfFile = new File([pdfBlob], `OfferSheet-${customerName.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
-    const shareData = {
-      files: [pdfFile],
-      title: t({en: "Offer Sheet for ", el: "Προσφορά για "}) + customerName,
-      text: t({en: "Please find attached the offer sheet for ", el: "Παρακαλώ βρείτε συνημμένη την προσφορά για "}) + customerName,
-    };
+        const customerName = offerData.customerInfo.name || offerData.customerInfo.company || "Customer";
+        const pdfFile = new File([pdfBlob], `OfferSheet-${customerName.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
+        const shareData = {
+          files: [pdfFile],
+          title: t({en: "Offer Sheet for ", el: "Προσφορά για "}) + customerName,
+          text: t({en: "Please find attached the offer sheet for ", el: "Παρακαλώ βρείτε συνημμένη την προσφορά για "}) + customerName,
+        };
 
-    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-      try {
-        await navigator.share(shareData);
-        toast({ title: t({en: "Shared Successfully", el: "Επιτυχής Κοινοποίηση"}), description: t({en: "Offer sheet shared via native dialog.", el: "Το δελτίο προσφοράς κοινοποιήθηκε μέσω του διαλόγου συστήματος."})});
-      } catch (error) {
-        console.error("Error using Web Share API:", error);
-        // Fallback to mailto if Web Share API fails or is cancelled by user
-        toast({ title: t({en: "Sharing Cancelled or Failed", el: "Η Κοινοποίηση Ακυρώθηκε ή Απέτυχε"}), description: t({en: "Could not share directly. PDF downloaded, opening email draft.", el: "Δεν ήταν δυνατή η απευθείας κοινοποίηση. Το PDF λήφθηκε, άνοιγμα πρόχειρου email."}), variant: "default"});
-        await exportAsPdf(false); // Trigger download
-        const email = offerData.customerInfo.contact;
-        const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
-        const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
-        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-      }
-    } else {
-      // Fallback if Web Share API is not supported for files or at all
-      toast({ title: t({en: "Direct Share Not Supported", el: "Η Απευθείας Κοινοποίηση δεν Υποστηρίζεται"}), description: t({en: "PDF downloaded. Please share it manually via email or other apps.", el: "Το PDF λήφθηκε. Παρακαλούμε κοινοποιήστε το χειροκίνητα μέσω email ή άλλων εφαρμογών."}), variant: "default"});
-      await exportAsPdf(false); // Trigger download
-      const email = offerData.customerInfo.contact;
-      const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
-      const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
-      if (email && email.includes('@')) { // Basic email validation
-         window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-      } else {
-         window.location.href = `mailto:?subject=${subject}&body=${body}`; // Open email client without recipient
-         toast({ title: t({en: "Customer Email Missing", el: "Λείπει το Email Πελάτη"}), description: t({en: "Customer email not found. Please enter it manually.", el: "Το email του πελάτη δεν βρέθηκε. Παρακαλούμε εισαγάγετέ το χειροκίνητα."}), variant: "default"});
-      }
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+          try {
+            await navigator.share(shareData);
+            toast({ title: t({en: "Shared Successfully", el: "Επιτυχής Κοινοποίηση"}), description: t({en: "Offer sheet shared via native dialog.", el: "Το δελτίο προσφοράς κοινοποιήθηκε μέσω του διαλόγου συστήματος."})});
+          } catch (error) {
+            console.error("Error using Web Share API:", error);
+            // Fallback to mailto if Web Share API fails or is cancelled by user
+            toast({ title: t({en: "Sharing Cancelled or Failed", el: "Η Κοινοποίηση Ακυρώθηκε ή Απέτυχε"}), description: t({en: "Could not share directly. PDF downloaded, opening email draft.", el: "Δεν ήταν δυνατή η απευθείας κοινοποίηση. Το PDF λήφθηκε, άνοιγμα πρόχειρου email."}), variant: "default"});
+            await exportAsPdfInternal(false); // Trigger download
+            const email = offerData.customerInfo.contact;
+            const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
+            const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+          }
+        } else {
+          // Fallback if Web Share API is not supported for files or at all
+          toast({ title: t({en: "Direct Share Not Supported", el: "Η Απευθείας Κοινοποίηση δεν Υποστηρίζεται"}), description: t({en: "PDF downloaded. Please share it manually via email or other apps.", el: "Το PDF λήφθηκε. Παρακαλούμε κοινοποιήστε το χειροκίνητα μέσω email ή άλλων εφαρμογών."}), variant: "default"});
+          await exportAsPdfInternal(false); // Trigger download
+          const email = offerData.customerInfo.contact;
+          const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
+          const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
+          if (email && email.includes('@')) { // Basic email validation
+             window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+          } else {
+             window.location.href = `mailto:?subject=${subject}&body=${body}`; // Open email client without recipient
+             toast({ title: t({en: "Customer Email Missing", el: "Λείπει το Email Πελάτη"}), description: t({en: "Customer email not found. Please enter it manually.", el: "Το email του πελάτη δεν βρέθηκε. Παρακαλούμε εισαγάγετέ το χειροκίνητα."}), variant: "default"});
+          }
+        }
+    } catch (error) {
+        console.error("Error in share process:", error);
+        toast({ title: t({en: "Sharing Error", el: "Σφάλμα Κοινοποίησης"}), description: t({en: "An unexpected error occurred during sharing.", el: "Παρουσιάστηκε σφάλμα κατά την κοινοποίηση."}), variant: "destructive"});
+    } finally {
+        setIsSharing(false);
     }
-  }, [exportAsPdf, offerData.customerInfo, offerData.sellerInfo.name, t, toast]);
+  }, [exportAsPdfInternal, offerData.customerInfo, offerData.sellerInfo.name, t, toast]);
 
 
   return (
@@ -1061,40 +1108,45 @@ export default function OfferSheetForm() {
       </Card>
 
       <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 md:space-x-4 pt-6 border-t mt-8">
-        <Button type="button" variant="outline" onClick={handleShare}>
-          <Share2 className="mr-2 h-5 w-5" /> {t({ en: 'Share Offer', el: 'Κοινοποίηση Προσφοράς' })}
+        <Button type="button" variant="outline" onClick={handleShare} disabled={isSharing || isExportingPdf}>
+          {isSharing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Share2 className="mr-2 h-5 w-5" />}
+          {isSharing ? t({ en: 'Sharing...', el: 'Κοινοποίηση...' }) : t({ en: 'Share Offer', el: 'Κοινοποίηση Προσφοράς' })}
         </Button>
         
-        <Button type="button" variant="outline" onClick={triggerImportFileDialog}>
+        <Button type="button" variant="outline" onClick={triggerImportFileDialog} disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson}>
           <FileUp className="mr-2 h-5 w-5" /> {t({ en: 'Import Data', el: 'Εισαγωγή Δεδομένων' })}
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <FileDown className="mr-2 h-5 w-5" /> {t({ en: 'Export', el: 'Εξαγωγή' })}
+            <Button variant="outline" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson}>
+              {isExportingPdf || isExportingJpeg || isExportingJson ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
+              {t({ en: 'Export', el: 'Εξαγωγή' })}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => exportAsPdf(false)}> {/* Explicitly false for download */}
-              <FileText className="mr-2 h-4 w-4" />
-              {t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF' })}
+            <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf}>
+              {isExportingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              {isExportingPdf ? t({en: 'Generating PDF...', el: 'Δημιουργία PDF...'}) : t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF' })}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportAsJpeg}>
-              <ImageIconLucide className="mr-2 h-4 w-4" />
-              {t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)' })}
+            <DropdownMenuItem onClick={handleExportJpeg} disabled={isExportingJpeg}>
+               {isExportingJpeg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIconLucide className="mr-2 h-4 w-4" />}
+              {isExportingJpeg ? t({en: 'Generating JPEG...', el: 'Δημιουργία JPEG...'}) : t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)' })}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportOfferDataAsJson}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>
-              {t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
+            <DropdownMenuItem onClick={handleExportJson} disabled={isExportingJson}>
+              {isExportingJson ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
+              {isExportingJson ? t({en: 'Exporting Data...', el: 'Εξαγωγή Δεδομένων...'}) : t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Save className="mr-2 h-5 w-5" /> {t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
+        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson}>
+          {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+          {isSaving ? t({ en: 'Saving...', el: 'Αποθήκευση...' }) : t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
         </Button>
       </div>
     </form>
   );
 }
+
+    
