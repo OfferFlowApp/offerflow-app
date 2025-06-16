@@ -1,11 +1,12 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { useLocalization } from '@/hooks/useLocalization';
-import type { Language } from '@/lib/types';
+import type { Language, SettingsData, SellerInfo } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle } from 'lucide-react';
+import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -27,6 +28,31 @@ export default function Header() {
   const { language, setAppLanguage, t } = useLocalization();
   const { currentUser, loading: authLoading, logOut } = useAuth();
   const router = useRouter();
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const [isLoadingLogo, setIsLoadingLogo] = useState(true);
+
+  useEffect(() => {
+    setIsLoadingLogo(true);
+    if (typeof window !== 'undefined') {
+      const savedSettingsRaw = localStorage.getItem('offerSheetSettings');
+      if (savedSettingsRaw) {
+        try {
+          const parsedSettings: SettingsData = JSON.parse(savedSettingsRaw);
+          let url: string | undefined = undefined;
+          if (parsedSettings.defaultSellerInfo && parsedSettings.defaultSellerInfo.logoUrl) {
+            url = parsedSettings.defaultSellerInfo.logoUrl;
+          } else if (parsedSettings.defaultLogoUrl) { // Legacy support for older settings structure
+            url = parsedSettings.defaultLogoUrl;
+          }
+          setLogoUrl(url);
+        } catch (e) {
+          console.error("Failed to parse settings for header logo:", e);
+          setLogoUrl(undefined);
+        }
+      }
+    }
+    setIsLoadingLogo(false);
+  }, []);
 
   const handleLanguageChange = (value: string) => {
     setAppLanguage(value as Language);
@@ -41,11 +67,24 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-8 flex items-center">
-          <span className="text-2xl font-bold text-primary">OfferSheet</span>
+          {isLoadingLogo ? (
+            <span className="text-2xl font-bold text-primary animate-pulse">OfferSheet</span>
+          ) : logoUrl ? (
+            <Image 
+              src={logoUrl} 
+              alt={t({ en: 'Application Logo', el: 'Λογότυπο Εφαρμογής' })} 
+              width={120} // Provide a base width for aspect ratio
+              height={40} // Provide a base height for aspect ratio
+              className="h-10 w-auto max-w-[150px] object-contain" // CSS controls final size
+              data-ai-hint="company brand"
+            />
+          ) : (
+            <span className="text-2xl font-bold text-primary">OfferSheet</span>
+          )}
         </Link>
         <nav className="flex items-center space-x-4 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-primary flex items-center">
-            <FileText className="mr-1 h-4 w-4" />
+            <Home className="mr-1 h-4 w-4" /> {/* Changed Icon for Home */}
             {t({ en: 'Home', el: 'Αρχική' })}
           </Link>
           <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary flex items-center">
@@ -109,5 +148,3 @@ export default function Header() {
     </header>
   );
 }
-
-    
