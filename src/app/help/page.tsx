@@ -23,8 +23,9 @@ export default function HelpPage() {
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <HelpCircle className="mx-auto h-16 w-16 text-primary mb-4" />
-          <h1 className="text-4xl font-bold text-primary font-headline">
-            {t({ en: "OfferFlow User Guide", el: "Οδηγός Χρήσης OfferFlow" })}
+          <h1 className="text-4xl font-bold font-headline">
+            <span className="text-primary">{t({ en: "Offer", el: "Offer" })}</span><span className="text-accent">{t({ en: "Flow", el: "Flow" })}</span>{' '}
+            {t({ en: "User Guide", el: "Οδηγός Χρήσης" })}
           </h1>
           <p className="text-lg text-muted-foreground mt-2">
             {t({ en: "Learn how to create, manage, and share professional offer sheets.", el: "Μάθετε πώς να δημιουργείτε, να διαχειρίζεστε και να μοιράζεστε επαγγελματικά δελτία προσφορών." })}
@@ -179,5 +180,7 @@ export default function HelpPage() {
     </div>
   );
 }
+
+    
 
     
