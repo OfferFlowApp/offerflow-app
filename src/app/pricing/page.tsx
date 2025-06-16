@@ -90,7 +90,11 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
-              className={`flex flex-col shadow-xl rounded-lg transition-all duration-300 hover:shadow-2xl ${plan.isFeatured ? 'border-primary border-2 ring-2 ring-primary/50 relative' : 'border'}`}
+              className={`flex flex-col rounded-lg transition-all duration-300 ${
+                plan.isFeatured 
+                  ? 'border-primary border-[3px] ring-4 ring-primary/60 relative shadow-2xl' 
+                  : 'border shadow-xl hover:shadow-2xl'
+              }`}
             >
               {plan.isFeatured && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-sm font-semibold rounded-full shadow-md">
