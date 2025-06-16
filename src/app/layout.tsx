@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import AppProviders from '@/components/layout/AppProviders';
 import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
+import SupportChat from '@/components/layout/SupportChat'; // Import SupportChat
 
 export const metadata: Metadata = {
   title: 'OfferFlow App',
@@ -27,6 +28,7 @@ export default function RootLayout({
           <AppProviders>
             {children}
             <Toaster />
+            <SupportChat /> {/* Add SupportChat here */}
           </AppProviders>
         </AuthProvider>
       </body>
