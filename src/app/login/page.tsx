@@ -1,18 +1,19 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
+
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useLocalization } from '@/hooks/useLocalization';
-import Link from 'next/link';
-import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useLocalization } from '@/hooks/useLocalization';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4">
@@ -45,7 +46,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     try {
