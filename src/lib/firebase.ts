@@ -23,6 +23,15 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
+// Log the config being used for debugging purposes, only on client-side
+if (typeof window !== 'undefined') {
+  console.log('%c[Auth Debug] Firebase Configuration a_Auth_Context_Error:', 'color: orange; font-weight: bold;', firebaseConfig);
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    console.error('%c[Auth Debug] CRITICAL: Firebase API Key or Project ID is missing from config!', 'color: red; font-weight: bold;');
+  }
+}
+
+
 if (
   !firebaseConfig.apiKey ||
   !firebaseConfig.authDomain ||
@@ -33,7 +42,7 @@ if (
     console.warn(
       'FIREBASE NOT CONFIGURED: Essential Firebase environment variables are missing. ' +
         "Please ensure NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, " +
-        "NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID are set in your .env.local file. " +
+        "NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID are set in your .env.local file or environment. " +
         'Firebase services will be non-functional. Some features like authentication will be disabled.'
     );
   }
@@ -43,10 +52,6 @@ if (
   db = {} as Firestore;
   storage = {} as FirebaseStorage;
 } else {
-  if (typeof window !== 'undefined') {
-    // Log the config being used for debugging purposes
-    console.log('[Auth Debug] firebaseConfig used for initialization:', firebaseConfig);
-  }
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
@@ -55,10 +60,6 @@ if (
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
-  // if (typeof window !== 'undefined') {
-  //     // console.log("Firebase initialized successfully with project:", firebaseConfig.projectId); // Intentionally commented out for cleaner default logs
-  // }
 }
 
 export { app, auth, db, storage };
-

@@ -105,14 +105,23 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
+    if (typeof window !== 'undefined') {
+        console.log(`[AuthContext] Attempting Google Sign-In from domain: ${window.location.hostname}`);
+    }
     if (!auth || typeof signInWithPopup !== 'function' || typeof GoogleAuthProvider !== 'function') {
-      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Google Sign-In is currently unavailable.", el: "Η σύνδεση με Google δεν είναι διαθέσιμη προς το παρόν."}), variant: "destructive" });
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Google Sign-In is currently unavailable (auth methods missing).", el: "Η σύνδεση με Google δεν είναι διαθέσιμη προς το παρόν (λείπουν μέθοδοι auth)."}), variant: "destructive" });
       return null;
     }
-    setLoading(true);
-    if (typeof window !== 'undefined') {
-      console.log(`[AuthContext] Attempting Google Sign-In from domain: ${window.location.hostname}`);
+    
+    // More detailed check for auth object integrity
+    // Checking for internal properties like 'name' or 'app' might indicate if it's a valid Firebase Auth object
+    if (!auth.app || typeof auth.settings !== 'object') {
+        console.error("[AuthContext] Firebase Auth object (auth) appears to be invalid or not fully initialized before Google Sign-In.", auth);
+        toast({ title: t({en: "Initialization Error", el: "Σφάλμα Αρχικοποίησης"}), description: t({en: "Authentication service is not ready.", el: "Η υπηρεσία αυθεντικοποίησης δεν είναι έτοιμη."}), variant: "destructive" });
+        return null;
     }
+
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
@@ -120,7 +129,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       router.push('/');
       return result.user;
     } catch (error: any) {
-      console.error("Google Sign-In error:", error); // This will still log the raw Firebase error object
+      console.error("Google Sign-In error:", error);
       // The specific console.error for unauthorized-domain has been removed.
       toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: error.message || t({en: "Could not sign in with Google.", el: "Δεν ήταν δυνατή η σύνδεση με Google."}), variant: "destructive" });
       return null;
@@ -165,4 +174,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
