@@ -68,23 +68,27 @@ export default function Header() {
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-8 flex items-center">
           {isLoadingLogo ? (
-            <span className="text-2xl font-bold text-primary animate-pulse">OfferSheet</span>
+            <span className="text-2xl font-bold animate-pulse">
+              <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
+            </span>
           ) : logoUrl ? (
             <Image 
               src={logoUrl} 
               alt={t({ en: 'Application Logo', el: 'Λογότυπο Εφαρμογής' })} 
-              width={120} // Provide a base width for aspect ratio
-              height={40} // Provide a base height for aspect ratio
-              className="h-10 w-auto max-w-[150px] object-contain" // CSS controls final size
+              width={120} 
+              height={40} 
+              className="h-10 w-auto max-w-[150px] object-contain"
               data-ai-hint="company brand"
             />
           ) : (
-            <span className="text-2xl font-bold text-primary">OfferSheet</span>
+            <span className="text-2xl font-bold">
+              <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
+            </span>
           )}
         </Link>
         <nav className="flex items-center space-x-4 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-primary flex items-center">
-            <Home className="mr-1 h-4 w-4" /> {/* Changed Icon for Home */}
+            <Home className="mr-1 h-4 w-4" />
             {t({ en: 'Home', el: 'Αρχική' })}
           </Link>
           <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary flex items-center">
