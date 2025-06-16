@@ -64,6 +64,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return null;
     }
     setLoading(true);
+    if (typeof window !== 'undefined') {
+      console.log(`[AuthContext] Attempting Email Sign-Up from domain: ${window.location.hostname}`);
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Successfully signed up!", el: "Επιτυχής εγγραφή!"}) });
@@ -84,6 +87,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return null;
     }
     setLoading(true);
+    if (typeof window !== 'undefined') {
+      console.log(`[AuthContext] Attempting Email Sign-In from domain: ${window.location.hostname}`);
+    }
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
@@ -104,14 +110,21 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return null;
     }
     setLoading(true);
+    if (typeof window !== 'undefined') {
+      console.log(`[AuthContext] Attempting Google Sign-In from domain: ${window.location.hostname}`);
+    }
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
       router.push('/');
       return result.user;
-    } catch (error: any) {
+    } catch (error: any) { // Added missing opening brace here
       console.error("Google Sign-In error:", error);
+      // Log the specific hostname that Firebase considers unauthorized if the error is auth/unauthorized-domain
+      if (error.code === 'auth/unauthorized-domain' && typeof window !== 'undefined') {
+        console.error(`[AuthContext] Google Sign-In failed for domain: ${window.location.hostname}. Please ensure this domain is authorized in your Firebase project settings (Authentication -> Sign-in method -> Authorized domains) AND in your Google Cloud Console OAuth consent screen & client ID credentials.`);
+      }
       toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: error.message || t({en: "Could not sign in with Google.", el: "Δεν ήταν δυνατή η σύνδεση με Google."}), variant: "destructive" });
       return null;
     } finally {
@@ -155,3 +168,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
