@@ -145,7 +145,6 @@ export default function DefaultLogoSettings() {
     if (value !== OTHER_SELLER_NAME_VALUE) {
       setDefaultSellerInfo(prev => ({ ...prev, name: value }));
     } else {
-      // If "Other" is selected and the current name is one of the predefined ones, clear it to allow custom input.
       if (PREDEFINED_SELLER_NAMES.includes(defaultSellerInfo.name || '')) {
         setDefaultSellerInfo(prev => ({ ...prev, name: '' }));
       }
@@ -183,21 +182,12 @@ export default function DefaultLogoSettings() {
         }
     }
 
-    // Ensure that if "Other" was selected but input was empty, we don't save an empty string if a default exists
     const finalSellerInfoToSave = { ...defaultSellerInfo };
-    if (selectedDefaultSellerNameKey === OTHER_SELLER_NAME_VALUE && !finalSellerInfoToSave.name) {
-      // This case is tricky; if they selected "Other" and left it blank, what should happen?
-      // For now, it saves blank. Could be improved to fall back to first predefined if desired.
-    }
-    if (selectedDefaultSellerAddressKey === OTHER_SELLER_ADDRESS_VALUE && !finalSellerInfoToSave.address) {
-      // Similar to name
-    }
-
 
     const settingsToSave: SettingsData = {
         ...existingSettings,
         defaultSellerInfo: finalSellerInfoToSave,
-        defaultLogoUrl: finalSellerInfoToSave.logoUrl, // Keep for legacy if OfferSheetForm directly uses it
+        defaultLogoUrl: finalSellerInfoToSave.logoUrl, 
     };
     localStorage.setItem('offerSheetSettings', JSON.stringify(settingsToSave));
     toast({
@@ -235,7 +225,7 @@ export default function DefaultLogoSettings() {
                 <Label htmlFor="customDefaultSellerName" className="text-sm font-normal">{t({ en: 'Custom Default Seller Name', el: 'Προσαρμοσμένο Προεπιλεγμένο Όνομα Πωλητή' })}</Label>
                 <Input
                   id="customDefaultSellerName"
-                  name="name" // Should match key in defaultSellerInfo
+                  name="name" 
                   value={defaultSellerInfo.name || ''}
                   onChange={handleCustomDefaultSellerNameChange}
                   placeholder={t({en: "Enter custom default seller name", el: "Εισαγάγετε προσαρμοσμένο προεπιλεγμένο όνομα πωλητή"})}
@@ -262,7 +252,7 @@ export default function DefaultLogoSettings() {
                 <Label htmlFor="customDefaultSellerAddress" className="text-sm font-normal">{t({ en: 'Custom Default Seller Address', el: 'Προσαρμοσμένη Προεπιλεγμένη Διεύθυνση Πωλητή' })}</Label>
                 <Textarea
                   id="customDefaultSellerAddress"
-                  name="address" // Should match key in defaultSellerInfo
+                  name="address" 
                   value={defaultSellerInfo.address || ''}
                   onChange={handleCustomDefaultSellerAddressChange}
                   placeholder={t({en: "Enter custom default seller address", el: "Εισαγάγετε προσαρμοσμένη προεπιλεγμένη διεύθυνση πωλητή"})}
@@ -288,7 +278,7 @@ export default function DefaultLogoSettings() {
       <div className="flex flex-col items-start space-y-4">
         <Label htmlFor="defaultLogoUpload" className="text-base">{t({en: "Default Company Logo", el: "Προεπιλεγμένο Λογότυπο Εταιρείας"})}</Label>
         {logoPreview ? (
-          <Image src={logoPreview} alt={t({en:"Default Logo Preview", el:"Προεπισκόπηση Προεπιλεγμένου Λογότυπου"})} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
+          <Image src={logoPreview} alt={t({en:"Default Logo Preview", el:"Προεπισκόπηση Προεπιλεγμένου Λογότυπου"})} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company brand" />
         ) : (
           <div className="w-40 h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
             <UploadCloud className="h-16 w-16" />

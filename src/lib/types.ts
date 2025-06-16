@@ -1,5 +1,5 @@
 
-export type Currency = 'EUR';
+export type Currency = 'EUR' | 'USD' | 'GBP';
 export type Language = 'en' | 'el';
 export type Theme = 'light' | 'dark';
 
@@ -57,4 +57,3 @@ export interface SettingsData {
   preferredLanguage?: Language;
   localProfile?: LocalUserProfile; 
 }
-

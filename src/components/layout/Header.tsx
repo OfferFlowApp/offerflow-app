@@ -3,7 +3,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-// import Image from 'next/image'; // Removed Image import
 import { Separator } from '@/components/ui/separator';
 import { useLocalization } from '@/hooks/useLocalization';
 import type { Language } from '@/lib/types';
@@ -14,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle, LogIn, UserPlus } from 'lucide-react';
+import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -35,23 +34,30 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logOut();
-    router.push('/'); // Redirect to homepage after logout
+    router.push('/'); 
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-8 flex items-center">
-          <span className="text-2xl font-bold text-primary">Giorgaras Furniture</span>
+          <span className="text-2xl font-bold text-primary">OfferSheet</span>
         </Link>
         <nav className="flex items-center space-x-6 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-primary">
+            <FileText className="mr-1 h-4 w-4 inline-block" />
             {t({ en: 'Home', el: 'Αρχική' })}
           </Link>
           <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary">
+            <FileText className="mr-1 h-4 w-4 inline-block" />
             {t({ en: 'Create Offer', el: 'Δημιουργία' })}
           </Link>
+           <Link href="/pricing" className="transition-colors hover:text-primary">
+            <CreditCard className="mr-1 h-4 w-4 inline-block" />
+            {t({ en: 'Pricing', el: 'Τιμολόγηση' })}
+          </Link>
           <Link href="/settings" className="transition-colors hover:text-primary">
+            <Settings className="mr-1 h-4 w-4 inline-block" />
             {t({ en: 'Settings', el: 'Ρυθμίσεις' })}
           </Link>
         </nav>

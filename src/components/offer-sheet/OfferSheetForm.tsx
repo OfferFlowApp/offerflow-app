@@ -28,7 +28,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PdfPageLayout from './PdfPageLayout'; 
 import ReactDOM from 'react-dom/client';
-import { useSearchParams } from 'next/navigation'; // For loading by ID
+import { useSearchParams } from 'next/navigation'; 
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -82,6 +82,8 @@ const initialSellerInfo: SellerInfo = {
 
 const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType, label: string }> = {
   EUR: { symbol: '€', IconComponent: Euro, label: 'Euro' },
+  USD: { symbol: '$', IconComponent: DollarIcon, label: 'US Dollar' },
+  GBP: { symbol: '£', IconComponent: PoundSterling, label: 'British Pound' },
 };
 
 const getCurrencySymbol = (currency: Currency): string => {
@@ -240,7 +242,7 @@ const ProductItemCard: React.FC<ProductItemProps> = React.memo(({ product, index
             <Input id={`productImage-${index}`} type="file" accept="image/*" onChange={handleProductImageUpload} className="file:text-primary file:font-medium" />
             {product.imageUrl && (
               <div className="mt-2">
-                <Image src={product.imageUrl} alt={t({ en: "Product Preview", el: "Προεπισκόπηση Προϊόντος" })} width={100} height={100} className="rounded-md object-cover" data-ai-hint="product image"/>
+                <Image src={product.imageUrl} alt={t({ en: "Product Preview", el: "Προεπισκόπηση Προϊόντος" })} width={100} height={100} className="rounded-md object-cover" data-ai-hint="product photo"/>
               </div>
             )}
           </div>
@@ -275,10 +277,10 @@ export default function OfferSheetForm() {
           const parsedSettings: SettingsData = JSON.parse(savedSettingsRaw);
           if (parsedSettings.defaultSellerInfo) {
             userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
-          } else if (parsedSettings.defaultLogoUrl) {
+          } else if (parsedSettings.defaultLogoUrl) { // Legacy support
             userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
           }
-          if (parsedSettings.defaultCurrency === 'EUR') { // Only EUR supported for now
+          if (parsedSettings.defaultCurrency && currencyMetadata[parsedSettings.defaultCurrency]) {
             userDefaultCurrency = parsedSettings.defaultCurrency;
           }
         } catch (error) {
@@ -845,7 +847,7 @@ export default function OfferSheetForm() {
             <Label htmlFor="logoUpload">{t({ en: 'Seller Logo', el: 'Λογότυπο Πωλητή' })}</Label>
             <div className="flex flex-col items-start space-y-2">
               {offerData.sellerInfo.logoUrl ? (
-                <Image src={offerData.sellerInfo.logoUrl} alt={t({ en: "Seller Logo Preview", el: "Προεπισκόπηση Λογοτύπου Πωλητή"})} width={150} height={75} className="rounded-md object-contain border p-2" data-ai-hint="company logo" />
+                <Image src={offerData.sellerInfo.logoUrl} alt={t({ en: "Seller Logo Preview", el: "Προεπισκόπηση Λογοτύπου Πωλητή"})} width={150} height={75} className="rounded-md object-contain border p-2" data-ai-hint="company brand" />
               ) : (
                 <div className="w-32 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
                   <UploadCloud className="h-8 w-8" />
@@ -1050,4 +1052,3 @@ export default function OfferSheetForm() {
     </form>
   );
 }
-
