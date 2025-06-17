@@ -8,7 +8,7 @@ const defaultEntitlements: PlanEntitlements = {
   canSaveTemplates: false,
   canSaveCustomers: false,
   canUseDashboard: false,
-  allowedExportFormats: ['pdf', 'jpeg', 'json'], // Basic exports
+  allowedExportFormats: ['pdf'], // Free default
   maxTeamMembers: 1,
   hasAnalytics: false,
   prioritySupportLevel: 'basic',
@@ -31,15 +31,16 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       { key: 'free-teams', textKey: { en: 'No Team Access', el: 'Όχι Πρόσβαση Ομάδας' }, available: false, icon: 'x' },
       { key: 'free-support', textKey: { en: 'Basic Email Support (72h+)', el: 'Βασική Υποστήριξη Email (72h+)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Get Started', el: 'Ξεκινήστε' },
+    buttonTextKey: { en: 'Current Plan', el: 'Τρέχον Πρόγραμμα' }, // Changed from Get Started as it's selected by default
     entitlements: {
       ...defaultEntitlements,
       maxOfferSheetsPerMonth: 2,
       canUseCustomBranding: false,
-      canRemoveWatermark: false,
-      allowedExportFormats: ['pdf'], // Only PDF for Free
+      canRemoveWatermark: false, // Explicitly false, watermark will be shown
+      allowedExportFormats: ['pdf'],
       prioritySupportLevel: 'basic',
     },
+    // stripePriceId: 'YOUR_FREE_PLAN_STRIPE_PRICE_ID' // Usually free plans don't need a price ID unless you model them in Stripe
   },
   pro: {
     id: 'pro',
@@ -54,7 +55,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       { key: 'pro-templates', textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
       { key: 'pro-customers', textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
       { key: 'pro-dashboard', textKey: { en: 'Basic Usage Dashboard', el: 'Βασικός Πίνακας Ελέγχου Χρήσης' }, available: true, icon: 'check' },
-      { key: 'pro-export', textKey: { en: 'PDF Export', el: 'Εξαγωγή PDF' }, available: true, icon: 'check' }, // Jpeg and JSON are generally available
+      { key: 'pro-export', textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
       { key: 'pro-support', textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
     ],
     buttonTextKey: { en: 'Choose Pro', el: 'Επιλέξτε Pro' },
@@ -66,10 +67,11 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       canRemoveWatermark: true,
       canSaveTemplates: true,
       canSaveCustomers: true,
-      canUseDashboard: true,
+      canUseDashboard: true, // Placeholder for now
       allowedExportFormats: ['pdf', 'jpeg', 'json'],
       prioritySupportLevel: 'standard',
     },
+    stripePriceId: 'YOUR_PRO_PLAN_STRIPE_PRICE_ID' // Replace with your actual Stripe Price ID
   },
   business: {
     id: 'business',
@@ -80,7 +82,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     features: [
       { key: 'business-all-pro', textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
       { key: 'business-teams', textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
-      { key: 'business-whitelabel', textKey: { en: 'Full White-Labeling', el: ' πλήρης απομάκρυνση λογότυπου OfferFlow' }, available: true, icon: 'check' },
+      { key: 'business-whitelabel', textKey: { en: 'Full White-Labeling Option', el: 'Επιλογή πλήρους White-Labeling' }, available: true, icon: 'check' },
       { key: 'business-export', textKey: { en: 'CSV & Excel Export Options', el: 'Επιλογές Εξαγωγής CSV & Excel' }, available: true, icon: 'check' },
       { key: 'business-analytics', textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
       { key: 'business-support', textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
@@ -93,12 +95,13 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       canRemoveWatermark: true,
       canSaveTemplates: true,
       canSaveCustomers: true,
-      canUseDashboard: true,
+      canUseDashboard: true, // Placeholder
       allowedExportFormats: ['pdf', 'jpeg', 'json', 'csv', 'excel'],
-      maxTeamMembers: 4,
-      hasAnalytics: true,
+      maxTeamMembers: 4, // Placeholder
+      hasAnalytics: true, // Placeholder
       prioritySupportLevel: 'priority',
     },
+    stripePriceId: 'YOUR_BUSINESS_PLAN_STRIPE_PRICE_ID' // Replace with your actual Stripe Price ID
   },
 };
 

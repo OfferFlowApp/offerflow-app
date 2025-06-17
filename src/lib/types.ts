@@ -9,8 +9,8 @@ export interface Product {
   id: string;
   title: string;
   quantity: number;
-  originalPrice: number; 
-  discountedPrice: number; 
+  originalPrice: number;
+  discountedPrice: number;
   discountedPriceType: 'exclusive' | 'inclusive';
   description: string;
   imageUrl?: string;
@@ -20,10 +20,10 @@ export interface CustomerInfo {
   id?: string; // For saving/reusing customers
   name: string;
   company: string;
-  contact: string; 
-  vatNumber?: string; 
-  address?: string; 
-  phone2?: string; 
+  contact: string;
+  vatNumber?: string;
+  address?: string;
+  phone2?: string;
   gemhNumber?: string;
   notes?: string; // For Pro/Business saved customers
 }
@@ -31,38 +31,38 @@ export interface CustomerInfo {
 export interface SellerInfo {
   name: string;
   address: string;
-  email?: string; 
-  phone?: string; 
-  logoUrl?: string; 
+  email?: string;
+  phone?: string;
+  logoUrl?: string;
   gemhNumber?: string;
 }
 
 export interface OfferSheetData {
   id?: string; // To identify the offer sheet itself
   customerInfo: CustomerInfo;
-  sellerInfo: SellerInfo; 
+  sellerInfo: SellerInfo;
   validityStartDate?: Date;
   validityEndDate?: Date;
   products: Product[];
   termsAndConditions: string;
   currency: Currency;
-  vatRate?: number; 
+  vatRate?: number;
   isFinalPriceVatInclusive?: boolean;
   // Fields for plan tracking if needed directly on offer
-  // createdByPlan?: PlanId; 
+  // createdByPlan?: PlanId;
 }
 
 export interface LocalUserProfile {
   username?: string;
-  userCodes?: string; 
+  userCodes?: string;
 }
 
 export interface SettingsData {
-  defaultLogoUrl?: string; 
+  defaultLogoUrl?: string;
   defaultSellerInfo?: Partial<SellerInfo>;
   defaultCurrency?: Currency;
   preferredLanguage?: Language;
-  localProfile?: LocalUserProfile; 
+  localProfile?: LocalUserProfile;
   defaultTermsAndConditions?: string;
 }
 
@@ -86,11 +86,9 @@ export interface UserSubscription {
   currentPeriodStart?: number; // Timestamp (ms)
   currentPeriodEnd?: number; // Timestamp (ms)
   offersCreatedThisPeriod?: number;
-  // Stripe specific fields (optional, for future use)
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
-  // Entitlements will be derived from planId mostly, but can be overridden
-  entitlements?: Partial<PlanEntitlements>; 
+  stripeCustomerId?: string; // Added for Stripe integration
+  stripeSubscriptionId?: string; // Added for Stripe integration
+  entitlements?: Partial<PlanEntitlements>;
 }
 
 export interface PricingPlanDetails {
@@ -108,4 +106,6 @@ export interface PricingPlanDetails {
   buttonTextKey: { en: string; el: string };
   isFeatured?: boolean;
   entitlements: PlanEntitlements;
+  stripePriceId?: string; // For Stripe integration (you'll get this from your Stripe dashboard)
 }
+

@@ -5,22 +5,79 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle, Info, ShoppingCart } from 'lucide-react';
+import { CheckCircle, XCircle, Info, ShoppingCart, Loader2 } from 'lucide-react';
 import { useLocalization } from '@/hooks/useLocalization';
-import { PLANS, type PricingPlanDetails } from '@/config/plans'; // Import new plans config
+import { PLANS, type PricingPlanDetails } from '@/config/plans';
 import type { PlanId } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const plansToShow: PricingPlanDetails[] = [PLANS.free, PLANS.pro, PLANS.business];
 
 export default function PricingPage() {
   const { t } = useLocalization();
+  const { currentUser, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoadingPlan, setIsLoadingPlan] = useState<PlanId | null>(null);
 
-  const handleChoosePlan = (planId: PlanId) => {
-    // Placeholder: In a real app, this would navigate to a checkout or contact form.
-    // For now, it can log or show a toast.
-    // With Firebase Auth, you'd typically associate the chosen plan with the user ID.
-    // Example: router.push(`/checkout?plan=${planId}`);
-    alert(`${t({en: "You selected:", el:"Επιλέξατε:"})} ${t(PLANS[planId].nameKey)}. ${t({en: "Checkout functionality is a placeholder.", el: "Η λειτουργία πληρωμής είναι placeholder."})}`);
+  const handleChoosePlan = async (planId: PlanId) => {
+    if (!currentUser) {
+      toast({
+        title: t({ en: "Login Required", el: "Απαιτείται Σύνδεση" }),
+        description: t({ en: "Please log in or sign up to choose a plan.", el: "Παρακαλώ συνδεθείτε ή εγγραφείτε για να επιλέξετε ένα πρόγραμμα." }),
+        variant: "default",
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (planId === 'free') {
+      toast({
+        title: t({ en: "Already on Free Plan", el: "Είστε ήδη στο Δωρεάν Πρόγραμμα" }),
+        description: t({ en: "You are currently on the Free plan.", el: "Αυτή τη στιγμή βρίσκεστε στο Δωρεάν πρόγραμμα." }),
+      });
+      return;
+    }
+
+    setIsLoadingPlan(planId);
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ planId: planId, userId: currentUser.uid }),
+      });
+
+      const session = await response.json();
+
+      if (session.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = session.url;
+      } else if (session.error) {
+        console.error("Stripe session error:", session.error);
+        toast({
+          title: t({ en: "Checkout Error", el: "Σφάλμα Πληρωμής" }),
+          description: session.error.message || t({ en: "Could not initiate checkout. Please try again.", el: "Δεν ήταν δυνατή η έναρξη της πληρωμής. Παρακαλώ προσπαθήστε ξανά." }),
+          variant: "destructive",
+        });
+      } else {
+         throw new Error("Invalid response from checkout session API");
+      }
+    } catch (error) {
+      console.error("Error choosing plan:", error);
+      toast({
+        title: t({ en: "Error", el: "Σφάλμα" }),
+        description: t({ en: "An unexpected error occurred. Please try again.", el: "Παρουσιάστηκε μη αναμενόμενο σφάλμα. Παρακαλώ προσπαθήστε ξανά." }),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPlan(null);
+    }
   };
 
   const getFeatureIcon = (iconType?: 'check' | 'x' | 'info') => {
@@ -39,20 +96,20 @@ export default function PricingPage() {
             {t({ en: 'Choose Your Plan', el: 'Επιλέξτε το Πρόγραμμά σας' })}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t({ 
-              en: 'Simple, transparent pricing for teams of all sizes. Pick the plan that’s right for you.', 
-              el: 'Απλή, διαφανής τιμολόγηση για ομάδες όλων των μεγεθών. Επιλέξτε το πρόγραμμα που σας ταιριάζει.' 
+            {t({
+              en: 'Simple, transparent pricing for teams of all sizes. Pick the plan that’s right for you.',
+              el: 'Απλή, διαφανής τιμολόγηση για ομάδες όλων των μεγεθών. Επιλέξτε το πρόγραμμα που σας ταιριάζει.'
             })}
           </p>
         </section>
 
         <section className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {plansToShow.map((plan) => (
-            <Card 
-              key={plan.id} 
+            <Card
+              key={plan.id}
               className={`flex flex-col rounded-lg transition-all duration-300 ${
-                plan.isFeatured 
-                  ? 'border-primary border-[3px] ring-4 ring-primary/60 relative shadow-2xl' 
+                plan.isFeatured
+                  ? 'border-primary border-[3px] ring-4 ring-primary/60 relative shadow-2xl'
                   : 'border shadow-xl hover:shadow-2xl'
               }`}
             >
@@ -84,12 +141,17 @@ export default function PricingPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button 
-                  onClick={() => handleChoosePlan(plan.id)} 
+                <Button
+                  onClick={() => handleChoosePlan(plan.id)}
                   className={`w-full text-lg py-3 ${plan.isFeatured ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-accent hover:bg-accent/90 text-accent-foreground'}`}
-                  disabled={plan.id === 'free'} // Cannot "choose" free again from here
+                  disabled={plan.id === 'free' || isLoadingPlan === plan.id || authLoading}
                 >
-                  <ShoppingCart className="mr-2 h-5 w-5" /> {t(plan.buttonTextKey)}
+                  {isLoadingPlan === plan.id ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                  )}
+                  {isLoadingPlan === plan.id ? t({en:"Processing...", el:"Επεξεργασία..."}) : t(plan.buttonTextKey)}
                 </Button>
               </CardFooter>
             </Card>
