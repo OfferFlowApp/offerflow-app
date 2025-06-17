@@ -5,70 +5,30 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, ShoppingCart } from 'lucide-react';
+import { CheckCircle, XCircle, Info, ShoppingCart } from 'lucide-react';
 import { useLocalization } from '@/hooks/useLocalization';
+import { PLANS, type PricingPlanDetails } from '@/config/plans'; // Import new plans config
+import type { PlanId } from '@/lib/types';
 
-interface PricingPlan {
-  id: string;
-  nameKey: { en: string; el: string };
-  priceKey: { en: string; el: string };
-  priceSuffixKey?: { en: string; el: string };
-  descriptionKey: { en: string; el: string };
-  featuresKeys: { en: string; el: string }[];
-  buttonTextKey: { en: string; el: string };
-  isFeatured?: boolean;
-}
-
-const plans: PricingPlan[] = [
-  {
-    id: 'free',
-    nameKey: { en: 'Free Tier', el: 'Δωρεάν Πακέτο' },
-    priceKey: { en: '$0', el: '€0' },
-    descriptionKey: { en: 'Get started with the basics.', el: 'Ξεκινήστε με τα βασικά.' },
-    featuresKeys: [
-      { en: 'Up to 3 Offer Sheets', el: 'Έως 3 Δελτία Προσφορών' },
-      { en: 'Basic PDF Export', el: 'Βασική Εξαγωγή PDF' },
-      { en: 'Community Support', el: 'Υποστήριξη Κοινότητας' },
-    ],
-    buttonTextKey: { en: 'Get Started', el: 'Ξεκινήστε' },
-  },
-  {
-    id: 'pro',
-    nameKey: { en: 'Pro Plan', el: 'Pro Πακέτο' },
-    priceKey: { en: '$15', el: '€15' },
-    priceSuffixKey: { en: '/ month', el: '/ μήνα' },
-    descriptionKey: { en: 'For professionals and small businesses.', el: 'Για επαγγελματίες και μικρές επιχειρήσεις.' },
-    featuresKeys: [
-      { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' },
-      { en: 'Custom Branding & Logo', el: 'Προσαρμοσμένη Επωνυμία & Λογότυπο' },
-      { en: 'Advanced PDF Export', el: 'Προηγμένη Εξαγωγή PDF' },
-      { en: 'Priority Email Support', el: 'Κατά Προτεραιότητα Υποστήριξη Email' },
-    ],
-    buttonTextKey: { en: 'Choose Pro', el: 'Επιλέξτε Pro' },
-    isFeatured: true,
-  },
-  {
-    id: 'enterprise',
-    nameKey: { en: 'Enterprise', el: 'Enterprise' },
-    priceKey: { en: 'Custom', el: 'Επικοινωνήστε' },
-    descriptionKey: { en: 'Tailored solutions for large organizations.', el: 'Εξατομικευμένες λύσεις για μεγάλους οργανισμούς.' },
-    featuresKeys: [
-      { en: 'All Pro Features', el: 'Όλα τα Pro Χαρακτηριστικά' },
-      { en: 'Team Collaboration', el: 'Συνεργασία Ομάδας' },
-      { en: 'Dedicated Account Manager', el: 'Αποκλειστικός Διαχειριστής Λογαριασμού' },
-      { en: 'API Access & Integrations', el: 'Πρόσβαση API & Ενσωματώσεις' },
-    ],
-    buttonTextKey: { en: 'Contact Us', el: 'Επικοινωνήστε Μαζί μας' },
-  },
-];
+const plansToShow: PricingPlanDetails[] = [PLANS.free, PLANS.pro, PLANS.business];
 
 export default function PricingPage() {
   const { t } = useLocalization();
 
-  const handleChoosePlan = (planId: string) => {
+  const handleChoosePlan = (planId: PlanId) => {
     // Placeholder: In a real app, this would navigate to a checkout or contact form.
-    alert(`${t({en: "You selected:", el:"Επιλέξατε:"})} ${planId}. ${t({en: "Checkout functionality is a placeholder.", el: "Η λειτουργία πληρωμής είναι placeholder."})}`);
+    // For now, it can log or show a toast.
+    // With Firebase Auth, you'd typically associate the chosen plan with the user ID.
+    // Example: router.push(`/checkout?plan=${planId}`);
+    alert(`${t({en: "You selected:", el:"Επιλέξατε:"})} ${t(PLANS[planId].nameKey)}. ${t({en: "Checkout functionality is a placeholder.", el: "Η λειτουργία πληρωμής είναι placeholder."})}`);
   };
+
+  const getFeatureIcon = (iconType?: 'check' | 'x' | 'info') => {
+    if (iconType === 'x') return <XCircle className="h-5 w-5 text-destructive mr-2 mt-0.5 shrink-0" />;
+    if (iconType === 'info') return <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 shrink-0" />;
+    return <CheckCircle className="h-5 w-5 text-accent mr-2 mt-0.5 shrink-0" />;
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -87,7 +47,7 @@ export default function PricingPage() {
         </section>
 
         <section className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan) => (
+          {plansToShow.map((plan) => (
             <Card 
               key={plan.id} 
               className={`flex flex-col rounded-lg transition-all duration-300 ${
@@ -115,10 +75,10 @@ export default function PricingPage() {
                   {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
                 </div>
                 <ul className="space-y-3">
-                  {plan.featuresKeys.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-accent mr-2 mt-0.5 shrink-0" />
-                      <span className="text-muted-foreground">{t(feature)}</span>
+                  {plan.features.map((feature) => (
+                    <li key={feature.key || t(feature.textKey)} className="flex items-start">
+                      {getFeatureIcon(feature.icon)}
+                      <span className={`text-muted-foreground ${!feature.available ? 'line-through' : ''}`}>{t(feature.textKey)}</span>
                     </li>
                   ))}
                 </ul>
@@ -127,6 +87,7 @@ export default function PricingPage() {
                 <Button 
                   onClick={() => handleChoosePlan(plan.id)} 
                   className={`w-full text-lg py-3 ${plan.isFeatured ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-accent hover:bg-accent/90 text-accent-foreground'}`}
+                  disabled={plan.id === 'free'} // Cannot "choose" free again from here
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" /> {t(plan.buttonTextKey)}
                 </Button>

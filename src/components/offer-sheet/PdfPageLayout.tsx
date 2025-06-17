@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react'; // Ensure React is imported
-import type { OfferSheetData, Product, Language } from '@/lib/types';
+import type { OfferSheetData, Product, Language, PlanId } from '@/lib/types';
 import Image from 'next/image';
 
 interface PdfPageLayoutProps {
@@ -19,6 +19,7 @@ interface PdfPageLayoutProps {
   };
   creationDate: string;
   t: (translations: { [key in Language]?: string } | string, fallback?: string) => string;
+  currentPlanId?: PlanId; // Pass current plan to decide on watermark
 }
 
 const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
@@ -30,7 +31,8 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
     currencySymbol,
     calculatedTotals,
     creationDate,
-    t
+    t,
+    currentPlanId
   } = props;
 
   const {
@@ -42,10 +44,12 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
     vatRate
   } = offerData; 
 
+  const showWatermark = currentPlanId === 'free';
+
   return (
     <>
       <div
-        className="bg-white text-black p-6 font-body" 
+        className="bg-white text-black p-6 font-body relative" // Added relative for watermark positioning
         style={{
           width: '210mm',
           minHeight: '297mm',
@@ -57,7 +61,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
         {/* Header */}
         <header className="flex justify-between items-start pb-4 border-b border-gray-300">
           <div className="w-2/5">
-            {sellerInfo.logoUrl ? (
+            {sellerInfo.logoUrl ? ( // Assuming Pro/Business can have logoUrl from sellerInfo
               <Image src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} width={120} height={60} className="max-h-20 object-contain mb-2" data-ai-hint="company brand"/>
             ) : (
               <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
@@ -161,7 +165,12 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
                 )}
               </div>
             </div>
-            <div className="text-center mt-6 text-gray-500 text-[10px]">
+             {showWatermark && (
+              <div className="text-center text-gray-400 text-[9px] pt-3">
+                {t({ en: "Made with OfferFlow", el: "Δημιουργήθηκε με το OfferFlow" })}
+              </div>
+            )}
+            <div className="text-center mt-2 text-gray-500 text-[10px]">
               {t({en: "Thank you for your business!", el: "Ευχαριστούμε για την προτίμησή σας!"})}
             </div>
           </footer>
@@ -173,4 +182,3 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
 }
 
 export default PdfPageLayout;
-    

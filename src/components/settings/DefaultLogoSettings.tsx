@@ -6,13 +6,15 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UploadCloud, Save } from 'lucide-react';
+import { UploadCloud, Save, ShieldAlert } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import type { SettingsData, SellerInfo } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocalization } from '@/hooks/useLocalization';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useRouter } from 'next/navigation';
 
 const PREDEFINED_SELLER_NAMES = [
   'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ',
@@ -32,6 +34,8 @@ const DEFAULT_SELLER_EMAIL = 'epiplagiorgaras@gmail.com';
 const DEFAULT_SELLER_PHONE = '2241021087';
 
 export default function DefaultLogoSettings() {
+  const { currentEntitlements } = useAuth();
+  const router = useRouter();
   const [defaultSellerInfo, setDefaultSellerInfo] = useState<Partial<SellerInfo>>({
     name: PREDEFINED_SELLER_NAMES[0] || '',
     address: PREDEFINED_SELLER_ADDRESSES[0] || '',
@@ -76,9 +80,11 @@ export default function DefaultLogoSettings() {
         const effectiveAddress = sellerAddressFromStorage || PREDEFINED_SELLER_ADDRESSES[0] || '';
         const keyForAddressSelect = PREDEFINED_SELLER_ADDRESSES.includes(effectiveAddress) ? effectiveAddress : OTHER_SELLER_ADDRESS_VALUE;
 
+        const effectiveLogo = currentEntitlements.canUseCustomBranding ? sellerLogoFromStorage : undefined;
+
         setDefaultSellerInfo({
             name: effectiveName,
-            logoUrl: sellerLogoFromStorage,
+            logoUrl: effectiveLogo,
             address: effectiveAddress,
             email: sellerEmailFromStorage || DEFAULT_SELLER_EMAIL,
             phone: sellerPhoneFromStorage || DEFAULT_SELLER_PHONE,
@@ -87,8 +93,8 @@ export default function DefaultLogoSettings() {
         setSelectedDefaultSellerNameKey(keyForNameSelect);
         setSelectedDefaultSellerAddressKey(keyForAddressSelect);
 
-        if (sellerLogoFromStorage) {
-            setLogoPreview(sellerLogoFromStorage);
+        if (effectiveLogo) {
+            setLogoPreview(effectiveLogo);
         }
 
       } catch (e) {
@@ -101,10 +107,12 @@ export default function DefaultLogoSettings() {
             address: fallbackAddress, 
             email: DEFAULT_SELLER_EMAIL,
             phone: DEFAULT_SELLER_PHONE,
-            gemhNumber: DEFAULT_SELLER_GEMH 
+            gemhNumber: DEFAULT_SELLER_GEMH,
+            logoUrl: undefined, // Ensure logo is cleared
         }));
         setSelectedDefaultSellerNameKey(fallbackName || OTHER_SELLER_NAME_VALUE);
         setSelectedDefaultSellerAddressKey(fallbackAddress || OTHER_SELLER_ADDRESS_VALUE);
+        setLogoPreview(undefined);
       }
     } else {
       // No settings found, use hardcoded defaults
@@ -116,14 +124,24 @@ export default function DefaultLogoSettings() {
           address: initialAddress,
           email: DEFAULT_SELLER_EMAIL,
           phone: DEFAULT_SELLER_PHONE,
-          gemhNumber: DEFAULT_SELLER_GEMH
+          gemhNumber: DEFAULT_SELLER_GEMH,
+          logoUrl: undefined, // Ensure logo is cleared
       }));
       setSelectedDefaultSellerNameKey(initialName || OTHER_SELLER_NAME_VALUE);
       setSelectedDefaultSellerAddressKey(initialAddress || OTHER_SELLER_ADDRESS_VALUE);
+      setLogoPreview(undefined);
     }
-  }, []);
+  }, [currentEntitlements.canUseCustomBranding]); // Re-run if branding entitlement changes
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!currentEntitlements.canUseCustomBranding) {
+        toast({
+            title: t({en: "Feature Unavailable", el: "Λειτουργία Μη Διαθέσιμη"}),
+            description: t({en: "Logo upload is a Pro/Business feature.", el: "Η μεταφόρτωση λογότυπου είναι Pro/Business."}),
+            variant: "destructive"
+        });
+        return;
+    }
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -183,11 +201,16 @@ export default function DefaultLogoSettings() {
     }
 
     const finalSellerInfoToSave = { ...defaultSellerInfo };
+    // Ensure logo is only saved if allowed
+    if (!currentEntitlements.canUseCustomBranding) {
+        finalSellerInfoToSave.logoUrl = undefined;
+    }
+
 
     const settingsToSave: SettingsData = {
         ...existingSettings,
         defaultSellerInfo: finalSellerInfoToSave,
-        defaultLogoUrl: finalSellerInfoToSave.logoUrl, 
+        defaultLogoUrl: finalSellerInfoToSave.logoUrl, // Keep legacy for OfferSheetForm compatibility
     };
     localStorage.setItem('offerSheetSettings', JSON.stringify(settingsToSave));
     toast({
@@ -277,14 +300,25 @@ export default function DefaultLogoSettings() {
       
       <div className="flex flex-col items-start space-y-4">
         <Label htmlFor="defaultLogoUpload" className="text-base">{t({en: "Default Company Logo", el: "Προεπιλεγμένο Λογότυπο Εταιρείας"})}</Label>
-        {logoPreview ? (
+        {logoPreview && currentEntitlements.canUseCustomBranding ? (
           <Image src={logoPreview} alt={t({en:"Default Logo Preview", el:"Προεπισκόπηση Προεπιλεγμένου Λογότυπου"})} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company brand" />
         ) : (
           <div className="w-40 h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
             <UploadCloud className="h-16 w-16" />
           </div>
         )}
-        <Input id="defaultLogoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
+        <Input id="defaultLogoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" disabled={!currentEntitlements.canUseCustomBranding} />
+        {!currentEntitlements.canUseCustomBranding && (
+             <div className="flex items-center text-sm text-amber-600 p-2 border border-amber-300 bg-amber-50 rounded-md">
+                <ShieldAlert className="h-5 w-5 mr-2 shrink-0" />
+                <span>
+                {t({en:"Default logo upload is a Pro/Business feature.", el:"Η μεταφόρτωση προεπιλεγμένου λογότυπου είναι Pro/Business."})}{' '}
+                <Button variant="link" size="sm" className="p-0 h-auto text-amber-600 hover:text-amber-700" onClick={() => router.push('/pricing')}>
+                    {t({en:"Upgrade your plan.", el:"Αναβαθμίστε το πλάνο σας."})}
+                </Button>
+                </span>
+            </div>
+        )}
       </div>
       <Button onClick={handleSaveSettings} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
         <Save className="mr-2 h-5 w-5" /> {t({en: "Save Default Seller Info", el: "Αποθήκευση Προεπιλεγμένων Πληροφοριών Πωλητή"})}

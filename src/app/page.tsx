@@ -4,30 +4,43 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, Loader2 } from 'lucide-react'; 
+import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, Loader2, ShieldAlert } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { OfferSheetData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useRouter } from 'next/navigation';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
 interface DisplayOfferInfo {
-  id: string; // Timestamp from localStorage key
+  id: string; 
   customerName: string;
   customerCompany?: string;
   customerContact?: string;
   formattedDate: string;
-  offerSheetName: string; // Derived name for the offer
+  offerSheetName: string; 
 }
 
 export default function HomePage() {
   const { t, language } = useLocalization(); 
+  const { currentUser, userSubscription, currentEntitlements, loading: authLoading, refreshSubscription } = useAuth();
+  const router = useRouter();
   const [recentOffers, setRecentOffers] = useState<DisplayOfferInfo[]>([]);
   const [isLoadingRecentOffers, setIsLoadingRecentOffers] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
+
+  useEffect(() => {
+    // Ensure subscription data is fresh when the page loads or user changes
+    if (currentUser) {
+      refreshSubscription();
+    }
+  }, [currentUser, refreshSubscription]);
 
   useEffect(() => {
     setIsLoadingRecentOffers(true);
@@ -66,15 +79,65 @@ export default function HomePage() {
       } catch (e) {
         console.error("Failed to parse offer sheet from localStorage:", e);
       }
-      // Sort by most recent first
       loadedOffers.sort((a, b) => parseInt(b.id, 10) - parseInt(a.id, 10));
-      setRecentOffers(loadedOffers.slice(0, 5)); // Show latest 5
+      setRecentOffers(loadedOffers.slice(0, 5)); 
     }
     setIsLoadingRecentOffers(false);
   }, [language, t]);
 
+  const handleCreateNewOffer = () => {
+    if (currentUser && userSubscription?.planId === 'free') {
+      const offersThisPeriod = userSubscription.offersCreatedThisPeriod || 0;
+      if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offersThisPeriod >= currentEntitlements.maxOfferSheetsPerMonth) {
+        setUpgradeReason(t({en:"You've reached your monthly limit of {limit} offer sheets for the Free plan.", el:"Έχετε φτάσει το μηνιαίο όριο των {limit} δελτίων προσφορών για το Free πρόγραμμα."}).replace('{limit}', String(currentEntitlements.maxOfferSheetsPerMonth)));
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+    // If not free or limit not reached, or no user (local mode)
+    router.push('/offer-sheet/edit');
+  };
+
+
+  if (authLoading && currentUser) { // Show loader only if user is logged in and auth is loading
+    return (
+        <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </main>
+            <Footer />
+        </div>
+    );
+  }
+
 
   return (
+    <>
+    {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center text-primary">
+                        <ShieldAlert className="mr-2 h-6 w-6" />
+                        {t({en: "Upgrade Required", el: "Απαιτείται Αναβάθμιση"})}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">{upgradeReason}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t({en: "Please upgrade your plan to create more offer sheets.", el: "Παρακαλώ αναβαθμίστε το πρόγραμμά σας για να δημιουργήσετε περισσότερα."})}
+                    </p>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>{t({en: "Close", el: "Κλείσιμο"})}</Button>
+                    <Button onClick={() => { setShowUpgradeModal(false); router.push('/pricing'); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                      {t({en: "View Plans", el: "Δείτε τα Πλάνα"})}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )}
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
@@ -82,12 +145,12 @@ export default function HomePage() {
           <h1 className="text-4xl font-bold mb-8 text-primary">
             {t({ en: 'Your Offer Sheets', el: 'Οι Προσφορές Σας' })}
           </h1>
-          <Link href="/offer-sheet/edit" className="block max-w-2xl mx-auto">
-            <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-5 text-lg rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <PlusCircle className="mr-2 h-6 w-6" />
-              {t({ en: 'Create New Offer Sheet', el: 'Δημιουργία Νέου Δελτίου Προσφοράς' })}
-            </Button>
-          </Link>
+          
+          <Button size="lg" onClick={handleCreateNewOffer} className="w-full max-w-2xl mx-auto bg-primary hover:bg-primary/90 text-primary-foreground py-5 text-lg rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <PlusCircle className="mr-2 h-6 w-6" />
+            {t({ en: 'Create New Offer Sheet', el: 'Δημιουργία Νέου Δελτίου Προσφοράς' })}
+          </Button>
+          
         </section>
 
         <section className="mb-16">
@@ -100,11 +163,11 @@ export default function HomePage() {
                 <Card key={index} className="bg-card rounded-xl border">
                   <CardContent className="p-5 flex items-center justify-between">
                     <div className="flex-grow overflow-hidden space-y-2 pr-4">
-                      <Skeleton className="h-6 w-3/4" /> {/* Offer Name */}
-                      <Skeleton className="h-4 w-1/2" /> {/* Customer/Company */}
-                      <Skeleton className="h-4 w-1/3" /> {/* Date */}
+                      <Skeleton className="h-6 w-3/4" /> 
+                      <Skeleton className="h-4 w-1/2" /> 
+                      <Skeleton className="h-4 w-1/3" /> 
                     </div>
-                    <Skeleton className="h-10 w-10 rounded-full shrink-0" /> {/* Button Icon */}
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" /> 
                   </CardContent>
                 </Card>
               ))}
@@ -175,7 +238,7 @@ export default function HomePage() {
                 <CardTitle className="font-headline">{t({ en: 'Custom Branding', el: 'Προσαρμοσμένη Επωνυμία' })}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">{t({ en: 'Easily upload your company logo to personalize every offer sheet.', el: 'Ανεβάστε εύκολα το λογότυπο της εταιρείας σας για να εξατομικεύσετε κάθε δελτίο προσφοράς.' })}</p>
+                <p className="text-muted-foreground">{t({ en: 'Personalize sheets with your logo (Pro/Business).', el: 'Εξατομικεύστε με το λογότυπό σας (Pro/Business).' })}</p>
               </CardContent>
             </Card>
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
@@ -197,16 +260,14 @@ export default function HomePage() {
                 <CardTitle className="font-headline">{t({ en: 'Export & Share', el: 'Εξαγωγή & Κοινοποίηση' })}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">{t({ en: 'Generate professional PDFs and share your offers with clients in moments.', el: 'Δημιουργήστε επαγγελματικά PDF και μοιραστείτε τις προσφορές σας με πελάτες σε στιγμές.' })}</p>
+                <p className="text-muted-foreground">{t({ en: 'Generate PDFs, JPEGs, and share offers (CSV/Excel for Business).', el: 'Δημιουργήστε PDF, JPEG και μοιραστείτε (CSV/Excel για Business).' })}</p>
               </CardContent>
             </Card>
           </div>
         </section>
-
       </main>
       <Footer />
     </div>
+    </>
   );
 }
-
-    

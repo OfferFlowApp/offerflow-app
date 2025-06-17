@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language, SettingsData } from '@/lib/types';
+import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language, SettingsData, UserSubscription, PlanEntitlements } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,9 +16,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp, Loader2 } from 'lucide-react';
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp, Loader2, BookTemplate, UserPlus as UserPlusIcon, ShieldAlert } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
@@ -28,7 +29,9 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PdfPageLayout from './PdfPageLayout'; 
 import ReactDOM from 'react-dom/client';
-import { useSearchParams } from 'next/navigation'; 
+import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { getPlanDetails } from '@/config/plans'; // Import getPlanDetails
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -69,6 +72,7 @@ const initialCustomerInfo: CustomerInfo = {
   address: '',
   phone2: '',
   gemhNumber: '',
+  notes: '',
 };
 
 const initialSellerInfo: SellerInfo = {
@@ -256,6 +260,8 @@ const ProductItemCard: React.FC<ProductItemProps> = React.memo(function ProductI
 export default function OfferSheetForm() {
   const { t } = useLocalization();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { currentUser, userSubscription, currentEntitlements, incrementOfferCountForCurrentUser, loading: authLoading } = useAuth();
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const { toast } = useToast();
   const [selectedSellerNameKey, setSelectedSellerNameKey] = React.useState<string>('');
@@ -269,7 +275,14 @@ export default function OfferSheetForm() {
   const [isExportingPdf, setIsExportingPdf] = React.useState(false);
   const [isExportingJpeg, setIsExportingJpeg] = React.useState(false);
   const [isExportingJson, setIsExportingJson] = React.useState(false);
+  const [isExportingCsv, setIsExportingCsv] = React.useState(false);
+  const [isExportingExcel, setIsExportingExcel] = React.useState(false);
   const [isSharing, setIsSharing] = React.useState(false);
+  const [isSavingTemplate, setIsSavingTemplate] = React.useState(false);
+  const [isSavingCustomer, setIsSavingCustomer] = React.useState(false);
+  
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [upgradeReason, setUpgradeReason] = React.useState('');
 
 
   React.useEffect(() => {
@@ -284,9 +297,17 @@ export default function OfferSheetForm() {
           const parsedSettings: SettingsData = JSON.parse(savedSettingsRaw);
           if (parsedSettings.defaultSellerInfo) {
             userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
-          } else if (parsedSettings.defaultLogoUrl) { // Legacy support
+            // Apply default logo from settings if user plan allows custom branding
+            if (currentEntitlements.canUseCustomBranding && parsedSettings.defaultSellerInfo.logoUrl) {
+              userDefaultSellerInfo.logoUrl = parsedSettings.defaultSellerInfo.logoUrl;
+            } else if (!currentEntitlements.canUseCustomBranding) {
+              // If plan doesn't allow custom branding, ensure logoUrl is not set from defaults
+              if (userDefaultSellerInfo) userDefaultSellerInfo.logoUrl = undefined;
+            }
+          } else if (parsedSettings.defaultLogoUrl && currentEntitlements.canUseCustomBranding) { // Legacy support
             userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
           }
+
           if (parsedSettings.defaultCurrency && currencyMetadata[parsedSettings.defaultCurrency]) {
             userDefaultCurrency = parsedSettings.defaultCurrency;
           }
@@ -303,6 +324,11 @@ export default function OfferSheetForm() {
         ...baseInitialData.sellerInfo,
         ...(userDefaultSellerInfo || {}),
       };
+      // Ensure logo is cleared if not allowed
+      if (!currentEntitlements.canUseCustomBranding) {
+        effectiveSellerInfo.logoUrl = undefined;
+      }
+
 
       setSelectedSellerNameKey(
         PREDEFINED_SELLER_NAMES.includes(effectiveSellerInfo.name) ? effectiveSellerInfo.name : OTHER_SELLER_NAME_VALUE
@@ -334,11 +360,16 @@ export default function OfferSheetForm() {
           const loadedData: OfferSheetData = JSON.parse(item);
           
           const customerInfo = { ...initialCustomerInfo, ...(loadedData.customerInfo || {}) };
-          const sellerInfo = { ...initialSellerInfo, ...(loadedData.sellerInfo || {}) };
+          let sellerInfo = { ...initialSellerInfo, ...(loadedData.sellerInfo || {}) };
+          // Respect branding entitlement for loaded data
+          if (!currentEntitlements.canUseCustomBranding) {
+            sellerInfo.logoUrl = undefined;
+          }
+
           const products = (loadedData.products || []).map(p => ({ ...initialProduct, ...p, discountedPriceType: p.discountedPriceType || 'exclusive' }));
 
           const fullLoadedData: OfferSheetData = {
-            ...initialOfferSheetData(loadedData.currency || BASE_DEFAULT_CURRENCY, loadedData.termsAndConditions), // Pass terms from loaded data
+            ...initialOfferSheetData(loadedData.currency || BASE_DEFAULT_CURRENCY, loadedData.termsAndConditions), 
             ...loadedData,
             customerInfo,
             sellerInfo,
@@ -363,7 +394,7 @@ export default function OfferSheetForm() {
           toast({ title: t({en: "Offer Sheet Loaded", el: "Το Δελτίο Προσφοράς Φορτώθηκε"}), description: `${t({en: "Loaded offer for", el: "Φορτώθηκε προσφορά για"})} ${fullLoadedData.customerInfo.name || t({en: "Unknown Customer", el: "Άγνωστος Πελάτης"})}.` });
         } catch (e) {
           console.error("Failed to parse loaded offer sheet:", e);
-          toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Could not load the offer sheet.", el: "Δεν ήταν δυνατή η φόρτωση του δελτίου προσφοράς."}), variant: "destructive" });
+          toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Could not load the offer sheet.", el: "Δεν ήταν δυνατή η φόρτωση."}), variant: "destructive" });
           initializeNewOfferSheet(); 
         }
       } else {
@@ -379,7 +410,7 @@ export default function OfferSheetForm() {
       initializeNewOfferSheet();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, t]); 
+  }, [searchParams, t, currentEntitlements.canUseCustomBranding]); // Added currentEntitlements
 
   React.useEffect(() => {
     setOfferData(prev => ({ ...prev, isFinalPriceVatInclusive: isFinalPriceVatInclusive }));
@@ -387,6 +418,11 @@ export default function OfferSheetForm() {
 
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => { 
+    if (!currentEntitlements.canUseCustomBranding) {
+      setUpgradeReason(t({en:"Custom branding is a Pro feature.", el: "Η προσαρμοσμένη επωνυμία είναι Pro λειτουργία."}));
+      setShowUpgradeModal(true);
+      return;
+    }
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -540,6 +576,17 @@ export default function OfferSheetForm() {
 
   const handleSubmit = React.useCallback(async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Offer limit check for free users when saving a *new* offer sheet
+    if (!currentOfferId && userSubscription?.planId === 'free') {
+        const offersThisPeriod = userSubscription.offersCreatedThisPeriod || 0;
+        if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offersThisPeriod >= currentEntitlements.maxOfferSheetsPerMonth) {
+            setUpgradeReason(t({en:"You've reached your monthly limit of {limit} offer sheets for the Free plan.", el:"Έχετε φτάσει το μηνιαίο όριο των {limit} δελτίων προσφορών για το Free πρόγραμμα."}).replace('{limit}', String(currentEntitlements.maxOfferSheetsPerMonth)));
+            setShowUpgradeModal(true);
+            return;
+        }
+    }
+
     setIsSaving(true);
     try {
       const offerDataToSave = {
@@ -547,26 +594,31 @@ export default function OfferSheetForm() {
           isFinalPriceVatInclusive: isFinalPriceVatInclusive,
       };
       
-      // Simulate async operation for demo
       await new Promise(resolve => setTimeout(resolve, 500)); 
 
       const saveId = currentOfferId || Date.now().toString();
       localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
 
+      if (!currentOfferId && userSubscription?.planId === 'free') { // Only increment for new offers on free plan
+        await incrementOfferCountForCurrentUser();
+      }
+
       toast({
         title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }),
-        description: t({ en: "Your offer sheet data has been saved to localStorage.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν στο localStorage." }),
+        description: t({ en: "Your offer sheet data has been saved.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν." }),
         variant: "default",
       });
       if (!currentOfferId) { 
           setCurrentOfferId(saveId);
+           // Update URL to include the new ID if it's a new save
+          router.replace(`/offer-sheet/edit?id=${saveId}`, { scroll: false });
       }
     } catch (error) {
         toast({ title: t({en: "Save Error", el: "Σφάλμα Αποθήκευσης"}), description: t({en: "Could not save the offer sheet.", el: "Δεν ήταν δυνατή η αποθήκευση."}), variant: "destructive" });
     } finally {
         setIsSaving(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, currentOfferId, t, toast]);
+  }, [offerData, isFinalPriceVatInclusive, currentOfferId, t, toast, router, userSubscription, currentEntitlements, incrementOfferCountForCurrentUser]);
   
   const triggerDownload = (dataUrl: string, filename: string) => {
     const link = document.createElement('a');
@@ -596,8 +648,8 @@ export default function OfferSheetForm() {
 
       const tempPdfPageContainer = document.createElement('div');
       tempPdfPageContainer.style.position = 'absolute';
-      tempPdfPageContainer.style.left = '-210mm'; // Off-screen
-      tempPdfPageContainer.style.width = '210mm'; // A4 width
+      tempPdfPageContainer.style.left = '-210mm'; 
+      tempPdfPageContainer.style.width = '210mm'; 
       document.body.appendChild(tempPdfPageContainer);
       
       const root = ReactDOM.createRoot(tempPdfPageContainer);
@@ -612,11 +664,12 @@ export default function OfferSheetForm() {
             calculatedTotals={currentCalculatedTotals} 
             creationDate={creationDate}
             t={t}
+            currentPlanId={userSubscription?.planId} // Pass planId for watermark
           />
         </React.StrictMode>
       );
 
-      await new Promise(resolve => setTimeout(resolve, 200)); // Allow time for render
+      await new Promise(resolve => setTimeout(resolve, 200)); 
 
       try {
         const canvas = await html2canvas(tempPdfPageContainer, { 
@@ -664,9 +717,14 @@ export default function OfferSheetForm() {
       toast({ title: t({en: "PDF Generated", el: "Το PDF δημιουργήθηκε"}), description: t({en: "Your PDF has been downloaded.", el: "Το PDF σας έχει ληφθεί."}), variant: "default" });
       return null;
     }
-  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast]);
+  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, userSubscription?.planId]);
 
   const handleExportPdf = async () => {
+    if (!currentEntitlements.allowedExportFormats.includes('pdf')) {
+        setUpgradeReason(t({en:"PDF export is not available on your current plan.", el: "Η εξαγωγή PDF δεν είναι διαθέσιμη."}));
+        setShowUpgradeModal(true);
+        return;
+    }
     setIsExportingPdf(true);
     try {
       await exportAsPdfInternal(false);
@@ -678,6 +736,11 @@ export default function OfferSheetForm() {
   };
 
   const handleExportJpeg = React.useCallback(async () => {
+    if (!currentEntitlements.allowedExportFormats.includes('jpeg')) {
+        setUpgradeReason(t({en:"JPEG export is not available on your current plan.", el: "Η εξαγωγή JPEG δεν είναι διαθέσιμη."}));
+        setShowUpgradeModal(true);
+        return;
+    }
     setIsExportingJpeg(true);
     try {
         const tempPdfPageContainer = document.createElement('div');
@@ -700,6 +763,7 @@ export default function OfferSheetForm() {
             calculatedTotals={currentCalculatedTotals}
             creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}
             t={t}
+            currentPlanId={userSubscription?.planId}
           />
         );
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -719,12 +783,17 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingJpeg(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast]);
+  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, userSubscription?.planId, currentEntitlements.allowedExportFormats]);
 
   const handleExportJson = React.useCallback(async () => {
+     if (!currentEntitlements.allowedExportFormats.includes('json')) {
+        setUpgradeReason(t({en:"JSON data export is not available on your current plan.", el: "Η εξαγωγή JSON δεν είναι διαθέσιμη."}));
+        setShowUpgradeModal(true);
+        return;
+    }
     setIsExportingJson(true);
     try {
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate async
+        await new Promise(resolve => setTimeout(resolve, 300)); 
         const dataToExport = {
           ...offerData,
           isFinalPriceVatInclusive: isFinalPriceVatInclusive, 
@@ -742,7 +811,34 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingJson(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, t, toast]);
+  }, [offerData, isFinalPriceVatInclusive, t, toast, currentEntitlements.allowedExportFormats]);
+
+  const handleExportCsv = React.useCallback(async () => {
+    if (!currentEntitlements.allowedExportFormats.includes('csv')) {
+        setUpgradeReason(t({en:"CSV export is a Business feature.", el: "Η εξαγωγή CSV είναι Business λειτουργία."}));
+        setShowUpgradeModal(true);
+        return;
+    }
+    setIsExportingCsv(true);
+    // Placeholder for CSV export logic
+    await new Promise(resolve => setTimeout(resolve, 300));
+    toast({ title: t({en: "CSV Export (Placeholder)", el: "Εξαγωγή CSV (Placeholder)"}), description: t({en: "CSV export functionality is not yet implemented.", el: "Η λειτουργία δεν έχει υλοποιηθεί."}) });
+    setIsExportingCsv(false);
+  }, [t, toast, currentEntitlements.allowedExportFormats]);
+
+  const handleExportExcel = React.useCallback(async () => {
+    if (!currentEntitlements.allowedExportFormats.includes('excel')) {
+        setUpgradeReason(t({en:"Excel export is a Business feature.", el: "Η εξαγωγή Excel είναι Business λειτουργία."}));
+        setShowUpgradeModal(true);
+        return;
+    }
+    setIsExportingExcel(true);
+    // Placeholder for Excel export logic
+    await new Promise(resolve => setTimeout(resolve, 300));
+    toast({ title: t({en: "Excel Export (Placeholder)", el: "Εξαγωγή Excel (Placeholder)"}), description: t({en: "Excel export functionality is not yet implemented.", el: "Η λειτουργία δεν έχει υλοποιηθεί."}) });
+    setIsExportingExcel(false);
+  }, [t, toast, currentEntitlements.allowedExportFormats]);
+
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -774,9 +870,14 @@ export default function OfferSheetForm() {
           isFinalPriceVatInclusive: typeof importedRawData.isFinalPriceVatInclusive === 'boolean' ? importedRawData.isFinalPriceVatInclusive : false,
         };
         
+        // Respect branding entitlement for imported data
+        if (!currentEntitlements.canUseCustomBranding) {
+          importedOfferData.sellerInfo.logoUrl = undefined;
+        }
+
         setOfferData(importedOfferData);
         setIsFinalPriceVatInclusive(importedOfferData.isFinalPriceVatInclusive || false);
-        setCurrentOfferId(null); 
+        setCurrentOfferId(null); // Import as a new offer, don't overwrite existing by ID
 
         setSelectedSellerNameKey(
             PREDEFINED_SELLER_NAMES.includes(importedOfferData.sellerInfo.name)
@@ -792,7 +893,7 @@ export default function OfferSheetForm() {
         toast({ title: t({en: "Data Imported", el: "Τα Δεδομένα Εισήχθησαν"}), description: t({en: "Offer sheet data loaded from JSON.", el: "Τα δεδομένα του δελτίου προσφοράς φορτώθηκαν από JSON."}) });
       } catch (error) {
         console.error("Error importing JSON:", error);
-        toast({ title: t({en: "Import Error", el: "Σφάλμα Εισαγωγής"}), description: (error as Error).message || t({en: "Could not parse or load the JSON file.", el: "Δεν ήταν δυνατή η ανάλυση ή η φόρτωση του αρχείου JSON."}), variant: "destructive" });
+        toast({ title: t({en: "Import Error", el: "Σφάλμα Εισαγωγής"}), description: (error as Error).message || t({en: "Could not parse or load the JSON file.", el: "Δεν ήταν δυνατή η ανάλυση ή η φόρτωση."}), variant: "destructive" });
       }
     };
     reader.readAsText(file);
@@ -800,7 +901,7 @@ export default function OfferSheetForm() {
     if (importFileRef.current) {
       importFileRef.current.value = "";
     }
-  }, [t, toast]);
+  }, [t, toast, currentEntitlements.canUseCustomBranding]);
 
   const triggerImportFileDialog = React.useCallback(() => {
     importFileRef.current?.click();
@@ -811,7 +912,7 @@ export default function OfferSheetForm() {
     try {
         const pdfBlob = await exportAsPdfInternal(true);
         if (!pdfBlob) {
-          toast({ title: t({en: "PDF Generation Failed", el: "Η Δημιουργία PDF Απέτυχε"}), description: t({en: "Could not generate PDF for sharing.", el: "Δεν ήταν δυνατή η δημιουργία PDF για κοινοποίηση."}), variant: "destructive"});
+          toast({ title: t({en: "PDF Generation Failed", el: "Η Δημιουργία PDF Απέτυχε"}), description: t({en: "Could not generate PDF for sharing.", el: "Δεν ήταν δυνατή η δημιουργία PDF."}), variant: "destructive"});
           setIsSharing(false);
           return;
         }
@@ -827,41 +928,99 @@ export default function OfferSheetForm() {
         if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
           try {
             await navigator.share(shareData);
-            toast({ title: t({en: "Shared Successfully", el: "Επιτυχής Κοινοποίηση"}), description: t({en: "Offer sheet shared via native dialog.", el: "Το δελτίο προσφοράς κοινοποιήθηκε μέσω του διαλόγου συστήματος."})});
+            toast({ title: t({en: "Shared Successfully", el: "Επιτυχής Κοινοποίηση"}), description: t({en: "Offer sheet shared via native dialog.", el: "Το δελτίο προσφοράς κοινοποιήθηκε."})});
           } catch (error) {
             console.error("Error using Web Share API:", error);
-            // Fallback to mailto if Web Share API fails or is cancelled by user
-            toast({ title: t({en: "Sharing Cancelled or Failed", el: "Η Κοινοποίηση Ακυρώθηκε ή Απέτυχε"}), description: t({en: "Could not share directly. PDF downloaded, opening email draft.", el: "Δεν ήταν δυνατή η απευθείας κοινοποίηση. Το PDF λήφθηκε, άνοιγμα πρόχειρου email."}), variant: "default"});
-            await exportAsPdfInternal(false); // Trigger download
+            toast({ title: t({en: "Sharing Cancelled or Failed", el: "Η Κοινοποίηση Ακυρώθηκε ή Απέτυχε"}), description: t({en: "Could not share directly. PDF downloaded, opening email draft.", el: "Δεν ήταν δυνατή η κοινοποίηση. Το PDF λήφθηκε."}), variant: "default"});
+            await exportAsPdfInternal(false); 
             const email = offerData.customerInfo.contact;
             const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
             const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
             window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
           }
         } else {
-          // Fallback if Web Share API is not supported for files or at all
-          toast({ title: t({en: "Direct Share Not Supported", el: "Η Απευθείας Κοινοποίηση δεν Υποστηρίζεται"}), description: t({en: "PDF downloaded. Please share it manually via email or other apps.", el: "Το PDF λήφθηκε. Παρακαλούμε κοινοποιήστε το χειροκίνητα μέσω email ή άλλων εφαρμογών."}), variant: "default"});
-          await exportAsPdfInternal(false); // Trigger download
+          toast({ title: t({en: "Direct Share Not Supported", el: "Η Απευθείας Κοινοποίηση δεν Υποστηρίζεται"}), description: t({en: "PDF downloaded. Please share it manually.", el: "Το PDF λήφθηκε. Παρακαλούμε κοινοποιήστε το."}), variant: "default"});
+          await exportAsPdfInternal(false); 
           const email = offerData.customerInfo.contact;
           const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
           const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
-          if (email && email.includes('@')) { // Basic email validation
+          if (email && email.includes('@')) { 
              window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
           } else {
-             window.location.href = `mailto:?subject=${subject}&body=${body}`; // Open email client without recipient
-             toast({ title: t({en: "Customer Email Missing", el: "Λείπει το Email Πελάτη"}), description: t({en: "Customer email not found. Please enter it manually.", el: "Το email του πελάτη δεν βρέθηκε. Παρακαλούμε εισαγάγετέ το χειροκίνητα."}), variant: "default"});
+             window.location.href = `mailto:?subject=${subject}&body=${body}`; 
+             toast({ title: t({en: "Customer Email Missing", el: "Λείπει το Email Πελάτη"}), description: t({en: "Customer email not found. Please enter it manually.", el: "Το email του πελάτη δεν βρέθηκε."}), variant: "default"});
           }
         }
     } catch (error) {
         console.error("Error in share process:", error);
-        toast({ title: t({en: "Sharing Error", el: "Σφάλμα Κοινοποίησης"}), description: t({en: "An unexpected error occurred during sharing.", el: "Παρουσιάστηκε σφάλμα κατά την κοινοποίηση."}), variant: "destructive"});
+        toast({ title: t({en: "Sharing Error", el: "Σφάλμα Κοινοποίησης"}), description: t({en: "An unexpected error occurred during sharing.", el: "Παρουσιάστηκε σφάλμα."}), variant: "destructive"});
     } finally {
         setIsSharing(false);
     }
   }, [exportAsPdfInternal, offerData.customerInfo, offerData.sellerInfo.name, t, toast]);
 
+  // Placeholder functions for Pro/Business features
+  const handleSaveTemplate = async () => {
+    if (!currentEntitlements.canSaveTemplates) {
+      setUpgradeReason(t({en:"Saving templates is a Pro feature.", el:"Η αποθήκευση προτύπων είναι Pro λειτουργία."}));
+      setShowUpgradeModal(true);
+      return;
+    }
+    setIsSavingTemplate(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    toast({ title: t({en:"Save as Template (Placeholder)", el:"Αποθήκευση ως Πρότυπο (Placeholder)"}), description: t({en:"This feature is coming soon for Pro users!", el: "Η λειτουργία έρχεται σύντομα!"}) });
+    setIsSavingTemplate(false);
+  };
+
+  const handleSaveCustomer = async () => {
+     if (!currentEntitlements.canSaveCustomers) {
+      setUpgradeReason(t({en:"Saving customer profiles is a Pro feature.", el: "Η αποθήκευση πελατών είναι Pro λειτουργία."}));
+      setShowUpgradeModal(true);
+      return;
+    }
+    setIsSavingCustomer(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    toast({ title: t({en:"Save Customer (Placeholder)", el:"Αποθήκευση Πελάτη (Placeholder)"}), description: t({en:"This feature is coming soon for Pro users!", el: "Η λειτουργία έρχεται σύντομα!"}) });
+    setIsSavingCustomer(false);
+  };
+
+  // If auth is loading, show a loader for the whole form
+  if (authLoading) {
+    return (
+        <div className="flex flex-col min-h-screen items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">{t({en: "Loading offer sheet...", el: "Φόρτωση δελτίου προσφοράς..."})}</p>
+        </div>
+    );
+  }
+
 
   return (
+    <>
+    {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center text-primary">
+                        <ShieldAlert className="mr-2 h-6 w-6" />
+                        {t({en: "Upgrade Required", el: "Απαιτείται Αναβάθμιση"})}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">{upgradeReason}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t({en: "Please upgrade your plan to access this feature.", el: "Παρακαλώ αναβαθμίστε το πρόγραμμά σας για πρόσβαση."})}
+                    </p>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>{t({en: "Close", el: "Κλείσιμο"})}</Button>
+                    <Button onClick={() => { setShowUpgradeModal(false); router.push('/pricing'); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                      {t({en: "View Plans", el: "Δείτε τα Πλάνα"})}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )}
     <form onSubmit={handleSubmit} id="offer-sheet-form-capture-area" className="space-y-8 p-4 md:p-6 max-w-4xl mx-auto bg-card rounded-xl shadow-2xl border">
       <input type="file" accept=".json" ref={importFileRef} onChange={handleImportFileChange} style={{ display: 'none' }} />
       
@@ -939,15 +1098,18 @@ export default function OfferSheetForm() {
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="logoUpload">{t({ en: 'Seller Logo', el: 'Λογότυπο Πωλητή' })}</Label>
             <div className="flex flex-col items-start space-y-2">
-              {offerData.sellerInfo.logoUrl ? (
+              {offerData.sellerInfo.logoUrl && currentEntitlements.canUseCustomBranding ? (
                 <Image src={offerData.sellerInfo.logoUrl} alt={t({ en: "Seller Logo Preview", el: "Προεπισκόπηση Λογοτύπου Πωλητή"})} width={150} height={75} className="rounded-md object-contain border p-2" data-ai-hint="company brand" />
               ) : (
                 <div className="w-32 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
                   <UploadCloud className="h-8 w-8" />
                 </div>
               )}
-              <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
-              <p className="text-xs text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</p>
+              <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" disabled={!currentEntitlements.canUseCustomBranding} />
+              {!currentEntitlements.canUseCustomBranding && (
+                <p className="text-xs text-amber-600">{t({en:"Logo upload is a Pro feature.", el:"Η μεταφόρτωση λογότυπου είναι Pro λειτουργία."})} <Button variant="link" size="sm" className="p-0 h-auto text-amber-600 hover:text-amber-700" onClick={() => router.push('/pricing')}>{t({en:"Upgrade", el:"Αναβάθμιση"})}</Button></p>
+              )}
+               {currentEntitlements.canUseCustomBranding && <p className="text-xs text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</p>}
             </div>
           </div>
         </CardContent>
@@ -955,8 +1117,14 @@ export default function OfferSheetForm() {
 
 
       <Card className="shadow-none border-none">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-headline text-xl md:text-2xl">{t({ en: 'Customer Information & Offer Validity', el: 'Στοιχεία Πελάτη & Ισχύς Προσφοράς' })}</CardTitle>
+          {currentEntitlements.canSaveCustomers && (
+            <Button type="button" variant="outline" onClick={handleSaveCustomer} disabled={isSavingCustomer}>
+              {isSavingCustomer ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlusIcon className="mr-2 h-5 w-5" />}
+              {t({en: "Save Customer", el: "Αποθήκευση Πελάτη"})}
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-2">
@@ -987,6 +1155,12 @@ export default function OfferSheetForm() {
             <Label htmlFor="customerAddress">{t({ en: 'Client Address', el: 'Διεύθυνση Πελάτη' })}</Label>
             <Textarea id="customerAddress" name="address" value={offerData.customerInfo.address || ''} onChange={handleCustomerInfoChange} placeholder="456 Client Ave, Town, Country" />
           </div>
+          {currentEntitlements.canSaveCustomers && (
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="customerNotes">{t({ en: 'Customer Notes (Internal)', el: 'Σημειώσεις Πελάτη (Εσωτερικές)' })}</Label>
+              <Textarea id="customerNotes" name="notes" value={offerData.customerInfo.notes || ''} onChange={handleCustomerInfoChange} placeholder={t({en: "Add notes about this customer...", el: "Προσθέστε σημειώσεις..."})} />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="offerCurrency">{t({ en: 'Offer Currency', el: 'Νόμισμα Προσφοράς' })}</Label>
             <Select value={offerData.currency} onValueChange={handleCurrencyChange}>
@@ -1094,8 +1268,14 @@ export default function OfferSheetForm() {
       </Card>
 
       <Card className="shadow-none border-none">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-headline text-xl md:text-2xl">{t({ en: 'Notes / Terms & Conditions', el: 'Σημειώσεις / Όροι & Προϋποθέσεις' })}</CardTitle>
+           {currentEntitlements.canSaveTemplates && (
+             <Button type="button" variant="outline" onClick={handleSaveTemplate} disabled={isSavingTemplate}>
+                {isSavingTemplate ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <BookTemplate className="mr-2 h-5 w-5" />}
+                {t({en:"Save as Template", el:"Αποθήκευση ως Πρότυπο"})}
+             </Button>
+           )}
         </CardHeader>
         <CardContent>
           <Textarea
@@ -1119,34 +1299,42 @@ export default function OfferSheetForm() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson}>
-              {isExportingPdf || isExportingJpeg || isExportingJson ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
+            <Button variant="outline" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel}>
+              {isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
               {t({ en: 'Export', el: 'Εξαγωγή' })}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf}>
+            <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf || !currentEntitlements.allowedExportFormats.includes('pdf')}>
               {isExportingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingPdf ? t({en: 'Generating PDF...', el: 'Δημιουργία PDF...'}) : t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF' })}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportJpeg} disabled={isExportingJpeg}>
+            <DropdownMenuItem onClick={handleExportJpeg} disabled={isExportingJpeg || !currentEntitlements.allowedExportFormats.includes('jpeg')}>
                {isExportingJpeg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIconLucide className="mr-2 h-4 w-4" />}
               {isExportingJpeg ? t({en: 'Generating JPEG...', el: 'Δημιουργία JPEG...'}) : t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)' })}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportJson} disabled={isExportingJson}>
+            <DropdownMenuItem onClick={handleExportJson} disabled={isExportingJson || !currentEntitlements.allowedExportFormats.includes('json')}>
               {isExportingJson ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
               {isExportingJson ? t({en: 'Exporting Data...', el: 'Εξαγωγή Δεδομένων...'}) : t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
+            </DropdownMenuItem>
+            { (currentEntitlements.allowedExportFormats.includes('csv') || currentEntitlements.allowedExportFormats.includes('excel')) && <DropdownMenuSeparator />}
+            <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv || !currentEntitlements.allowedExportFormats.includes('csv')}>
+              {isExportingCsv ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              {isExportingCsv ? t({en: 'Exporting CSV...', el: 'Εξαγωγή CSV...'}) : t({en: 'Export as CSV (Placeholder)', el: 'Εξαγωγή CSV (Placeholder)'})}
+            </DropdownMenuItem>
+             <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel || !currentEntitlements.allowedExportFormats.includes('excel')}>
+              {isExportingExcel ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel (Placeholder)', el: 'Εξαγωγή Excel (Placeholder)'})}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson}>
+        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel}>
           {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
           {isSaving ? t({ en: 'Saving...', el: 'Αποθήκευση...' }) : t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
         </Button>
       </div>
     </form>
+    </>
   );
 }
-
-    
