@@ -31,16 +31,16 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       { key: 'free-teams', textKey: { en: 'No Team Access', el: 'Όχι Πρόσβαση Ομάδας' }, available: false, icon: 'x' },
       { key: 'free-support', textKey: { en: 'Basic Email Support (72h+)', el: 'Βασική Υποστήριξη Email (72h+)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Current Plan', el: 'Τρέχον Πρόγραμμα' }, // Changed from Get Started as it's selected by default
+    buttonTextKey: { en: 'Current Plan', el: 'Τρέχον Πρόγραμμα' },
     entitlements: {
       ...defaultEntitlements,
       maxOfferSheetsPerMonth: 2,
       canUseCustomBranding: false,
-      canRemoveWatermark: false, // Explicitly false, watermark will be shown
+      canRemoveWatermark: false,
       allowedExportFormats: ['pdf'],
       prioritySupportLevel: 'basic',
     },
-    // stripePriceId: 'YOUR_FREE_PLAN_STRIPE_PRICE_ID' // Usually free plans don't need a price ID unless you model them in Stripe
+    // No stripePriceId for free plan typically
   },
   pro: {
     id: 'pro',
@@ -67,11 +67,11 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       canRemoveWatermark: true,
       canSaveTemplates: true,
       canSaveCustomers: true,
-      canUseDashboard: true, // Placeholder for now
+      canUseDashboard: true,
       allowedExportFormats: ['pdf', 'jpeg', 'json'],
       prioritySupportLevel: 'standard',
     },
-    stripePriceId: 'YOUR_PRO_PLAN_STRIPE_PRICE_ID' // Replace with your actual Stripe Price ID
+    stripePriceId: 'YOUR_PRO_PLAN_STRIPE_PRICE_ID' // IMPORTANT: Replace with your actual Stripe Price ID
   },
   business: {
     id: 'business',
@@ -95,13 +95,13 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       canRemoveWatermark: true,
       canSaveTemplates: true,
       canSaveCustomers: true,
-      canUseDashboard: true, // Placeholder
+      canUseDashboard: true,
       allowedExportFormats: ['pdf', 'jpeg', 'json', 'csv', 'excel'],
-      maxTeamMembers: 4, // Placeholder
-      hasAnalytics: true, // Placeholder
+      maxTeamMembers: 4,
+      hasAnalytics: true,
       prioritySupportLevel: 'priority',
     },
-    stripePriceId: 'YOUR_BUSINESS_PLAN_STRIPE_PRICE_ID' // Replace with your actual Stripe Price ID
+    stripePriceId: 'YOUR_BUSINESS_PLAN_STRIPE_PRICE_ID' // IMPORTANT: Replace with your actual Stripe Price ID
   },
 };
 
@@ -113,7 +113,8 @@ export const getEntitlements = (planId: PlanId | undefined | null): PlanEntitlem
   return getPlanDetails(planId).entitlements;
 };
 
-// Helper to check if a user is on a paid plan
 export const isPaidUser = (planId: PlanId | undefined | null): boolean => {
   return planId === 'pro' || planId === 'business';
 };
+
+    

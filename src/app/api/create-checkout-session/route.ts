@@ -1,13 +1,14 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-// import Stripe from 'stripe'; // You'll need to install stripe: npm install stripe
+import Stripe from 'stripe';
 import { PLANS } from '@/config/plans';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // Assuming you have this from your Firebase setup
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase'; // Assuming you have this from your Firebase setup
+import type { User } from 'firebase/auth';
 
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-//   apiVersion: '2024-06-20',
-// });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20', // Use the latest API version
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,39 +22,60 @@ export async function POST(request: NextRequest) {
     }
 
     const planDetails = PLANS[planId];
-    if (!planDetails || !planDetails.stripePriceId) {
-      return NextResponse.json({ error: { message: 'Stripe Price ID not configured for this plan.' } }, { status: 500 });
+    if (!planDetails || !planDetails.stripePriceId || planDetails.stripePriceId.startsWith('YOUR_')) {
+      console.error(`Stripe Price ID not configured or is a placeholder for plan: ${planId}. Actual value: ${planDetails.stripePriceId}`);
+      return NextResponse.json({ error: { message: 'Stripe Price ID not configured for this plan. Please check server logs.' } }, { status: 500 });
     }
 
-    // Placeholder: In a real app, you'd create a Stripe Customer if one doesn't exist
-    // and store the stripeCustomerId with the user's profile/subscription in Firestore.
-    // For this example, we'll assume you'd fetch or create it.
-    // let stripeCustomerId = 'cus_EXISTING_CUSTOMER_ID'; // Fetch from user's record
+    const userDocRef = doc(db, 'users', userId, 'subscription', 'current');
+    const userDocSnap = await getDoc(userDocRef);
+    let firebaseUserRecord: User | null = null;
+    try {
+        // This is a server-side operation, direct auth.currentUser won't work.
+        // We need the user's email to create/lookup a Stripe customer.
+        // For this example, we assume the client sends enough info or we fetch it.
+        // In a real app, you might fetch the Firebase user by UID to get their email.
+        // const adminAuth = getAuth(); // This would be Firebase Admin SDK if running in a trusted server environment
+        // firebaseUserRecord = await adminAuth.getUser(userId);
+        // For now, we'll assume client might need to send email or we look it up from a user profile collection if available
+    } catch (error) {
+        console.warn("Could not fetch Firebase user record to get email for Stripe customer:", error);
+    }
 
-    // For now, this is a placeholder response.
-    // You would integrate the Stripe SDK here to create a checkout session.
-    // Example (conceptual, requires Stripe SDK and config):
-    /*
-    const userDocRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userDocRef);
-    let stripeCustomerId = userDoc.data()?.stripeCustomerId;
+
+    let stripeCustomerId = userDocSnap.exists() ? userDocSnap.data()?.stripeCustomerId : undefined;
 
     if (!stripeCustomerId) {
       // Create a new Stripe customer
-      const customer = await stripe.customers.create({
-        email: userDoc.data()?.email, // Assuming you store user email
+      // We'd ideally use the user's email here. If firebaseUserRecord.email is available:
+      // const customerEmail = firebaseUserRecord?.email;
+      // For now, let's allow creating a customer without an email, or with a placeholder
+      const customerParams: Stripe.CustomerCreateParams = {
         metadata: {
           firebaseUID: userId,
         },
-      });
+      };
+      // if (customerEmail) {
+      //   customerParams.email = customerEmail;
+      // }
+      
+      const customer = await stripe.customers.create(customerParams);
       stripeCustomerId = customer.id;
-      await setDoc(userDocRef, { stripeCustomerId: stripeCustomerId }, { merge: true });
+      
+      // Save the new stripeCustomerId to the user's subscription document or a main user profile
+      if (userDocSnap.exists()) {
+        await updateDoc(userDocRef, { stripeCustomerId: stripeCustomerId });
+      } else {
+        // This case should ideally be handled by AuthContext creating a free sub record first
+        // But as a fallback:
+        await setDoc(userDocRef, { stripeCustomerId: stripeCustomerId, planId: 'free', status: 'active' }, { merge: true });
+      }
     }
 
-
+    // For one-time payments or setting up subscriptions
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'subscription',
+      payment_method_types: ['card'], // Add other payment methods like 'ideal', 'paypal' etc.
+      mode: 'subscription', // Use 'payment' for one-time purchases
       customer: stripeCustomerId,
       line_items: [
         {
@@ -61,35 +83,31 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${request.nextUrl.origin}/profile?session_id={CHECKOUT_SESSION_ID}`, // Or a dedicated success page
-      cancel_url: `${request.nextUrl.origin}/pricing`,
+      // {CHECKOUT_SESSION_ID} is a Stripe variable and will be populated automatically
+      success_url: `${request.nextUrl.origin}/profile?session_id={CHECKOUT_SESSION_ID}&payment_status=success`,
+      cancel_url: `${request.nextUrl.origin}/pricing?payment_status=cancelled`,
       metadata: {
-        userId: userId,
-        planId: planId,
+        userId: userId, // For webhook to identify the user
+        planId: planId,   // For webhook to know which plan was purchased
       }
     });
+
+    if (!session.url) {
+        return NextResponse.json({ error: { message: 'Could not create Stripe session. No URL returned.'}}, { status: 500 });
+    }
+
     return NextResponse.json({ url: session.url });
-    */
-
-    console.log(`[API Create Checkout] Placeholder: User ${userId} chose plan ${planId}. Stripe Price ID: ${planDetails.stripePriceId}`);
-    console.log(`[API Create Checkout] In a real app, you would initialize Stripe, create a customer if needed, and create a checkout session here.`);
-    console.log(`[API Create Checkout] The success_url should point to a page that confirms the subscription, and cancel_url back to pricing.`);
-
-    // Simulate a redirect URL for testing UI flow without actual Stripe
-    // In a real scenario, session.url comes from Stripe.
-    // You'd replace 'YOUR_STRIPE_PRICE_ID_PRO' and 'YOUR_STRIPE_PRICE_ID_BUSINESS' in config/plans.ts
-    // with actual Price IDs from your Stripe dashboard.
-    const simulatedStripeCheckoutUrl = `https://example.com/fake-stripe-checkout?plan=${planId}&priceId=${planDetails.stripePriceId}&user=${userId}`;
-
-
-    return NextResponse.json({
-        // url: session.url // This would be the real Stripe checkout URL
-        url: simulatedStripeCheckoutUrl, // Placeholder URL for now
-        message: "This is a placeholder. Stripe SDK integration is needed."
-    });
 
   } catch (error: any) {
-    console.error('Error creating checkout session:', error);
-    return NextResponse.json({ error: { message: error.message || 'Internal Server Error' } }, { status: 500 });
+    console.error('Error creating Stripe checkout session:', error);
+    let errorMessage = 'Internal Server Error';
+    if (error instanceof Stripe.errors.StripeError) {
+        errorMessage = error.message;
+    } else if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    return NextResponse.json({ error: { message: errorMessage } }, { status: 500 });
   }
 }
+
+    

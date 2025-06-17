@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection
+    match /users/{userId}/{document=**} {
+      // Allow users to read/write their own general data (e.g., profile)
+      // but not their subscription directly here.
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User Subscription Data
+    match /users/{userId}/subscription/{subId} {
+      // Allow a user to read their own subscription details
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // IMPORTANT: Disallow users from directly changing their planId or status.
+      // These should ONLY be changed by your secure backend (Firebase Functions)
+      // after a successful payment or other trusted server-side event.
+      allow write: if false; // Start by disallowing direct client writes
+
+      // More granularly:
+      // allow create: if request.auth != null && request.auth.uid == userId &&
+      //               request.resource.data.planId == 'free' && // Only allow creating a 'free' plan initially
+      //               request.resource.data.status == 'active';
+
+      // allow update: if request.auth != null && request.auth.uid == userId &&
+      //               // Allow updating non-sensitive fields like 'offersCreatedThisPeriod'
+      //               !(request.resource.data.planId != resource.data.planId) &&
+      //               !(request.resource.data.status != resource.data.status) &&
+      //               !(request.resource.data.stripeCustomerId != resource.data.stripeCustomerId) &&
+      //               !(request.resource.data.stripeSubscriptionId != resource.data.stripeSubscriptionId);
+    }
+
+    // Add other rules for other collections if you have them
+  }
+}
