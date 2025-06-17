@@ -31,7 +31,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       { key: 'free-teams', textKey: { en: 'No Team Access', el: 'Όχι Πρόσβαση Ομάδας' }, available: false, icon: 'x' },
       { key: 'free-support', textKey: { en: 'Basic Email Support (72h+)', el: 'Βασική Υποστήριξη Email (72h+)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Current Plan', el: 'Τρέχον Πρόγραμμα' },
+    buttonTextKey: { en: 'Your Current Plan', el: 'Το Τρέχον Πρόγραμμά σας' },
     entitlements: {
       ...defaultEntitlements,
       maxOfferSheetsPerMonth: 2,
@@ -71,7 +71,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       allowedExportFormats: ['pdf', 'jpeg', 'json'],
       prioritySupportLevel: 'standard',
     },
-    stripePriceId: 'YOUR_PRO_PLAN_STRIPE_PRICE_ID' // IMPORTANT: Replace with your actual Stripe Price ID
+    stripePriceId: 'YOUR_PRO_PLAN_STRIPE_PRICE_ID' // <-- Replace this with your actual Stripe Price ID for Pro
   },
   business: {
     id: 'business',
@@ -101,7 +101,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
       hasAnalytics: true,
       prioritySupportLevel: 'priority',
     },
-    stripePriceId: 'YOUR_BUSINESS_PLAN_STRIPE_PRICE_ID' // IMPORTANT: Replace with your actual Stripe Price ID
+    stripePriceId: 'YOUR_BUSINESS_PLAN_STRIPE_PRICE_ID' // <-- Replace this with your actual Stripe Price ID for Business
   },
 };
 
@@ -116,5 +116,3 @@ export const getEntitlements = (planId: PlanId | undefined | null): PlanEntitlem
 export const isPaidUser = (planId: PlanId | undefined | null): boolean => {
   return planId === 'pro' || planId === 'business';
 };
-
-    
