@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, Home } from 'lucide-react';
+import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -40,16 +40,21 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
+        <div className="flex items-center gap-1 mr-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label={t({en: "Go back", el: "Πίσω"})}>
+              <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => router.forward()} aria-label={t({en: "Go forward", el: "Μπροστά"})}>
+              <ArrowRight className="h-5 w-5" />
+          </Button>
+        </div>
+
         <Link href="/" className="mr-8 flex items-center">
           <span className="text-2xl font-bold">
             <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
           </span>
         </Link>
         <nav className="flex items-center space-x-4 text-sm font-medium">
-          <Link href="/" className="transition-colors hover:text-primary flex items-center">
-            <Home className="mr-1 h-4 w-4" />
-            {t({ en: 'Home', el: 'Αρχική' })}
-          </Link>
           <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary flex items-center">
             <FileText className="mr-1 h-4 w-4" />
             {t({ en: 'Create Offer', el: 'Δημιουργία' })}
