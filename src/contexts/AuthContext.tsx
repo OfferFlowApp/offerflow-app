@@ -124,9 +124,24 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // No initial subscription created anymore. User will start a trial from pricing page.
-      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Welcome! Please choose a plan to get started.", el: "Καλώς ήρθατε! Παρακαλώ επιλέξτε ένα πρόγραμμα."}) });
-      router.push('/pricing'); 
+      
+      // Automatically create a 30-day trial subscription for the 'pro-monthly' plan on signup
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 30);
+      
+      const newTrialSubscription: UserSubscription = {
+        planId: 'pro-monthly', // Trial is for the Pro Monthly plan
+        status: 'trialing',
+        currentPeriodStart: Date.now(),
+        currentPeriodEnd: trialEndDate.getTime(),
+        offersCreatedThisPeriod: 0,
+      };
+
+      const userSubRef = doc(db, 'users', userCredential.user.uid, 'subscription', 'current');
+      await setDoc(userSubRef, newTrialSubscription);
+      
+      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Welcome! Your 30-day free trial has started.", el: "Καλώς ήρθατε! Η δωρεάν δοκιμή 30 ημερών ξεκίνησε."}) });
+      router.push('/'); // Go to homepage after signup, they can see trial status there/on pricing page
       return userCredential.user;
     } catch (error: any) {
       console.error("Sign up error:", error);
@@ -166,18 +181,30 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      // Check if user has a subscription. If not, they're treated as a new user.
+      
+      // Check if user is new. If so, create a trial subscription.
       const subRef = doc(db, 'users', result.user.uid, 'subscription', 'current');
       const subSnap = await getDoc(subRef);
       
-      toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
-      
       if (!subSnap.exists()) {
-        router.push('/pricing'); // Guide new Google users to pick a plan
+        // This is a new user, create a trial for them.
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 30);
+      
+        const newTrialSubscription: UserSubscription = {
+          planId: 'pro-monthly',
+          status: 'trialing',
+          currentPeriodStart: Date.now(),
+          currentPeriodEnd: trialEndDate.getTime(),
+          offersCreatedThisPeriod: 0,
+        };
+        await setDoc(subRef, newTrialSubscription);
+        toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Welcome! Your 30-day free trial has started.", el: "Καλώς ήρθατε! Η δωρεάν δοκιμή 30 ημερών ξεκίνησε."}) });
       } else {
-        router.push('/');
+         toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
       }
-
+      
+      router.push('/'); // Always go to homepage after google sign in now
       return result.user;
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
