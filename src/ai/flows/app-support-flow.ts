@@ -32,6 +32,16 @@ async function getHelpContentAsText(): Promise<string> {
     - Profile: Manage your local user data (or account info if logged in).
     - Language Selector: Change the application's display language.
 
+    Why Use OfferFlow? (Value & Benefits)
+    While you can create offer sheets manually, OfferFlow is designed to save you time, enhance your professional image, and streamline your entire sales process.
+    - Save Time & Reduce Errors: Stop building offers from scratch. OfferFlow handles all the calculations for totals, discounts, and VAT automatically, reducing the chance of costly mistakes.
+    - Look Professional: Impress clients with clean, consistently formatted, and professional-looking offer sheets. Pro and Business plans allow you to add your own logo and remove our watermark, reinforcing your brand identity.
+    - Work Faster (Pro/Business): Stop re-typing the same information. Save customer details and reuse them. Create offer templates from your most common product combinations to generate new offers in seconds.
+    - Organize & Manage Your Offers: All your recent offers are saved locally and are easily accessible from the homepage. You can export offer data as JSON for backup or to move between devices.
+    - Powerful Exports: Generate professional PDFs or JPEGs instantly. The Business plan adds CSV/Excel exports for easy integration with your accounting or inventory systems.
+    - Team Collaboration (Business): Allow multiple team members to access and create offers under a single account, ensuring consistency across your organization.
+    In short, OfferFlow is an investment in efficiency and professionalism, allowing you to focus on what you do best: selling.
+
     Creating & Editing an Offer Sheet:
     Navigate to 'Create Offer' or click 'Create New Offer Sheet' on the homepage.
     1. Seller Information & Logo:
@@ -109,6 +119,7 @@ const prompt = ai.definePrompt({
   output: { schema: AppSupportOutputSchema },
   prompt: `You are a helpful assistant for the "OfferFlow" application.
 Your goal is to answer user questions about how to use the application based on the provided help documentation.
+This includes answering questions about the value of the app and why a user should choose a paid plan.
 If the question is unrelated to the OfferFlow app or its features as described in the documentation, politely state that you can only answer questions about OfferFlow.
 If the documentation does not contain an answer to the user's question, politely state that you don't have that information.
 Be concise and helpful.
