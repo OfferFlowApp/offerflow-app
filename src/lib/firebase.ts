@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import {initializeApp, getApps, getApp, type FirebaseApp} from 'firebase/app';
 import {getAuth, type Auth} from 'firebase/auth';
-import {getFirestore, type Firestore} from 'firebase/firestore';
+import {getFirestore, type Firestore, enableIndexedDbPersistence} from 'firebase/firestore';
 import {getStorage, type FirebaseStorage} from 'firebase/storage';
 
 // Your web app's Firebase configuration
@@ -25,9 +25,9 @@ let storage: FirebaseStorage;
 
 // Log the config being used for debugging purposes, only on client-side
 if (typeof window !== 'undefined') {
-  console.log('%c[Auth Debug] Firebase Configuration a_Auth_Context_Error:', 'color: orange; font-weight: bold;', firebaseConfig);
+  console.log('%c[Firebase] Configuration:', 'color: orange; font-weight: bold;', firebaseConfig);
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-    console.error('%c[Auth Debug] CRITICAL: Firebase API Key or Project ID is missing from config!', 'color: red; font-weight: bold;');
+    console.error('%c[Firebase] CRITICAL: Firebase API Key or Project ID is missing from config!', 'color: red; font-weight: bold;');
   }
 }
 
@@ -60,6 +60,17 @@ if (
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
+
+  if (typeof window !== 'undefined') {
+    enableIndexedDbPersistence(db)
+      .catch((err) => {
+        if (err.code == 'failed-precondition') {
+          console.warn('[Firebase] Firestore persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.');
+        } else if (err.code == 'unimplemented') {
+          console.warn('[Firebase] Firestore persistence failed: The browser does not support all of the features required to enable persistence.');
+        }
+      });
+  }
 }
 
 export { app, auth, db, storage };

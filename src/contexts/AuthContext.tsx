@@ -50,8 +50,23 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const fetchUserSubscription = useCallback(async (userId: string): Promise<UserSubscription | null> => {
     if (!db || !userId) return null;
     const subRef = doc(db, 'users', userId, 'subscription', 'current');
+    
+    // Retry logic to handle transient "client is offline" errors on initial load
+    const getDocWithRetry = async () => {
+      try {
+        return await getDoc(subRef);
+      } catch (error: any) {
+        if (error.code === 'unavailable') {
+          console.warn("Firestore: Client is offline. Retrying once in 500ms...");
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return await getDoc(subRef);
+        }
+        throw error;
+      }
+    };
+
     try {
-      const subSnap = await getDoc(subRef);
+      const subSnap = await getDocWithRetry();
       if (subSnap.exists()) {
         const subData = subSnap.data() as UserSubscription;
         // Check and reset offer period if necessary
@@ -200,7 +215,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         await createInitialSubscription(result.user.uid); // Create free sub if new Google user
       }
       // Subscription will be fetched/updated by onAuthStateChanged effect
-      toast({ title: t({en: "Signed In", el: "Συνδεθήκαて"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
+      toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
       router.push('/');
       return result.user;
     } catch (error: any) {
