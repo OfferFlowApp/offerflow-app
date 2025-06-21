@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle, Info, ShoppingCart, Loader2, Sparkles } from 'lucide-react';
+import { CheckCircle, XCircle, Info, ShoppingCart, Loader2, Sparkles, Clock } from 'lucide-react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { PLANS, type PricingPlanDetails } from '@/config/plans';
 import type { PlanId } from '@/lib/types';
@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { differenceInDays } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const proPlanMonthly = PLANS['pro-monthly'];
 const proPlanYearly = PLANS['pro-yearly'];
@@ -31,7 +33,14 @@ export default function PricingPage() {
   const proPlan = billingInterval === 'monthly' ? proPlanMonthly : proPlanYearly;
   const businessPlan = billingInterval === 'monthly' ? businessPlanMonthly : businessPlanYearly;
   
-  const isSubscribed = userSubscription?.status === 'active' || userSubscription?.status === 'trialing';
+  const isAlreadyPaid = userSubscription?.status === 'active';
+  const isTrialing = userSubscription?.status === 'trialing';
+
+  let trialDaysLeft = 0;
+  if (isTrialing && userSubscription.currentPeriodEnd) {
+    const endDate = new Date(userSubscription.currentPeriodEnd);
+    trialDaysLeft = Math.max(0, differenceInDays(endDate, new Date()));
+  }
 
   const handleChoosePlan = async (planId: PlanId) => {
     if (planId === 'none') return;
@@ -42,11 +51,11 @@ export default function PricingPage() {
         description: t({ en: "Please log in or sign up to choose a plan.", el: "Παρακαλώ συνδεθείτε ή εγγραφείτε για να επιλέξετε ένα πρόγραμμα." }),
         variant: "default",
       });
-      router.push('/login?redirect=/pricing'); // Redirect back to pricing after login
+      router.push('/login?redirect=/pricing');
       return;
     }
 
-    if (isSubscribed) {
+    if (isAlreadyPaid) {
       toast({
         title: t({ en: "Already Subscribed", el: "Είστε ήδη Συνδρομητής" }),
         description: t({ en: "Please manage your subscription from your profile page.", el: "Διαχειριστείτε τη συνδρομή σας από τη σελίδα του προφίλ σας." }),
@@ -108,12 +117,22 @@ export default function PricingPage() {
             {t({ en: 'Choose Your Plan', el: 'Επιλέξτε το Πρόγραμμά σας' })}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t({
-              en: 'All plans start with a 30-day free trial. No credit card required to start, but required to continue after the trial.',
-              el: 'Όλα τα προγράμματα ξεκινούν με 30 ημέρες δωρεάν δοκιμή. Δεν απαιτείται πιστωτική κάρτα για την έναρξη, αλλά για τη συνέχιση μετά τη δοκιμή.'
-            })}
+            {isTrialing
+              ? t({ en: 'You are currently on a free trial. Select a plan below to activate it.', el: 'Βρίσκεστε σε δωρεάν δοκιμή. Επιλέξτε ένα πλάνο παρακάτω για να το ενεργοποιήσετε.' })
+              : t({ en: 'All plans start with a 30-day free trial. No credit card required to start, but required to continue after the trial.', el: 'Όλα τα προγράμματα ξεκινούν με 30 ημέρες δωρεάν δοκιμή. Δεν απαιτείται πιστωτική κάρτα για την έναρξη, αλλά για τη συνέχιση μετά τη δοκιμή.' })
+            }
           </p>
         </section>
+
+        {isTrialing && (
+          <Alert className="max-w-5xl mx-auto mb-8 border-accent text-accent-foreground bg-accent/10">
+            <Clock className="h-4 w-4 !text-accent" />
+            <AlertTitle>{t({ en: "You are on a free trial!", el: "Βρίσκεστε σε δωρεάν δοκιμή!" })}</AlertTitle>
+            <AlertDescription>
+              {t({ en: `You have ${trialDaysLeft} day(s) left. Choose a plan now to activate it.`, el: `Απομένουν ${trialDaysLeft} ημέρα(ες). Επιλέξτε ένα πρόγραμμα τώρα για να το ενεργοποιήσετε.` })}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <section className="flex flex-col items-center gap-8">
             <div className="text-center">
@@ -133,8 +152,14 @@ export default function PricingPage() {
 
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto w-full">
             {plansToShow.map((plan) => {
-                const isCurrentPlan = isSubscribed && userSubscription?.planId === plan.id;
-                const isDisabled = isLoadingPlan === plan.id || authLoading || isSubscribed;
+                const isCurrentPlan = isAlreadyPaid && userSubscription?.planId === plan.id;
+                const isDisabled = isLoadingPlan === plan.id || authLoading || isAlreadyPaid;
+
+                const getButtonText = () => {
+                  if (isCurrentPlan) return t({en: "Your Current Plan", el: "Το Πρόγραμμά σας"});
+                  if (isTrialing) return t({en: "Activate Plan", el: "Ενεργοποίηση Προγράμματος"});
+                  return t(plan.buttonTextKey);
+                }
 
                 return (
                   <Card
@@ -195,12 +220,12 @@ export default function PricingPage() {
                       ) : isCurrentPlan ? (
                           <>
                             <CheckCircle className="mr-2 h-5 w-5" />
-                            {t({en:"Your Current Plan", el:"Το Πρόγραμμά σας"})}
+                            {getButtonText()}
                           </>
                       ) : (
                           <>
                             <ShoppingCart className="mr-2 h-5 w-5" />
-                            {t(plan.buttonTextKey)}
+                            {getButtonText()}
                           </>
                       )}
                       </Button>
