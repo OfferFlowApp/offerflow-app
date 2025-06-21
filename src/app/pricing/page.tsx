@@ -116,6 +116,10 @@ export default function PricingPage() {
         </section>
 
         <section className="flex flex-col items-center gap-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-2">{t({ en: 'Select Billing Cycle', el: 'Επιλέξτε Κύκλο Χρέωσης' })}</h2>
+              <p className="text-muted-foreground">{t({ en: 'Save more by choosing a yearly plan!', el: 'Εξοικονομήστε περισσότερα επιλέγοντας ετήσιο πρόγραμμα!' })}</p>
+            </div>
             <Tabs
                 defaultValue="monthly"
                 onValueChange={(value) => setBillingInterval(value as 'monthly' | 'yearly')}
@@ -155,7 +159,7 @@ export default function PricingPage() {
                     <div className="text-center mb-6">
                       <div className="flex items-baseline justify-center gap-2">
                         {plan.listPriceKey && t(plan.listPriceKey) !== t(plan.priceKey) && (
-                          <span className="text-2xl font-medium text-muted-foreground line-through">
+                          <span className="text-2xl font-medium text-destructive line-through">
                             {t(plan.listPriceKey)}
                           </span>
                         )}

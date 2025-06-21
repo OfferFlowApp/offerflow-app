@@ -78,7 +78,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'pro-yearly': {
     id: 'pro-yearly',
     nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
-    listPriceKey: { en: '€95.76', el: '€95.76' },
+    listPriceKey: { en: '€143.76', el: '€143.76' },
     priceKey: { en: '€83.79', el: '€83.79' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
     descriptionKey: { en: 'Save ~1.5 months with the yearly plan!', el: 'Εξοικονομήστε ~1.5 μήνα με το ετήσιο!' },
