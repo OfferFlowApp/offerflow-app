@@ -36,12 +36,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const defaultFreePlanEntitlements = getEntitlements('free');
+// Entitlements for a user who is logged in but has no active subscription.
+const defaultNoPlanEntitlements = getEntitlements('none');
 
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
-  const [currentEntitlements, setCurrentEntitlements] = useState<PlanEntitlements>(defaultFreePlanEntitlements);
+  const [currentEntitlements, setCurrentEntitlements] = useState<PlanEntitlements>(defaultNoPlanEntitlements);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
@@ -52,59 +53,30 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const subRef = doc(db, 'users', userId, 'subscription', 'current');
     
     const maxRetries = 2;
-    let lastError: any = null;
-
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const subSnap = await getDoc(subRef);
         
         if (subSnap.exists()) {
           const subData = subSnap.data() as UserSubscription;
-          const now = Date.now();
-          if (subData.currentPeriodEnd && now > subData.currentPeriodEnd) {
-            const newPeriodStart = now;
-            const newPeriodEnd = new Date(newPeriodStart).setMonth(new Date(newPeriodStart).getMonth() + 1);
-            const updatedSub = {
-              ...subData,
-              offersCreatedThisPeriod: 0,
-              currentPeriodStart: newPeriodStart,
-              currentPeriodEnd: newPeriodEnd,
-            };
-            await setDoc(subRef, updatedSub, { merge: true });
-            return updatedSub;
-          }
           return subData;
         } else {
-          const thirtyDaysFromNow = new Date();
-          thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-          const freeSub: UserSubscription = {
-            planId: 'free',
-            status: 'active',
-            offersCreatedThisPeriod: 0,
-            currentPeriodStart: Date.now(),
-            currentPeriodEnd: thirtyDaysFromNow.getTime(),
-          };
-          await setDoc(subRef, freeSub);
-          return freeSub;
+          // No subscription document found for the user.
+          return null;
         }
       } catch (error: any) {
-        lastError = error;
         if (error.code === 'unavailable' && attempt < maxRetries) {
           console.warn(`Firestore: Client is offline. Retrying... (Attempt ${attempt}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 500));
         } else {
-          // This is a non-retriable error or the last attempt failed
-          console.error("Error fetching/creating user subscription:", error);
-          toast({ title: t({en: "Subscription Error", el: "Σφάλμα Συνδρομής"}), description: t({en: "Could not load subscription details.", el: "Δεν ήταν δυνατή η φόρτωση."}), variant: "destructive" });
+          console.error("Error fetching user subscription:", error);
+          // Don't toast here as it can be annoying on intermittent connection issues
           return null;
         }
       }
     }
-    
-    // This part should not be reached if the loop logic is correct, but it's a safeguard.
     return null;
-
-  }, [t, toast]);
+  }, []);
   
   const refreshSubscription = useCallback(async () => {
     if (currentUser) {
@@ -121,12 +93,13 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!auth || typeof auth.onAuthStateChanged !== 'function') {
       setCurrentUser(null);
       setUserSubscription(null);
-      setCurrentEntitlements(defaultFreePlanEntitlements);
+      setCurrentEntitlements(defaultNoPlanEntitlements);
       setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
+      setLoading(true);
       setCurrentUser(user);
       if (user) {
         const sub = await fetchUserSubscription(user.uid);
@@ -134,7 +107,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         setCurrentEntitlements(getEntitlements(sub?.planId));
       } else {
         setUserSubscription(null);
-        setCurrentEntitlements(defaultFreePlanEntitlements);
+        setCurrentEntitlements(defaultNoPlanEntitlements);
       }
       setLoading(false);
     });
@@ -142,22 +115,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [fetchUserSubscription]);
-
-
-  const createInitialSubscription = async (userId: string): Promise<UserSubscription> => {
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    const freeSub: UserSubscription = {
-      planId: 'free',
-      status: 'active',
-      offersCreatedThisPeriod: 0,
-      currentPeriodStart: Date.now(),
-      currentPeriodEnd: thirtyDaysFromNow.getTime(),
-    };
-    const subRef = doc(db, 'users', userId, 'subscription', 'current');
-    await setDoc(subRef, freeSub);
-    return freeSub;
-  };
 
   const signUpWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
     if (!auth || typeof createUserWithEmailAndPassword !== 'function') {
@@ -167,9 +124,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await createInitialSubscription(userCredential.user.uid); // Create free sub on sign up
-      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Successfully signed up!", el: "Επιτυχής εγγραφή!"}) });
-      router.push('/'); 
+      // No initial subscription created anymore. User will start a trial from pricing page.
+      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Welcome! Please choose a plan to get started.", el: "Καλώς ήρθατε! Παρακαλώ επιλέξτε ένα πρόγραμμα."}) });
+      router.push('/pricing'); 
       return userCredential.user;
     } catch (error: any) {
       console.error("Sign up error:", error);
@@ -188,7 +145,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // Subscription will be fetched by onAuthStateChanged effect
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
       router.push('/');
       return userCredential.user;
@@ -210,14 +166,18 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
+      // Check if user has a subscription. If not, they're treated as a new user.
       const subRef = doc(db, 'users', result.user.uid, 'subscription', 'current');
       const subSnap = await getDoc(subRef);
-      if (!subSnap.exists()) {
-        await createInitialSubscription(result.user.uid); // Create free sub if new Google user
-      }
-      // Subscription will be fetched/updated by onAuthStateChanged effect
+      
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
-      router.push('/');
+      
+      if (!subSnap.exists()) {
+        router.push('/pricing'); // Guide new Google users to pick a plan
+      } else {
+        router.push('/');
+      }
+
       return result.user;
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
@@ -235,7 +195,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!auth || typeof signOut !== 'function') {
       setCurrentUser(null);
       setUserSubscription(null);
-      setCurrentEntitlements(defaultFreePlanEntitlements);
+      setCurrentEntitlements(defaultNoPlanEntitlements);
       setLoading(false); 
       router.push('/login'); 
       return;
@@ -243,7 +203,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     try {
       await signOut(auth);
       toast({ title: t({en: "Signed Out", el: "Αποσυνδεθήκατε"}), description: t({en: "Successfully signed out.", el: "Επιτυχής αποσύνδεση."})});
-      // State will be cleared by onAuthStateChanged
       router.push('/login'); 
     } catch (error: any) {
       console.error("Sign out error:", error);
@@ -253,7 +212,16 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   
   const incrementOfferCountForCurrentUser = async (): Promise<boolean> => {
     if (!currentUser || !userSubscription) {
-      toast({ title: t({en:"Action Failed", el: "Η ενέργεια απέτυχε"}), description: t({en: "User or subscription not found.", el:"Ο χρήστης ή η συνδρομή δεν βρέθηκε."}), variant: "destructive" });
+        // This case might be fine for non-subscribed users hitting their limit of 1
+        if (currentUser && !userSubscription) {
+             const subRef = doc(db, 'users', currentUser.uid, 'offers', 'count');
+             // This part is tricky without a subscription doc.
+             // For simplicity, we'll assume the check happens client-side based on entitlements.
+             // If we really need to track usage for non-subscribed users, a different structure is needed.
+             // Let's rely on client-side check for now.
+             console.log("Incrementing offer for non-subscribed user (not implemented server-side).");
+             return true;
+        }
       return false;
     }
 
@@ -262,7 +230,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       await updateDoc(subRef, {
         offersCreatedThisPeriod: increment(1)
       });
-      // Optimistically update local state or refetch
       setUserSubscription(prev => prev ? ({ ...prev, offersCreatedThisPeriod: (prev.offersCreatedThisPeriod || 0) + 1 }) : null);
       return true;
     } catch (error) {

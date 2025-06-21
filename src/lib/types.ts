@@ -3,7 +3,9 @@ export type Currency = 'EUR' | 'USD' | 'GBP';
 export type Language = 'en' | 'el';
 export type Theme = 'light' | 'dark';
 
-export type PlanId = 'free' | 'pro' | 'business';
+// Updated to reflect monthly/yearly price IDs
+export type PlanId = 'pro-monthly' | 'pro-yearly' | 'business-monthly' | 'business-yearly' | 'none';
+
 
 export interface Product {
   id: string;
@@ -81,8 +83,8 @@ export interface PlanEntitlements {
 }
 
 export interface UserSubscription {
-  planId: PlanId;
-  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'free'; // 'free' for users without a paid plan
+  planId: PlanId; // Will be one of the 4 paid plans
+  status: 'active' | 'trialing' | 'canceled' | 'past_due'; // status from Stripe
   currentPeriodStart?: number; // Timestamp (ms)
   currentPeriodEnd?: number; // Timestamp (ms)
   offersCreatedThisPeriod?: number;
@@ -92,7 +94,7 @@ export interface UserSubscription {
 }
 
 export interface PricingPlanDetails {
-  id: PlanId;
+  id: PlanId; // Will be one of the 4 paid plans, or 'none'
   nameKey: { en: string; el: string };
   priceKey: { en: string; el: string };
   priceSuffixKey?: { en: string; el: string };
@@ -108,4 +110,3 @@ export interface PricingPlanDetails {
   entitlements: PlanEntitlements;
   stripePriceId?: string; // For Stripe integration (you'll get this from your Stripe dashboard)
 }
-

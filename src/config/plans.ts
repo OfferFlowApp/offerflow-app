@@ -8,105 +8,132 @@ const defaultEntitlements: PlanEntitlements = {
   canSaveTemplates: false,
   canSaveCustomers: false,
   canUseDashboard: false,
-  allowedExportFormats: ['pdf'], // Free default
-  maxTeamMembers: 1,
+  allowedExportFormats: [],
+  maxTeamMembers: 0,
   hasAnalytics: false,
   prioritySupportLevel: 'basic',
 };
 
+const proEntitlements: PlanEntitlements = {
+  maxOfferSheetsPerMonth: 'unlimited',
+  canUseCustomBranding: true,
+  canRemoveWatermark: true,
+  canSaveTemplates: true,
+  canSaveCustomers: true,
+  canUseDashboard: true,
+  allowedExportFormats: ['pdf', 'jpeg', 'json'],
+  maxTeamMembers: 1,
+  hasAnalytics: false,
+  prioritySupportLevel: 'standard',
+};
+
+const businessEntitlements: PlanEntitlements = {
+  maxOfferSheetsPerMonth: 'unlimited',
+  canUseCustomBranding: true,
+  canRemoveWatermark: true,
+  canSaveTemplates: true,
+  canSaveCustomers: true,
+  canUseDashboard: true,
+  allowedExportFormats: ['pdf', 'jpeg', 'json', 'csv', 'excel'],
+  maxTeamMembers: 4,
+  hasAnalytics: true,
+  prioritySupportLevel: 'priority',
+};
+
 export const PLANS: Record<PlanId, PricingPlanDetails> = {
-  free: {
-    id: 'free',
-    nameKey: { en: 'Free Plan', el: 'Δωρεάν Πρόγραμμα' },
-    priceKey: { en: '€0', el: '€0' },
-    priceSuffixKey: { en: '/ month', el: '/ μήνα' },
-    descriptionKey: { en: 'Get started with basic offer sheet creation.', el: 'Ξεκινήστε με βασική δημιουργία προσφορών.' },
-    features: [
-      { key: 'free-offers', textKey: { en: 'Up to 2 Offer Sheets / month', el: 'Έως 2 Δελτία Προσφορών / μήνα' }, available: true, icon: 'check' },
-      { key: 'free-watermark', textKey: { en: '"Made with OfferFlow" watermark', el: 'Υδατογράφημα "Made with OfferFlow"' }, available: true, icon: 'info' },
-      { key: 'free-export', textKey: { en: 'PDF Export only', el: 'Εξαγωγή μόνο σε PDF' }, available: true, icon: 'check' },
-      { key: 'free-branding', textKey: { en: 'No Custom Branding', el: 'Όχι Προσαρμοσμένη Επωνυμία' }, available: false, icon: 'x' },
-      { key: 'free-templates', textKey: { en: 'No Custom Templates', el: 'Όχι Προσαρμοσμένα Πρότυπα' }, available: false, icon: 'x' },
-      { key: 'free-customers', textKey: { en: 'No Saved Customers', el: 'Όχι Αποθηκευμένοι Πελάτες' }, available: false, icon: 'x' },
-      { key: 'free-teams', textKey: { en: 'No Team Access', el: 'Όχι Πρόσβαση Ομάδας' }, available: false, icon: 'x' },
-      { key: 'free-support', textKey: { en: 'Basic Email Support (72h+)', el: 'Βασική Υποστήριξη Email (72h+)' }, available: true, icon: 'check' },
-    ],
-    buttonTextKey: { en: 'Your Current Plan', el: 'Το Τρέχον Πρόγραμμά σας' },
+  'none': {
+    id: 'none',
+    nameKey: { en: 'No Plan', el: 'Κανένα Πρόγραμμα' },
+    priceKey: { en: '', el: '' },
+    descriptionKey: { en: '', el: '' },
+    features: [],
+    buttonTextKey: { en: 'Choose a Plan', el: 'Επιλέξτε Πρόγραμμα' },
     entitlements: {
       ...defaultEntitlements,
-      maxOfferSheetsPerMonth: 2,
-      canUseCustomBranding: false,
-      canRemoveWatermark: false,
+      maxOfferSheetsPerMonth: 1, // Allow 1 free offer to try it out
       allowedExportFormats: ['pdf'],
-      prioritySupportLevel: 'basic',
     },
-    // No stripePriceId for free plan typically
   },
-  pro: {
-    id: 'pro',
+  'pro-monthly': {
+    id: 'pro-monthly',
     nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
-    priceKey: { en: '€11.98', el: '€11.98' },
+    priceKey: { en: '€7.98', el: '€7.98' },
     priceSuffixKey: { en: '/ month', el: '/ μήνα' },
     descriptionKey: { en: 'For professionals who need more power.', el: 'Για επαγγελματίες που χρειάζονται περισσότερη δύναμη.' },
     features: [
-      { key: 'pro-offers', textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
-      { key: 'pro-branding', textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
-      { key: 'pro-no-watermark', textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος "Made with OfferFlow"' }, available: true, icon: 'check' },
-      { key: 'pro-templates', textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
-      { key: 'pro-customers', textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
-      { key: 'pro-dashboard', textKey: { en: 'Basic Usage Dashboard', el: 'Βασικός Πίνακας Ελέγχου Χρήσης' }, available: true, icon: 'check' },
-      { key: 'pro-export', textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
-      { key: 'pro-support', textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
+        { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
+        { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
+        { textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος' }, available: true, icon: 'check' },
+        { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
+        { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
+        { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
+        { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Choose Pro', el: 'Επιλέξτε Pro' },
+    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
     isFeatured: true,
-    entitlements: {
-      ...defaultEntitlements,
-      maxOfferSheetsPerMonth: 'unlimited',
-      canUseCustomBranding: true,
-      canRemoveWatermark: true,
-      canSaveTemplates: true,
-      canSaveCustomers: true,
-      canUseDashboard: true,
-      allowedExportFormats: ['pdf', 'jpeg', 'json'],
-      prioritySupportLevel: 'standard',
-    },
-    stripePriceId: 'YOUR_PRO_PLAN_STRIPE_PRICE_ID' // <-- Replace this with your actual Stripe Price ID for Pro
+    entitlements: proEntitlements,
+    stripePriceId: 'YOUR_PRO_MONTHLY_STRIPE_PRICE_ID' // <-- Replace
   },
-  business: {
-    id: 'business',
+  'pro-yearly': {
+    id: 'pro-yearly',
+    nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
+    priceKey: { en: '€83.79', el: '€83.79' },
+    priceSuffixKey: { en: '/ year', el: '/ έτος' },
+    descriptionKey: { en: 'Save ~1.5 months with the yearly plan!', el: 'Εξοικονομήστε ~1.5 μήνα με το ετήσιο!' },
+    features: [
+        { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
+        { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
+        { textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος' }, available: true, icon: 'check' },
+        { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
+        { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
+        { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
+        { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
+    ],
+    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    isFeatured: true,
+    entitlements: proEntitlements,
+    stripePriceId: 'YOUR_PRO_YEARLY_STRIPE_PRICE_ID' // <-- Replace
+  },
+  'business-monthly': {
+    id: 'business-monthly',
     nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
     priceKey: { en: '€38.98', el: '€38.98' },
     priceSuffixKey: { en: '/ month', el: '/ μήνα' },
     descriptionKey: { en: 'For teams and growing businesses.', el: 'Για ομάδες και αναπτυσσόμενες επιχειρήσεις.' },
     features: [
-      { key: 'business-all-pro', textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
-      { key: 'business-teams', textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
-      { key: 'business-whitelabel', textKey: { en: 'Full White-Labeling Option', el: 'Επιλογή πλήρους White-Labeling' }, available: true, icon: 'check' },
-      { key: 'business-export', textKey: { en: 'CSV & Excel Export Options', el: 'Επιλογές Εξαγωγής CSV & Excel' }, available: true, icon: 'check' },
-      { key: 'business-analytics', textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
-      { key: 'business-support', textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
+        { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
+        { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
+        { textKey: { en: 'Full White-Labeling Option', el: 'Επιλογή πλήρους White-Labeling' }, available: true, icon: 'check' },
+        { textKey: { en: 'CSV & Excel Export Options', el: 'Επιλογές Εξαγωγής CSV & Excel' }, available: true, icon: 'check' },
+        { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
+        { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Choose Business', el: 'Επιλέξτε Business' },
-    entitlements: {
-      ...defaultEntitlements,
-      maxOfferSheetsPerMonth: 'unlimited',
-      canUseCustomBranding: true,
-      canRemoveWatermark: true,
-      canSaveTemplates: true,
-      canSaveCustomers: true,
-      canUseDashboard: true,
-      allowedExportFormats: ['pdf', 'jpeg', 'json', 'csv', 'excel'],
-      maxTeamMembers: 4,
-      hasAnalytics: true,
-      prioritySupportLevel: 'priority',
-    },
-    stripePriceId: 'YOUR_BUSINESS_PLAN_STRIPE_PRICE_ID' // <-- Replace this with your actual Stripe Price ID for Business
+    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    entitlements: businessEntitlements,
+    stripePriceId: 'YOUR_BUSINESS_MONTHLY_STRIPE_PRICE_ID' // <-- Replace
+  },
+  'business-yearly': {
+    id: 'business-yearly',
+    nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
+    priceKey: { en: '€389.80', el: '€389.80' },
+    priceSuffixKey: { en: '/ year', el: '/ έτος' },
+    descriptionKey: { en: 'Save 2 months with the yearly plan!', el: 'Εξοικονομήστε 2 μήνες με το ετήσιο!' },
+    features: [
+        { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
+        { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
+        { textKey: { en: 'Full White-Labeling Option', el: 'Επιλογή πλήρους White-Labeling' }, available: true, icon: 'check' },
+        { textKey: { en: 'CSV & Excel Export Options', el: 'Επιλογές Εξαγωγής CSV & Excel' }, available: true, icon: 'check' },
+        { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
+        { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
+    ],
+    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    entitlements: businessEntitlements,
+    stripePriceId: 'YOUR_BUSINESS_YEARLY_STRIPE_PRICE_ID' // <-- Replace
   },
 };
 
 export const getPlanDetails = (planId: PlanId | undefined | null): PricingPlanDetails => {
-  return PLANS[planId || 'free'] || PLANS.free;
+  return PLANS[planId || 'none'] || PLANS.none;
 };
 
 export const getEntitlements = (planId: PlanId | undefined | null): PlanEntitlements => {
@@ -114,5 +141,6 @@ export const getEntitlements = (planId: PlanId | undefined | null): PlanEntitlem
 };
 
 export const isPaidUser = (planId: PlanId | undefined | null): boolean => {
-  return planId === 'pro' || planId === 'business';
+  if (!planId || planId === 'none') return false;
+  return true; // Any plan other than 'none' is a paid/trialing plan
 };

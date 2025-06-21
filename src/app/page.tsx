@@ -9,10 +9,10 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import type { OfferSheetData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
@@ -36,11 +36,22 @@ export default function HomePage() {
   const [upgradeReason, setUpgradeReason] = useState('');
 
   useEffect(() => {
-    // Ensure subscription data is fresh when the page loads or user changes
     if (currentUser) {
       refreshSubscription();
     }
   }, [currentUser, refreshSubscription]);
+
+  const countLocalOffers = () => {
+    if (typeof window === 'undefined') return 0;
+    let count = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(OFFER_SHEET_STORAGE_PREFIX)) {
+            count++;
+        }
+    }
+    return count;
+  };
 
   useEffect(() => {
     setIsLoadingRecentOffers(true);
@@ -83,23 +94,28 @@ export default function HomePage() {
       setRecentOffers(loadedOffers.slice(0, 5)); 
     }
     setIsLoadingRecentOffers(false);
-  }, [language, t]);
+  }, [language, t, userSubscription]); // Rerun when subscription changes
 
   const handleCreateNewOffer = () => {
-    if (currentUser && userSubscription?.planId === 'free') {
-      const offersThisPeriod = userSubscription.offersCreatedThisPeriod || 0;
-      if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offersThisPeriod >= currentEntitlements.maxOfferSheetsPerMonth) {
-        setUpgradeReason(t({en:"You've reached your monthly limit of {limit} offer sheets for the Free plan.", el:"Έχετε φτάσει το μηνιαίο όριο των {limit} δελτίων προσφορών για το Free πρόγραμμα."}).replace('{limit}', String(currentEntitlements.maxOfferSheetsPerMonth)));
+    if (currentUser) {
+      // For logged-in users, check against their entitlements
+      const offerCount = userSubscription?.offersCreatedThisPeriod || countLocalOffers();
+      if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offerCount >= currentEntitlements.maxOfferSheetsPerMonth) {
+        if (userSubscription) {
+          setUpgradeReason(t({en:"You've reached your monthly limit. Please upgrade your plan for unlimited offers.", el:"Έχετε φτάσει το μηνιαίο όριο. Παρακαλώ αναβαθμίστε το πρόγραμμά σας."}));
+        } else {
+          setUpgradeReason(t({en:"You've used your trial offer. Please start a subscription to create more.", el:"Χρησιμοποιήσατε τη δοκιμαστική προσφορά σας. Παρακαλώ ξεκινήστε μια συνδρομή."}));
+        }
         setShowUpgradeModal(true);
         return;
       }
     }
-    // If not free or limit not reached, or no user (local mode)
+    // If no user, or user is within limits, allow creation.
     router.push('/offer-sheet/edit');
   };
 
 
-  if (authLoading && currentUser) { // Show loader only if user is logged in and auth is loading
+  if (authLoading) {
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
@@ -120,14 +136,11 @@ export default function HomePage() {
                 <CardHeader>
                     <CardTitle className="flex items-center text-primary">
                         <ShieldAlert className="mr-2 h-6 w-6" />
-                        {t({en: "Upgrade Required", el: "Απαιτείται Αναβάθμιση"})}
+                        {userSubscription ? t({en: "Upgrade Required", el: "Απαιτείται Αναβάθμιση"}) : t({en: "Start a Trial", el: "Ξεκινήστε μια Δοκιμή"})}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">{upgradeReason}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t({en: "Please upgrade your plan to create more offer sheets.", el: "Παρακαλώ αναβαθμίστε το πρόγραμμά σας για να δημιουργήσετε περισσότερα."})}
-                    </p>
                 </CardContent>
                 <CardFooter className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>{t({en: "Close", el: "Κλείσιμο"})}</Button>
