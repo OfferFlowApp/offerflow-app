@@ -30,6 +30,8 @@ export default function PricingPage() {
 
   const proPlan = billingInterval === 'monthly' ? proPlanMonthly : proPlanYearly;
   const businessPlan = billingInterval === 'monthly' ? businessPlanMonthly : businessPlanYearly;
+  
+  const isSubscribed = userSubscription?.status === 'active' || userSubscription?.status === 'trialing';
 
   const handleChoosePlan = async (planId: PlanId) => {
     if (planId === 'none') return;
@@ -44,9 +46,7 @@ export default function PricingPage() {
       return;
     }
 
-    if (userSubscription?.status === 'active' || userSubscription?.status === 'trialing') {
-      // This is a placeholder for subscription management (upgrade/downgrade)
-      // For now, we'll just inform the user they are already subscribed.
+    if (isSubscribed) {
       toast({
         title: t({ en: "Already Subscribed", el: "Είστε ήδη Συνδρομητής" }),
         description: t({ en: "Please manage your subscription from your profile page.", el: "Διαχειριστείτε τη συνδρομή σας από τη σελίδα του προφίλ σας." }),
@@ -132,66 +132,81 @@ export default function PricingPage() {
             </Tabs>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto w-full">
-            {plansToShow.map((plan) => (
-                <Card
-                key={plan.id}
-                className={`flex flex-col rounded-lg transition-all duration-300 ${
-                    plan.isFeatured
-                    ? 'border-primary border-[3px] ring-4 ring-primary/60 relative shadow-2xl'
-                    : 'border shadow-xl hover:shadow-2xl'
-                }`}
-                >
-                {plan.isFeatured && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-sm font-semibold rounded-full shadow-md flex items-center gap-1.5">
-                      <Sparkles className="h-4 w-4" />
-                      {t({en: "Most Popular", el: "Πιο Δημοφιλές"})}
-                    </div>
-                )}
-                <CardHeader className="pt-8">
-                    <CardTitle className="text-2xl font-bold font-headline text-center text-primary">
-                    {t(plan.nameKey)}
-                    </CardTitle>
-                    <CardDescription className="text-center text-muted-foreground min-h-[40px]">
-                    {t(plan.descriptionKey)}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                    <div className="text-center mb-6">
-                      <div className="flex items-baseline justify-center gap-2">
-                        {plan.listPriceKey && t(plan.listPriceKey) !== t(plan.priceKey) && (
-                          <span className="text-2xl font-medium text-destructive line-through">
-                            {t(plan.listPriceKey)}
-                          </span>
-                        )}
-                        <span className="text-4xl font-extrabold">{t(plan.priceKey)}</span>
+            {plansToShow.map((plan) => {
+                const isCurrentPlan = isSubscribed && userSubscription?.planId === plan.id;
+                const isDisabled = isLoadingPlan === plan.id || authLoading || isSubscribed;
+
+                return (
+                  <Card
+                  key={plan.id}
+                  className={`flex flex-col rounded-lg transition-all duration-300 ${
+                      isCurrentPlan ? 'border-accent border-[3px] ring-4 ring-accent/60 relative shadow-2xl' :
+                      plan.isFeatured
+                      ? 'border-primary border-[3px] ring-4 ring-primary/60 relative shadow-2xl'
+                      : 'border shadow-xl hover:shadow-2xl'
+                  }`}
+                  >
+                  {plan.isFeatured && !isCurrentPlan && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-sm font-semibold rounded-full shadow-md flex items-center gap-1.5">
+                        <Sparkles className="h-4 w-4" />
+                        {t({en: "Most Popular", el: "Πιο Δημοφιλές"})}
                       </div>
-                      {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
-                    </div>
-                    <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                        <li key={t(feature.textKey)} className="flex items-start">
-                        {getFeatureIcon(feature.icon)}
-                        <span className={`text-muted-foreground ${!feature.available ? 'line-through' : ''}`}>{t(feature.textKey)}</span>
-                        </li>
-                    ))}
-                    </ul>
-                </CardContent>
-                <CardFooter>
-                    <Button
-                    onClick={() => handleChoosePlan(plan.id)}
-                    className={`w-full text-lg py-3 ${plan.isFeatured ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-accent hover:bg-accent/90 text-accent-foreground'}`}
-                    disabled={isLoadingPlan === plan.id || authLoading}
-                    >
-                    {isLoadingPlan === plan.id ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                        <ShoppingCart className="mr-2 h-5 w-5" />
-                    )}
-                    {isLoadingPlan === plan.id ? t({en:"Processing...", el:"Επεξεργασία..."}) : t(plan.buttonTextKey)}
-                    </Button>
-                </CardFooter>
-                </Card>
-            ))}
+                  )}
+                  <CardHeader className="pt-8">
+                      <CardTitle className="text-2xl font-bold font-headline text-center text-primary">
+                      {t(plan.nameKey)}
+                      </CardTitle>
+                      <CardDescription className="text-center text-muted-foreground min-h-[40px]">
+                      {t(plan.descriptionKey)}
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                      <div className="text-center mb-6">
+                        <div className="flex items-baseline justify-center gap-2">
+                          {plan.listPriceKey && t(plan.listPriceKey) !== t(plan.priceKey) && (
+                            <span className="text-2xl font-medium text-destructive line-through">
+                              {t(plan.listPriceKey)}
+                            </span>
+                          )}
+                          <span className="text-4xl font-extrabold">{t(plan.priceKey)}</span>
+                        </div>
+                        {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
+                      </div>
+                      <ul className="space-y-3">
+                      {plan.features.map((feature) => (
+                          <li key={t(feature.textKey)} className="flex items-start">
+                          {getFeatureIcon(feature.icon)}
+                          <span className={`text-muted-foreground ${!feature.available ? 'line-through' : ''}`}>{t(feature.textKey)}</span>
+                          </li>
+                      ))}
+                      </ul>
+                  </CardContent>
+                  <CardFooter>
+                      <Button
+                      onClick={() => handleChoosePlan(plan.id)}
+                      className={`w-full text-lg py-3 ${
+                        isCurrentPlan ? 'bg-accent hover:bg-accent/90 text-accent-foreground' :
+                        plan.isFeatured ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-accent hover:bg-accent/90 text-accent-foreground'
+                      }`}
+                      disabled={isDisabled}
+                      >
+                      {isLoadingPlan === plan.id ? (
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ) : isCurrentPlan ? (
+                          <>
+                            <CheckCircle className="mr-2 h-5 w-5" />
+                            {t({en:"Your Current Plan", el:"Το Πρόγραμμά σας"})}
+                          </>
+                      ) : (
+                          <>
+                            <ShoppingCart className="mr-2 h-5 w-5" />
+                            {t(plan.buttonTextKey)}
+                          </>
+                      )}
+                      </Button>
+                  </CardFooter>
+                  </Card>
+              )})}
             </div>
         </section>
       </main>
