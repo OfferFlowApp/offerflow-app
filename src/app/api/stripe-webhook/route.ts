@@ -1,52 +1,37 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-// import Stripe from 'stripe'; // You'll need to install stripe
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import Stripe from 'stripe';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserSubscription, PlanId } from '@/lib/types';
 
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-// const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!; // Get this from Stripe Dashboard
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    // const sig = request.headers.get('stripe-signature');
+    const sig = request.headers.get('stripe-signature');
 
-    // console.log("[Stripe Webhook] Received raw body:", rawBody.substring(0, 200) + "...");
-    // console.log("[Stripe Webhook] Received signature:", sig);
+    let event: Stripe.Event;
+    try {
+      if (!sig || !webhookSecret) {
+        console.error("[Stripe Webhook] Error: Missing signature or webhook secret.");
+        return NextResponse.json({ error: 'Webhook signature verification failed. Config missing.' }, { status: 400 });
+      }
+      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    } catch (err: any) {
+      console.error(`[Stripe Webhook] Error constructing event: ${err.message}`);
+      return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    }
 
-
-    // let event: Stripe.Event;
-    // try {
-    //   if (!sig || !webhookSecret) {
-    //     console.error("[Stripe Webhook] Error: Missing signature or webhook secret.");
-    //     return NextResponse.json({ error: 'Webhook signature verification failed. Config missing.' }, { status: 400 });
-    //   }
-    //   event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    // } catch (err: any) {
-    //   console.error(`[Stripe Webhook] Error constructing event: ${err.message}`);
-    //   return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
-    // }
-
-    // console.log('[Stripe Webhook] Verified event:', event.type, event.id);
-
-    // For now, let's just log the event type and data without full verification
-    // In a real app, you MUST verify the signature as shown above.
-    const event = JSON.parse(rawBody); // THIS IS INSECURE FOR PRODUCTION - ONLY FOR INITIAL TESTING
-    console.log('[Stripe Webhook] INSECURELY Parsed Event Type:', event.type);
-
+    console.log('[Stripe Webhook] Verified event:', event.type, event.id);
 
     // Handle the event
     switch (event.type) {
       case 'checkout.session.completed':
-        const session = event.data.object as any; // Stripe.Checkout.Session;
+        const session = event.data.object as Stripe.Checkout.Session;
         console.log('[Stripe Webhook] Checkout session completed:', session.id);
-        // Fulfill the purchase...
-        // session.metadata.userId
-        // session.metadata.planId
-        // session.customer (stripeCustomerId)
-        // session.subscription (stripeSubscriptionId)
 
         const userId = session.metadata?.userId;
         const planId = session.metadata?.planId as PlanId;
@@ -59,37 +44,33 @@ export async function POST(request: NextRequest) {
         }
 
         const userSubRef = doc(db, 'users', userId, 'subscription', 'current');
-        const newSubscriptionData: Partial<UserSubscription> = {
+        
+        // Let's get the subscription object from Stripe to get the period dates
+        const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+        const newSubscriptionData: UserSubscription = {
           planId: planId,
           status: 'active',
           stripeCustomerId: stripeCustomerId,
           stripeSubscriptionId: stripeSubscriptionId,
-          currentPeriodStart: Date.now(), // Or from Stripe event
-          // currentPeriodEnd will be set by Stripe for subscriptions
-          // offersCreatedThisPeriod: 0, // Reset if needed
+          currentPeriodStart: stripeSubscription.current_period_start * 1000, // Stripe uses seconds, convert to ms
+          currentPeriodEnd: stripeSubscription.current_period_end * 1000,     // Stripe uses seconds, convert to ms
+          offersCreatedThisPeriod: 0, // Reset on new subscription
         };
 
-        // If it's a subscription, Stripe sends `invoice.payment_succeeded` for recurring payments.
-        // `checkout.session.completed` is for the initial setup.
-        // You might also handle `customer.subscription.updated` or `customer.subscription.deleted`.
-
+        // setDoc will create or overwrite the document
         await setDoc(userSubRef, newSubscriptionData, { merge: true });
         console.log(`[Stripe Webhook] User ${userId} subscription updated to ${planId}.`);
         break;
-
+      
+      // You can add more event handlers here in the future
       // case 'invoice.payment_succeeded':
-      //   const invoice = event.data.object as Stripe.Invoice;
-      //   if (invoice.billing_reason === 'subscription_cycle' || invoice.billing_reason === 'subscription_create') {
-      //     const stripeSubscriptionId = invoice.subscription as string;
-      //     const stripeCustomerId = invoice.customer as string;
-            // Query Firestore for user by stripeSubscriptionId or stripeCustomerId
-            // Update their currentPeriodStart, currentPeriodEnd from invoice/subscription data
-            // Reset offersCreatedThisPeriod if it's a new cycle
-      //     console.log(`[Stripe Webhook] Invoice payment succeeded for subscription: ${stripeSubscriptionId}`);
-      //   }
+      //   // Handle recurring payments
+      //   break;
+      // case 'customer.subscription.deleted':
+      //   // Handle cancellations
       //   break;
 
-      // ... handle other event types
       default:
         console.log(`[Stripe Webhook] Unhandled event type ${event.type}`);
     }
