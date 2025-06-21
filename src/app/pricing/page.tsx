@@ -198,8 +198,8 @@ export default function PricingPage() {
                         {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
                       </div>
                       <ul className="space-y-3">
-                      {plan.features.map((feature) => (
-                          <li key={t(feature.textKey)} className="flex items-start">
+                      {plan.features.map((feature, index) => (
+                          <li key={t(feature.textKey) + index} className="flex items-start">
                           {getFeatureIcon(feature.icon)}
                           <span className={`text-muted-foreground ${!feature.available ? 'line-through' : ''}`}>{t(feature.textKey)}</span>
                           </li>
