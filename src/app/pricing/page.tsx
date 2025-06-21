@@ -37,7 +37,7 @@ export default function PricingPage() {
   const isTrialing = userSubscription?.status === 'trialing';
 
   let trialDaysLeft = 0;
-  if (isTrialing && userSubscription.currentPeriodEnd) {
+  if (isTrialing && userSubscription?.currentPeriodEnd) {
     const endDate = new Date(userSubscription.currentPeriodEnd);
     trialDaysLeft = Math.max(0, differenceInDays(endDate, new Date()));
   }
@@ -165,8 +165,8 @@ export default function PricingPage() {
 
                 const getButtonText = () => {
                   if (isCurrentPlan) return t({en: "Your Current Plan", el: "Το Πρόγραμμά σας"});
-                  // For both trialing and new users, the button text is the same.
-                  return t(plan.buttonTextKey); 
+                  if (isTrialing) return t({en: "Invest Now", el: "Επενδύστε Τώρα"});
+                  return t(plan.buttonTextKey);
                 }
 
                 return (

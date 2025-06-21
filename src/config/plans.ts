@@ -70,7 +70,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
         { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
+    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
     isFeatured: true,
     entitlements: proEntitlements,
     stripePriceId: 'price_1RcYqTGxDVvbchhpdQw7awbM' 
@@ -91,7 +91,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
         { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
+    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
     isFeatured: true,
     entitlements: proEntitlements,
     stripePriceId: 'price_1RcZ5VGxDVvbchhpXseQQ1qV' 
@@ -110,7 +110,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
+    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
     entitlements: businessEntitlements,
     stripePriceId: 'price_1RcYuxGxDVvbchhpjUS5jpM9' 
   },
@@ -129,7 +129,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
+    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
     entitlements: businessEntitlements,
     stripePriceId: 'price_1RcZHOGxDVvbchhpxW5LE71u'
   },
