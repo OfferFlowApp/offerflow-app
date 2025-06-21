@@ -47,7 +47,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     priceKey: { en: '', el: '' },
     descriptionKey: { en: '', el: '' },
     features: [],
-    buttonTextKey: { en: 'Choose a Plan', el: 'Επιλέξτε Πρόγραμμα' },
+    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
     entitlements: {
       ...defaultEntitlements,
       maxOfferSheetsPerMonth: 1, // Allow 1 free offer to try it out
@@ -70,7 +70,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
         { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
     isFeatured: true,
     entitlements: proEntitlements,
     stripePriceId: 'price_1RcYqTGxDVvbchhpdQw7awbM' 
@@ -91,7 +91,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
         { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
     isFeatured: true,
     entitlements: proEntitlements,
     stripePriceId: 'price_1RcZ5VGxDVvbchhpXseQQ1qV' 
@@ -110,7 +110,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
     entitlements: businessEntitlements,
     stripePriceId: 'price_1RcYuxGxDVvbchhpjUS5jpM9' 
   },
@@ -129,7 +129,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
         { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
     ],
-    buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
+    buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
     entitlements: businessEntitlements,
     stripePriceId: 'price_1RcZHOGxDVvbchhpxW5LE71u'
   },

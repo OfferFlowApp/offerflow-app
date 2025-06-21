@@ -107,6 +107,17 @@ export default function PricingPage() {
   };
 
   const plansToShow = [proPlan, businessPlan];
+  
+  const getIntroText = () => {
+    if (isAlreadyPaid) {
+      return t({en: "You are currently subscribed. You can manage your plan from your profile page.", el: "Είστε ήδη συνδρομητής. Μπορείτε να διαχειριστείτε το πρόγραμμά σας από το προφίλ σας."});
+    }
+    if (isTrialing) {
+      return t({en: "You are on a free trial. Choose a plan below to activate it and continue after your trial ends.", el: "Βρίσκεστε σε δωρεάν δοκιμή. Επιλέξτε ένα πρόγραμμα παρακάτω για να το ενεργοποιήσετε και να συνεχίσετε μετά τη λήξη της."});
+    }
+    // This is for logged-out users or users with no subscription info (should be rare if logged in)
+    return t({en: "Create an account to automatically start your 30-day free Pro trial. Choose a plan below to continue when the trial ends.", el: "Δημιουργήστε λογαριασμό για να ξεκινήσετε αυτόματα τη δωρεάν δοκιμή 30 ημερών. Επιλέξτε ένα πρόγραμμα παρακάτω για να συνεχίσετε μετά τη δοκιμή."});
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -117,10 +128,7 @@ export default function PricingPage() {
             {t({ en: 'Choose Your Plan', el: 'Επιλέξτε το Πρόγραμμά σας' })}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {isTrialing
-              ? t({ en: 'You are currently on a free trial. Select a plan below to activate it.', el: 'Βρίσκεστε σε δωρεάν δοκιμή. Επιλέξτε ένα πλάνο παρακάτω για να το ενεργοποιήσετε.' })
-              : t({ en: 'All plans start with a 30-day free trial. No credit card required to start, but required to continue after the trial.', el: 'Όλα τα προγράμματα ξεκινούν με 30 ημέρες δωρεάν δοκιμή. Δεν απαιτείται πιστωτική κάρτα για την έναρξη, αλλά για τη συνέχιση μετά τη δοκιμή.' })
-            }
+            {getIntroText()}
           </p>
         </section>
 
@@ -157,8 +165,8 @@ export default function PricingPage() {
 
                 const getButtonText = () => {
                   if (isCurrentPlan) return t({en: "Your Current Plan", el: "Το Πρόγραμμά σας"});
-                  if (isTrialing) return t({en: "Activate Plan", el: "Ενεργοποίηση Προγράμματος"});
-                  return t(plan.buttonTextKey);
+                  // For both trialing and new users, the button text is the same.
+                  return t(plan.buttonTextKey); 
                 }
 
                 return (
