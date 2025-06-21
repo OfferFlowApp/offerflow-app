@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogIn, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -78,7 +77,9 @@ export default function LoginPage() {
         <Card className="w-full max-w-md shadow-xl rounded-lg">
           <CardHeader className="text-center">
             <LogIn className="mx-auto h-10 w-10 text-primary mb-3" />
-            <CardTitle className="text-3xl font-bold text-primary">{t({en: "Login", el: "Σύνδεση"})}</CardTitle>
+            <CardTitle className="text-3xl font-bold">
+              <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
+            </CardTitle>
             <CardDescription className="mt-2">
               {language === 'el' ? 'Συνδεθείτε στον λογαριασμό σας ' : 'Access your '}
               <span className="font-bold">
@@ -132,7 +133,14 @@ export default function LoginPage() {
                 <p className="text-sm text-destructive text-center">{error}</p>
               )}
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
-                {loading ? t({en: "Logging in...", el: "Γίνεται σύνδεση..."}) : t({en: "Login", el: "Σύνδεση"})}
+                {loading ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t({en: "Logging in...", el: "Γίνεται σύνδεση..."})}
+                    </>
+                ) : (
+                    t({en: "Login", el: "Σύνδεση"})
+                )}
               </Button>
             </form>
 
@@ -148,7 +156,7 @@ export default function LoginPage() {
             </div>
 
             <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
-              <GoogleIcon />
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
               {t({en: "Log in with Google", el: "Σύνδεση με Google"})}
             </Button>
 
