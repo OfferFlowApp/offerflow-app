@@ -12,16 +12,18 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { htmlToText } from 'html-to-text';
 
+const STYLED_OFFERFLOW = `<span style="font-weight:bold;color:#3F51B5">Offer</span><span style="font-weight:bold;color:#4CAF50">Flow</span>`;
+
 // This is a placeholder for fetching and processing your help page content.
 // In a real scenario, you might fetch this from a file, database, or a CMS.
 async function getHelpContentAsText(): Promise<string> {
   console.log('[appSupportFlow] Starting getHelpContentAsText');
   // This is a more detailed summary based on src/app/help/page.tsx
   const rawHelpContent = `
-    OfferFlow User Guide: Create, manage, and share professional offer sheets.
+    ${STYLED_OFFERFLOW} User Guide: Create, manage, and share professional offer sheets.
 
     Getting Started & Navigation:
-    Welcome to OfferFlow! This guide will help you make the most of its features.
+    Welcome to ${STYLED_OFFERFLOW}! This guide will help you make the most of its features.
     The main navigation bar at the top includes:
     - Home: Access recent offers and create new ones.
     - Create Offer: Go directly to the offer sheet form.
@@ -74,7 +76,7 @@ async function getHelpContentAsText(): Promise<string> {
 
     Troubleshooting & Tips:
     - Pop-ups: Ensure your browser allows pop-ups from this site for PDF downloads and email drafts to open correctly.
-    - Local Storage: Offer sheets and settings are saved in your browser's local storage. This means data is specific to the browser you are using and won't automatically sync across different devices or browsers unless you manually export/import JSON data.
+    - Local Storage: Offer sheets and settings are saved in your browser's local storage. This means data is specific to the browser you are using and won't automatically sync across different devices or browsers unless you manually export/import JSON data or a future cloud sync feature is implemented.
     - Performance: If the app feels slow, ensure your internet connection is stable. Complex offer sheets with many high-resolution images might take longer to process for PDF/JPEG generation.
   `;
   const textContent = htmlToText(rawHelpContent, {

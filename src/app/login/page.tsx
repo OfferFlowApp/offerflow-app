@@ -38,7 +38,7 @@ const GoogleIcon = () => (
 );
 
 export default function LoginPage() {
-  const { t } = useLocalization();
+  const { t, language } = useLocalization();
   const { signInWithEmail, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -80,10 +80,11 @@ export default function LoginPage() {
             <LogIn className="mx-auto h-10 w-10 text-primary mb-3" />
             <CardTitle className="text-3xl font-bold text-primary">{t({en: "Login", el: "Σύνδεση"})}</CardTitle>
             <CardDescription className="mt-2">
-              {t({
-                en: "Access your OfferFlow account.",
-                el: "Συνδεθείτε στον λογαριασμό σας OfferFlow."
-              })}
+              {language === 'el' ? 'Συνδεθείτε στον λογαριασμό σας ' : 'Access your '}
+              <span className="font-bold">
+                <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
+              </span>
+              {language === 'el' ? '' : ' account.'}
             </CardDescription>
           </CardHeader>
           <CardContent>

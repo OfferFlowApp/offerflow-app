@@ -93,9 +93,10 @@ export default function SupportChat() {
       {isOpen && (
         <Card className="fixed bottom-6 right-6 w-80 sm:w-96 h-[28rem] sm:h-[32rem] shadow-xl z-[100] flex flex-col rounded-lg border bg-card">
           <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
-            <CardTitle className="text-lg font-semibold text-primary flex items-center">
-              <Bot className="h-5 w-5 mr-2" />
-              {t({ en: 'OfferFlow Support', el: 'Υποστήριξη OfferFlow' })}
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <Bot className="h-5 w-5 mr-2 text-primary" />
+              <span className="font-bold"><span className="text-primary">Offer</span><span className="text-accent">Flow</span></span>
+              <span className='ml-1.5 font-medium text-primary'>{t({ en: 'Support', el: 'Υποστήριξη' })}</span>
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={toggleChat} className="h-8 w-8">
               <X className="h-5 w-5" />

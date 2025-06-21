@@ -37,7 +37,7 @@ const GoogleIcon = () => (
 );
 
 export default function SignupPage() {
-  const { t } = useLocalization();
+  const { t, language } = useLocalization();
   const { signUpWithEmail, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -89,10 +89,11 @@ export default function SignupPage() {
             <UserPlus className="mx-auto h-10 w-10 text-primary mb-3" />
             <CardTitle className="text-3xl font-bold text-primary">{t({en: "Create Account", el: "Δημιουργία Λογαριασμού"})}</CardTitle>
             <CardDescription className="mt-2">
-              {t({
-                en: "Join OfferFlow to manage your offer sheets.",
-                el: "Εγγραφείτε στο OfferFlow για να διαχειριστείτε τις προσφορές σας."
-              })}
+              {language === 'el' ? 'Εγγραφείτε στο ' : 'Join '}
+              <span className="font-bold">
+                <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
+              </span>
+              {language === 'el' ? ' για να διαχειριστείτε τις προσφορές σας.' : ' to manage your offer sheets.'}
             </CardDescription>
           </CardHeader>
           <CardContent>

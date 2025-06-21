@@ -167,7 +167,11 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
             </div>
              {showWatermark && (
               <div className="text-center text-gray-400 text-[9px] pt-3">
-                {t({ en: "Made with OfferFlow", el: "Δημιουργήθηκε με το OfferFlow" })}
+                {t({ en: "Made with", el: "Δημιουργήθηκε με το" })}{' '}
+                <span style={{ fontWeight: 'bold' }}>
+                    <span style={{ color: '#3F51B5' }}>Offer</span>
+                    <span style={{ color: '#4CAF50' }}>Flow</span>
+                </span>
               </div>
             )}
             <div className="text-center mt-2 text-gray-500 text-[10px]">
