@@ -51,58 +51,59 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!db || !userId) return null;
     const subRef = doc(db, 'users', userId, 'subscription', 'current');
     
-    // Retry logic to handle transient "client is offline" errors on initial load
-    const getDocWithRetry = async () => {
-      try {
-        return await getDoc(subRef);
-      } catch (error: any) {
-        if (error.code === 'unavailable') {
-          console.warn("Firestore: Client is offline. Retrying once in 500ms...");
-          await new Promise(resolve => setTimeout(resolve, 500));
-          return await getDoc(subRef);
-        }
-        throw error;
-      }
-    };
+    const maxRetries = 2;
+    let lastError: any = null;
 
-    try {
-      const subSnap = await getDocWithRetry();
-      if (subSnap.exists()) {
-        const subData = subSnap.data() as UserSubscription;
-        // Check and reset offer period if necessary
-        const now = Date.now();
-        if (subData.currentPeriodEnd && now > subData.currentPeriodEnd) {
-          const newPeriodStart = now;
-          const newPeriodEnd = new Date(newPeriodStart).setMonth(new Date(newPeriodStart).getMonth() + 1);
-          const updatedSub = {
-            ...subData,
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const subSnap = await getDoc(subRef);
+        
+        if (subSnap.exists()) {
+          const subData = subSnap.data() as UserSubscription;
+          const now = Date.now();
+          if (subData.currentPeriodEnd && now > subData.currentPeriodEnd) {
+            const newPeriodStart = now;
+            const newPeriodEnd = new Date(newPeriodStart).setMonth(new Date(newPeriodStart).getMonth() + 1);
+            const updatedSub = {
+              ...subData,
+              offersCreatedThisPeriod: 0,
+              currentPeriodStart: newPeriodStart,
+              currentPeriodEnd: newPeriodEnd,
+            };
+            await setDoc(subRef, updatedSub, { merge: true });
+            return updatedSub;
+          }
+          return subData;
+        } else {
+          const thirtyDaysFromNow = new Date();
+          thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+          const freeSub: UserSubscription = {
+            planId: 'free',
+            status: 'active',
             offersCreatedThisPeriod: 0,
-            currentPeriodStart: newPeriodStart,
-            currentPeriodEnd: newPeriodEnd,
+            currentPeriodStart: Date.now(),
+            currentPeriodEnd: thirtyDaysFromNow.getTime(),
           };
-          await setDoc(subRef, updatedSub, { merge: true });
-          return updatedSub;
+          await setDoc(subRef, freeSub);
+          return freeSub;
         }
-        return subData;
-      } else {
-        // No subscription found, create a default free one
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-        const freeSub: UserSubscription = {
-          planId: 'free',
-          status: 'active',
-          offersCreatedThisPeriod: 0,
-          currentPeriodStart: Date.now(),
-          currentPeriodEnd: thirtyDaysFromNow.getTime(),
-        };
-        await setDoc(subRef, freeSub);
-        return freeSub;
+      } catch (error: any) {
+        lastError = error;
+        if (error.code === 'unavailable' && attempt < maxRetries) {
+          console.warn(`Firestore: Client is offline. Retrying... (Attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retrying
+        } else {
+          // This is a non-retriable error or the last attempt failed
+          console.error("Error fetching/creating user subscription:", error);
+          toast({ title: t({en: "Subscription Error", el: "Σφάλμα Συνδρομής"}), description: t({en: "Could not load subscription details.", el: "Δεν ήταν δυνατή η φόρτωση."}), variant: "destructive" });
+          return null;
+        }
       }
-    } catch (error) {
-      console.error("Error fetching/creating user subscription:", error);
-      toast({ title: t({en: "Subscription Error", el: "Σφάλμα Συνδρομής"}), description: t({en: "Could not load subscription details.", el: "Δεν ήταν δυνατή η φόρτωση."}), variant: "destructive" });
-      return null;
     }
+    
+    // This part should not be reached if the loop logic is correct, but it's a safeguard.
+    return null;
+
   }, [t, toast]);
   
   const refreshSubscription = useCallback(async () => {
