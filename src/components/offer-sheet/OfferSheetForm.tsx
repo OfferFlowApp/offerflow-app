@@ -508,17 +508,16 @@ export default function OfferSheetForm() {
   }, []);
   
   const moveProduct = React.useCallback((dragIndex: number, hoverIndex: number) => {
-    setOfferData((prevOfferData) =>
-      update(prevOfferData, {
-        products: {
-          $splice: [
-            [dragIndex, 1],
-            [hoverIndex, 0, prevOfferData.products[dragIndex] as Product],
-          ],
-        },
-      }),
-    )
-  }, []); 
+    setOfferData((prev) => {
+        const newProducts = [...prev.products];
+        const [draggedItem] = newProducts.splice(dragIndex, 1);
+        newProducts.splice(hoverIndex, 0, draggedItem);
+        return {
+            ...prev,
+            products: newProducts,
+        };
+    });
+  }, []);
 
   const handleCurrencyChange = (value: string) => {
     if (currencyMetadata[value as Currency]) {
