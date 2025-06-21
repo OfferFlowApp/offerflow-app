@@ -153,8 +153,15 @@ export default function PricingPage() {
                 </CardHeader>
                 <CardContent className="flex-grow">
                     <div className="text-center mb-6">
-                    <span className="text-4xl font-extrabold">{t(plan.priceKey)}</span>
-                    {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
+                      <div className="flex items-baseline justify-center gap-2">
+                        {plan.listPriceKey && t(plan.listPriceKey) !== t(plan.priceKey) && (
+                          <span className="text-2xl font-medium text-muted-foreground line-through">
+                            {t(plan.listPriceKey)}
+                          </span>
+                        )}
+                        <span className="text-4xl font-extrabold">{t(plan.priceKey)}</span>
+                      </div>
+                      {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
                     </div>
                     <ul className="space-y-3">
                     {plan.features.map((feature) => (

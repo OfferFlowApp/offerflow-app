@@ -97,6 +97,7 @@ export interface PricingPlanDetails {
   id: PlanId; // Will be one of the 4 paid plans, or 'none'
   nameKey: { en: string; el: string };
   priceKey: { en: string; el: string };
+  listPriceKey?: { en: string; el: string };
   priceSuffixKey?: { en: string; el: string };
   descriptionKey: { en: string; el: string };
   features: {

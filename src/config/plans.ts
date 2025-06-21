@@ -57,6 +57,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'pro-monthly': {
     id: 'pro-monthly',
     nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
+    listPriceKey: { en: '€11.98', el: '€11.98' },
     priceKey: { en: '€7.98', el: '€7.98' },
     priceSuffixKey: { en: '/ month', el: '/ μήνα' },
     descriptionKey: { en: 'For professionals who need more power.', el: 'Για επαγγελματίες που χρειάζονται περισσότερη δύναμη.' },
@@ -77,6 +78,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'pro-yearly': {
     id: 'pro-yearly',
     nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
+    listPriceKey: { en: '€95.76', el: '€95.76' },
     priceKey: { en: '€83.79', el: '€83.79' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
     descriptionKey: { en: 'Save ~1.5 months with the yearly plan!', el: 'Εξοικονομήστε ~1.5 μήνα με το ετήσιο!' },
@@ -115,6 +117,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'business-yearly': {
     id: 'business-yearly',
     nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
+    listPriceKey: { en: '€467.76', el: '€467.76' },
     priceKey: { en: '€389.80', el: '€389.80' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
     descriptionKey: { en: 'Save 2 months with the yearly plan!', el: 'Εξοικονομήστε 2 μήνες με το ετήσιο!' },
