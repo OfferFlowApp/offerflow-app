@@ -72,7 +72,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
     isFeatured: true,
     entitlements: proEntitlements,
-    stripePriceId: 'YOUR_PRO_MONTHLY_STRIPE_PRICE_ID' // <-- Replace
+    stripePriceId: 'price_1RcYqTGxDVvbchhpdQw7awbM' 
   },
   'pro-yearly': {
     id: 'pro-yearly',
@@ -92,7 +92,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
     isFeatured: true,
     entitlements: proEntitlements,
-    stripePriceId: 'YOUR_PRO_YEARLY_STRIPE_PRICE_ID' // <-- Replace
+    stripePriceId: 'price_1RcZ5VGxDVvbchhpXseQQ1qV' 
   },
   'business-monthly': {
     id: 'business-monthly',
@@ -110,7 +110,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     ],
     buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
     entitlements: businessEntitlements,
-    stripePriceId: 'YOUR_BUSINESS_MONTHLY_STRIPE_PRICE_ID' // <-- Replace
+    stripePriceId: 'price_1RcYuxGxDVvbchhpjUS5jpM9' 
   },
   'business-yearly': {
     id: 'business-yearly',
@@ -128,7 +128,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     ],
     buttonTextKey: { en: 'Start 30-Day Free Trial', el: 'Έναρξη Δωρεάν Δοκιμής 30 Ημερών' },
     entitlements: businessEntitlements,
-    stripePriceId: 'YOUR_BUSINESS_YEARLY_STRIPE_PRICE_ID' // <-- Replace
+    stripePriceId: 'price_1RcZHOGxDVvbchhpxW5LE71u'
   },
 };
 
