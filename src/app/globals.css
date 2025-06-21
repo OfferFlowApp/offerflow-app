@@ -108,4 +108,23 @@ body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  .prose {
+    color: hsl(var(--foreground));
+    max-width: 65ch;
+  }
+  .prose h2 {
+    @apply text-2xl font-bold mt-8 mb-4;
+  }
+  .prose p {
+    @apply leading-7 mb-4;
+  }
+  .prose strong {
+    @apply font-semibold;
+  }
+  .prose a {
+    @apply text-primary underline;
+  }
+  .dark .prose {
+    color: hsl(var(--foreground));
+  }
 }

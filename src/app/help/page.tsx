@@ -1,4 +1,3 @@
-
 "use client";
 
 import Header from '@/components/layout/Header';
@@ -12,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocalization } from '@/hooks/useLocalization';
 import Link from 'next/link';
-import { HelpCircle, LayoutDashboard, SettingsIcon, UserCircleIcon, ShoppingCartIcon, FileTextIcon, PlusCircleIcon, SaveIcon, Share2Icon, DownloadIcon, UploadIcon, PaletteIcon, ListChecksIcon, CreditCardIcon } from 'lucide-react';
+import { HelpCircle, LayoutDashboard, SettingsIcon, UserCircleIcon, FileTextIcon, PlusCircleIcon, SaveIcon, Share2Icon, DownloadIcon, UploadIcon, PaletteIcon, ListChecksIcon, CreditCardIcon, FileSignature } from 'lucide-react';
 
 export default function HelpPage() {
   const { t } = useLocalization();
@@ -172,6 +171,19 @@ export default function HelpPage() {
                 </AccordionContent>
               </AccordionItem>
 
+              <AccordionItem value="item-8">
+                <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                  <FileSignature className="mr-3 h-5 w-5 text-primary" />
+                  {t({ en: "Legal Information", el: "Νομικές Πληροφορίες" })}
+                </AccordionTrigger>
+                <AccordionContent className="text-base pl-8 space-y-2">
+                  <ul className="list-disc list-inside space-y-1 pl-4">
+                     <li><Link href="/terms-of-service" className="text-primary hover:underline">{t({ en: "Terms of Service", el: "Όροι Παροχής Υπηρεσιών" })}</Link></li>
+                     <li><Link href="/privacy-policy" className="text-primary hover:underline">{t({ en: "Privacy Policy", el: "Πολιτική Απορρήτου" })}</Link></li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+
             </Accordion>
           </CardContent>
         </Card>
@@ -180,7 +192,3 @@ export default function HelpPage() {
     </div>
   );
 }
-
-    
-
-    
