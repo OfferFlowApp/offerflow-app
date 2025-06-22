@@ -128,3 +128,25 @@ body {
     color: hsl(var(--foreground));
   }
 }
+
+@layer utilities {
+  @keyframes page-loading-bar-animation {
+    from {
+      width: 0%;
+    }
+    to {
+      width: 100%;
+    }
+  }
+
+  .page-loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 9999;
+    background-color: hsl(var(--primary));
+    animation: page-loading-bar-animation 0.75s ease-out forwards;
+  }
+}

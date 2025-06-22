@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import AppProviders from '@/components/layout/AppProviders';
 import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
 import SupportChat from '@/components/layout/SupportChat'; // Import SupportChat
+import TopProgressBar from '@/components/layout/TopProgressBar';
 
 export const metadata: Metadata = {
   title: 'OfferFlow App',
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning={true}>
         <AuthProvider> {/* Wrap AppProviders with AuthProvider */}
           <AppProviders>
+            <TopProgressBar />
             {children}
             <Toaster />
             <SupportChat /> {/* Add SupportChat here */}
