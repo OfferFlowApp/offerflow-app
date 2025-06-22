@@ -73,7 +73,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
               <p className="whitespace-pre-line">{sellerInfo.address || t({en: '123 Seller St, City', el: 'Οδός Πωλητή 123, Πόλη'})}</p>
               {sellerInfo.email && <p>{sellerInfo.email}</p>}
               {sellerInfo.phone && <p>{sellerInfo.phone}</p>}
-              {sellerInfo.gemhNumber && <p>{t({en: 'GEMH No.:', el: 'Γ.Ε.ΜΗ.:'})} {sellerInfo.gemhNumber}</p>}
+              {sellerInfo.gemhNumber && <p>{t({en: 'General Commercial Registry No.:', el: 'Γ.Ε.ΜΗ.:'})} {sellerInfo.gemhNumber}</p>}
             </div>
           </div>
 
@@ -82,7 +82,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
             <p><span className="font-semibold">{t({en: "Name:", el: "Όνομα:"})}</span> {customerInfo.name}</p>
             {customerInfo.company && <p><span className="font-semibold">{t({en: "Company:", el: "Εταιρεία:"})}</span> {customerInfo.company}</p>}
             {customerInfo.vatNumber && <p><span className="font-semibold">{t({en: "VAT No.:", el: "ΑΦΜ:"})}</span> {customerInfo.vatNumber}</p>}
-            {customerInfo.gemhNumber && <p><span className="font-semibold">{t({en: "GEMH No.:", el: "Γ.Ε.Μ.Η.:"})}</span> {customerInfo.gemhNumber}</p>}
+            {customerInfo.gemhNumber && <p><span className="font-semibold">{t({en: "General Commercial Registry No.:", el: "Γ.Ε.Μ.Η.:"})}</span> {customerInfo.gemhNumber}</p>}
             {customerInfo.contact && <p><span className="font-semibold">{t({en: "Email/Contact:", el: "Email/Επικοινωνία:"})}</span> {customerInfo.contact}</p>}
             {customerInfo.phone2 && <p><span className="font-semibold">{t({en: "Phone:", el: "Τηλέφωνο:"})}</span> {customerInfo.phone2}</p>}
             {customerInfo.address && <p className="whitespace-pre-line"><span className="font-semibold">{t({en: "Address:", el: "Διεύθυνση:"})}</span> {customerInfo.address}</p>}

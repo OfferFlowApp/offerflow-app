@@ -1090,7 +1090,7 @@ export default function OfferSheetForm() {
             <Input id="sellerPhone" name="phone" type="tel" value={offerData.sellerInfo.phone || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_PHONE} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sellerGemhNumber">{t({ en: 'Seller ΓΕΜΗ Number', el: 'Αριθμός ΓΕΜΗ Πωλητή' })}</Label>
+            <Label htmlFor="sellerGemhNumber">{t({ en: 'Seller General Commercial Registry Number', el: 'Αριθμός ΓΕΜΗ Πωλητή' })}</Label>
             <Input id="sellerGemhNumber" name="gemhNumber" value={offerData.sellerInfo.gemhNumber || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_GEMH} />
           </div>
 
@@ -1139,7 +1139,7 @@ export default function OfferSheetForm() {
             <Input id="customerVatNumber" name="vatNumber" value={offerData.customerInfo.vatNumber || ''} onChange={handleCustomerInfoChange} placeholder="EL123456789" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="customerGemhNumber">{t({ en: 'Client ΓΕΜΗ Number', el: 'Αριθμός ΓΕΜΗ Πελάτη' })}</Label>
+            <Label htmlFor="customerGemhNumber">{t({ en: 'Client General Commercial Registry Number', el: 'Αριθμός ΓΕΜΗ Πελάτη' })}</Label>
             <Input id="customerGemhNumber" name="gemhNumber" value={offerData.customerInfo.gemhNumber || ''} onChange={handleCustomerInfoChange} placeholder="123456789012" />
           </div>
           <div className="space-y-2">

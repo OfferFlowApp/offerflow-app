@@ -293,7 +293,7 @@ export default function DefaultLogoSettings() {
             <Input id="defaultSellerPhone" name="phone" value={defaultSellerInfo.phone || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_PHONE}/>
         </div>
         <div className="space-y-2">
-            <Label htmlFor="defaultSellerGemh">{t({en: "Default Seller ΓΕΜΗ Number", el: "Προεπιλεγμένος Αριθμός ΓΕΜΗ Πωλητή"})}</Label>
+            <Label htmlFor="defaultSellerGemh">{t({en: "Default Seller General Commercial Registry Number", el: "Προεπιλεγμένος Αριθμός ΓΕΜΗ Πωλητή"})}</Label>
             <Input id="defaultSellerGemh" name="gemhNumber" value={defaultSellerInfo.gemhNumber || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_GEMH}/>
         </div>
       </div>

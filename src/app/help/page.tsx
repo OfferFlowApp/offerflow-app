@@ -1,3 +1,4 @@
+
 "use client";
 
 import Header from '@/components/layout/Header';
@@ -64,11 +65,11 @@ export default function HelpPage() {
                   <p>{t({ en: "Navigate to 'Create Offer' or click 'Create New Offer Sheet' on the homepage.", el: "Πλοηγηθείτε στο 'Δημιουργία Προσφοράς' ή κάντε κλικ στο 'Δημιουργία Νέου Δελτίου Προσφοράς' στην αρχική σελίδα." })}</p>
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "1. Seller Information & Logo", el: "1. Πληροφορίες Πωλητή & Λογότυπο" })}</h4>
-                    <p>{t({ en: "Enter your company's details (name, address, email, phone, ΓΕΜΗ). Upload your logo. You can set defaults in Settings.", el: "Εισαγάγετε τα στοιχεία της εταιρείας σας (όνομα, διεύθυνση, email, τηλέφωνο, ΓΕΜΗ). Ανεβάστε το λογότυπό σας. Μπορείτε να ορίσετε προεπιλογές στις Ρυθμίσεις." })}</p>
+                    <p>{t({ en: "Enter your company's details (name, address, email, phone, General Commercial Registry). Upload your logo. You can set defaults in Settings.", el: "Εισαγάγετε τα στοιχεία της εταιρείας σας (όνομα, διεύθυνση, email, τηλέφωνο, ΓΕΜΗ). Ανεβάστε το λογότυπό σας. Μπορείτε να ορίσετε προεπιλογές στις Ρυθμίσεις." })}</p>
                   </div>
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "2. Customer Information & Offer Validity", el: "2. Στοιχεία Πελάτη & Ισχύς Προσφοράς" })}</h4>
-                    <p>{t({ en: "Fill in your client's details (name, company, contact info, VAT, ΓΕΜΗ, address). Choose the offer currency (EUR, USD, GBP) and set validity dates.", el: "Συμπληρώστε τα στοιχεία του πελάτη σας (όνομα, εταιρεία, στοιχεία επικοινωνίας, ΑΦΜ, ΓΕΜΗ, διεύθυνση). Επιλέξτε το νόμισμα της προσφοράς (EUR, USD, GBP) και ορίστε τις ημερομηνίες ισχύος." })}</p>
+                    <p>{t({ en: "Fill in your client's details (name, company, contact info, VAT, General Commercial Registry, address). Choose the offer currency (EUR, USD, GBP) and set validity dates.", el: "Συμπληρώστε τα στοιχεία του πελάτη σας (όνομα, εταιρεία, στοιχεία επικοινωνίας, ΑΦΜ, ΓΕΜΗ, διεύθυνση). Επιλέξτε το νόμισμα της προσφοράς (EUR, USD, GBP) και ορίστε τις ημερομηνίες ισχύος." })}</p>
                   </div>
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "3. Adding Products", el: "3. Προσθήκη Προϊόντων" })}</h4>
@@ -132,7 +133,7 @@ export default function HelpPage() {
                 <AccordionContent className="text-base pl-8 space-y-3">
                   <p>{t({ en: "Access the settings page via the header link to set default values for new offer sheets:", el: "Αποκτήστε πρόσβαση στη σελίδα ρυθμίσεων μέσω του συνδέσμου στην κεφαλίδα για να ορίσετε προεπιλεγμένες τιμές για νέα δελτία προσφορών:" })}</p>
                   <ul className="list-disc list-inside space-y-1 pl-4">
-                    <li><strong>{t({ en: "Branding & Seller Defaults:", el: "Προεπιλογές Επωνυμίας & Πωλητή:" })}</strong> {t({ en: "Set your default company logo, name, address, email, phone, and ΓΕΜΗ.", el: "Ορίστε το προεπιλεγμένο λογότυπο της εταιρείας σας, όνομα, διεύθυνση, email, τηλέφωνο και ΓΕΜΗ." })}</li>
+                    <li><strong>{t({ en: "Branding & Seller Defaults:", el: "Προεπιλογές Επωνυμίας & Πωλητή:" })}</strong> {t({ en: "Set your default company logo, name, address, email, phone, and General Commercial Registry.", el: "Ορίστε το προεπιλεγμένο λογότυπο της εταιρείας σας, όνομα, διεύθυνση, email, τηλέφωνο και ΓΕΜΗ." })}</li>
                     <li><strong>{t({ en: "Localization:", el: "Τοπικοποίηση:" })}</strong> {t({ en: "Choose your preferred application language and default currency (EUR, USD, GBP) for new offers.", el: "Επιλέξτε την προτιμώμενη γλώσσα εφαρμογής και το προεπιλεγμένο νόμισμα (EUR, USD, GBP) για νέες προσφορές." })}</li>
                     <li><strong>{t({ en: "Default Content:", el: "Προεπιλεγμένο Περιεχόμενο:" })}</strong> {t({ en: "Set default terms and conditions text that will auto-populate in new offer sheets.", el: "Ορίστε προεπιλεγμένο κείμενο όρων και προϋποθέσεων που θα συμπληρώνεται αυτόματα σε νέα δελτία προσφορών." })}</li>
                   </ul>

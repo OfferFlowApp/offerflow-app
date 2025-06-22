@@ -45,9 +45,9 @@ async function getHelpContentAsText(): Promise<string> {
     Creating & Editing an Offer Sheet:
     Navigate to 'Create Offer' or click 'Create New Offer Sheet' on the homepage.
     1. Seller Information & Logo:
-       Enter your company's details (name, address, email, phone, ΓΕΜΗ). Upload your logo. You can set defaults in Settings.
+       Enter your company's details (name, address, email, phone, General Commercial Registry). Upload your logo. You can set defaults in Settings.
     2. Customer Information & Offer Validity:
-       Fill in your client's details (name, company, contact info, VAT, ΓΕΜΗ, address). Choose the offer currency (EUR, USD, GBP) and set validity dates (Offer Valid From, Offer Valid Until).
+       Fill in your client's details (name, company, contact info, VAT, General Commercial Registry, address). Choose the offer currency (EUR, USD, GBP) and set validity dates (Offer Valid From, Offer Valid Until).
     3. Adding Products:
        - Click 'Add Product'.
        - Enter title, quantity, original unit price (excluding VAT), and the discounted unit price.
@@ -74,7 +74,7 @@ async function getHelpContentAsText(): Promise<string> {
 
     Customizing Settings:
     Access the settings page via the header link to set default values for new offer sheets:
-    - Branding & Seller Defaults: Set your default company logo, name, address, email, phone, and ΓΕΜΗ.
+    - Branding & Seller Defaults: Set your default company logo, name, address, email, phone, and General Commercial Registry.
     - Localization: Choose your preferred application language and default currency (EUR, USD, GBP) for new offers.
     - Default Content: Set default terms and conditions text that will auto-populate in new offer sheets.
 
