@@ -23,7 +23,6 @@ import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSi
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
-import update from 'immutability-helper';
 import { useLocalization } from '@/hooks/useLocalization';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -34,24 +33,6 @@ import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { getPlanDetails } from '@/config/plans'; // Import getPlanDetails
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
-
-const PREDEFINED_SELLER_NAMES = [
-  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ',
-  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - MEDIA STROM',
-  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - DROMEAS',
-  'GIORGARAS FURNITURE',
-];
-const OTHER_SELLER_NAME_VALUE = 'other_seller_name';
-
-const PREDEFINED_SELLER_ADDRESSES = [
-  'ΚΑΝΑΔΑ 11 ΡΟΔΟΣ',
-  'KANADA 11 RHODES',
-];
-const OTHER_SELLER_ADDRESS_VALUE = 'other_seller_address';
-const DEFAULT_SELLER_GEMH = '071970120000';
-const DEFAULT_SELLER_EMAIL = 'epiplagiorgaras@gmail.com';
-const DEFAULT_SELLER_PHONE = '2241021087';
-
 
 const initialProduct: Product = {
   id: '',
@@ -76,12 +57,12 @@ const initialCustomerInfo: CustomerInfo = {
 };
 
 const initialSellerInfo: SellerInfo = {
-  name: PREDEFINED_SELLER_NAMES[0] || '', 
-  address: PREDEFINED_SELLER_ADDRESSES[0] || '',
-  email: DEFAULT_SELLER_EMAIL,
-  phone: DEFAULT_SELLER_PHONE,
+  name: '',
+  address: '',
+  email: '',
+  phone: '',
   logoUrl: undefined,
-  gemhNumber: DEFAULT_SELLER_GEMH,
+  gemhNumber: '',
 };
 
 const currencyMetadata: Record<Currency, { symbol: string; IconComponent: React.ElementType, label: string }> = {
@@ -264,8 +245,6 @@ export default function OfferSheetForm() {
   const { currentUser, userSubscription, currentEntitlements, incrementOfferCountForCurrentUser, loading: authLoading } = useAuth();
   const [offerData, setOfferData] = React.useState<OfferSheetData>(() => initialOfferSheetData(BASE_DEFAULT_CURRENCY));
   const { toast } = useToast();
-  const [selectedSellerNameKey, setSelectedSellerNameKey] = React.useState<string>('');
-  const [selectedSellerAddressKey, setSelectedSellerAddressKey] = React.useState<string>('');
   const [isFinalPriceVatInclusive, setIsFinalPriceVatInclusive] = React.useState(false);
   const [currentOfferId, setCurrentOfferId] = React.useState<string | null>(null);
   const importFileRef = React.useRef<HTMLInputElement>(null);
@@ -329,14 +308,6 @@ export default function OfferSheetForm() {
         effectiveSellerInfo.logoUrl = undefined;
       }
 
-
-      setSelectedSellerNameKey(
-        PREDEFINED_SELLER_NAMES.includes(effectiveSellerInfo.name) ? effectiveSellerInfo.name : OTHER_SELLER_NAME_VALUE
-      );
-      setSelectedSellerAddressKey(
-        PREDEFINED_SELLER_ADDRESSES.includes(effectiveSellerInfo.address) ? effectiveSellerInfo.address : OTHER_SELLER_ADDRESS_VALUE
-      );
-      
       setOfferData({
         ...baseInitialData,
         sellerInfo: effectiveSellerInfo,
@@ -379,17 +350,6 @@ export default function OfferSheetForm() {
           };
           
           setOfferData(fullLoadedData);
-
-          setSelectedSellerNameKey(
-            PREDEFINED_SELLER_NAMES.includes(fullLoadedData.sellerInfo.name)
-              ? fullLoadedData.sellerInfo.name
-              : OTHER_SELLER_NAME_VALUE
-          );
-          setSelectedSellerAddressKey(
-            PREDEFINED_SELLER_ADDRESSES.includes(fullLoadedData.sellerInfo.address)
-              ? fullLoadedData.sellerInfo.address
-              : OTHER_SELLER_ADDRESS_VALUE
-          );
           setIsFinalPriceVatInclusive(fullLoadedData.isFinalPriceVatInclusive || false);
           toast({ title: t({en: "Offer Sheet Loaded", el: "Το Δελτίο Προσφοράς Φορτώθηκε"}), description: `${t({en: "Loaded offer for", el: "Φορτώθηκε προσφορά για"})} ${fullLoadedData.customerInfo.name || t({en: "Unknown Customer", el: "Άγνωστος Πελάτης"})}.` });
         } catch (e) {
@@ -439,43 +399,6 @@ export default function OfferSheetForm() {
       sellerInfo: { ...prev.sellerInfo, [name]: value },
     }));
   };
-
-  const handleSellerNameSelectionChange = (value: string) => {
-    setSelectedSellerNameKey(value);
-    if (value !== OTHER_SELLER_NAME_VALUE) {
-      setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: value } }));
-    } else {
-      if (PREDEFINED_SELLER_NAMES.includes(offerData.sellerInfo.name || '')) {
-        setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, name: '' } }));
-      }
-    }
-  };
-
-  const handleCustomSellerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setOfferData(prev => ({
-      ...prev,
-      sellerInfo: { ...prev.sellerInfo, name: e.target.value },
-    }));
-  };
-
-  const handleSellerAddressSelectionChange = (value: string) => {
-    setSelectedSellerAddressKey(value);
-    if (value !== OTHER_SELLER_ADDRESS_VALUE) {
-      setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, address: value } }));
-    } else {
-      if (PREDEFINED_SELLER_ADDRESSES.includes(offerData.sellerInfo.address || '')) {
-        setOfferData(prev => ({ ...prev, sellerInfo: { ...prev.sellerInfo, address: '' } }));
-      }
-    }
-  };
-
-  const handleCustomSellerAddressChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setOfferData(prev => ({
-      ...prev,
-      sellerInfo: { ...prev.sellerInfo, address: e.target.value },
-    }));
-  };
-
 
   const handleCustomerInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -878,17 +801,6 @@ export default function OfferSheetForm() {
         setIsFinalPriceVatInclusive(importedOfferData.isFinalPriceVatInclusive || false);
         setCurrentOfferId(null); // Import as a new offer, don't overwrite existing by ID
 
-        setSelectedSellerNameKey(
-            PREDEFINED_SELLER_NAMES.includes(importedOfferData.sellerInfo.name)
-            ? importedOfferData.sellerInfo.name
-            : OTHER_SELLER_NAME_VALUE
-        );
-        setSelectedSellerAddressKey(
-            PREDEFINED_SELLER_ADDRESSES.includes(importedOfferData.sellerInfo.address)
-            ? importedOfferData.sellerInfo.address
-            : OTHER_SELLER_ADDRESS_VALUE
-        );
-
         toast({ title: t({en: "Data Imported", el: "Τα Δεδομένα Εισήχθησαν"}), description: t({en: "Offer sheet data loaded from JSON.", el: "Τα δεδομένα του δελτίου προσφοράς φορτώθηκαν από JSON."}) });
       } catch (error) {
         console.error("Error importing JSON:", error);
@@ -1029,69 +941,38 @@ export default function OfferSheetForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="sellerNameSelect">{t({ en: 'Seller Company Name', el: 'Όνομα Εταιρείας Πωλητή' })}</Label>
-            <Select value={selectedSellerNameKey} onValueChange={handleSellerNameSelectionChange}>
-              <SelectTrigger id="sellerNameSelect">
-                <SelectValue placeholder={t({ en: "Select or type seller name", el: "Επιλέξτε ή πληκτρολογήστε όνομα πωλητή" })} />
-              </SelectTrigger>
-              <SelectContent>
-                {PREDEFINED_SELLER_NAMES.map(name => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
-                ))}
-                <SelectItem value={OTHER_SELLER_NAME_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectedSellerNameKey === OTHER_SELLER_NAME_VALUE && (
-              <div className="mt-2 space-y-1">
-                <Label htmlFor="customSellerName" className="text-sm font-normal">{t({ en: 'Custom Seller Name', el: 'Προσαρμοσμένο Όνομα Πωλητή' })}</Label>
-                <Input
-                  id="customSellerName"
-                  name="name"
-                  value={offerData.sellerInfo.name}
-                  onChange={handleCustomSellerNameChange}
-                  placeholder={t({ en: "Enter custom seller name", el: "Εισαγάγετε προσαρμοσμένο όνομα πωλητή" })}
-                />
-              </div>
-            )}
+            <Label htmlFor="sellerName">{t({ en: 'Seller Company Name', el: 'Όνομα Εταιρείας Πωλητή' })}</Label>
+            <Input
+              id="sellerName"
+              name="name"
+              value={offerData.sellerInfo.name}
+              onChange={handleSellerInfoChange}
+              placeholder={t({ en: "Your Company Name", el: "Όνομα Εταιρείας" })}
+            />
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="sellerAddressSelect">{t({ en: 'Seller Address', el: 'Διεύθυνση Πωλητή' })}</Label>
-            <Select value={selectedSellerAddressKey} onValueChange={handleSellerAddressSelectionChange}>
-              <SelectTrigger id="sellerAddressSelect">
-                <SelectValue placeholder={t({ en: "Select or type seller address", el: "Επιλέξτε ή πληκτρολογήστε διεύθυνση πωλητή" })} />
-              </SelectTrigger>
-              <SelectContent>
-                {PREDEFINED_SELLER_ADDRESSES.map(addr => (
-                  <SelectItem key={addr} value={addr}>{addr}</SelectItem>
-                ))}
-                <SelectItem value={OTHER_SELLER_ADDRESS_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectedSellerAddressKey === OTHER_SELLER_ADDRESS_VALUE && (
-              <div className="mt-2 space-y-1">
-                <Label htmlFor="customSellerAddress" className="text-sm font-normal">{t({ en: 'Custom Seller Address', el: 'Προσαρμοσμένη Διεύθυνση Πωλητή' })}</Label>
-                <Textarea
-                  id="customSellerAddress"
-                  name="address"
-                  value={offerData.sellerInfo.address}
-                  onChange={handleCustomSellerAddressChange}
-                  placeholder={t({ en: "123 Business Rd, Suite 400, City, Country", el: "Οδός Επιχείρησης 123, Γραφείο 400, Πόλη, Χώρα" })}
-                />
-              </div>
-            )}
+            <Label htmlFor="sellerAddress">{t({ en: 'Seller Address', el: 'Διεύθυνση Πωλητή' })}</Label>
+            <Textarea
+              id="sellerAddress"
+              name="address"
+              value={offerData.sellerInfo.address}
+              onChange={handleSellerInfoChange}
+              placeholder={t({ en: "123 Business Rd, Suite 400, City, Country", el: "Οδός Επιχείρησης 123, Γραφείο 400, Πόλη, Χώρα" })}
+            />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="sellerEmail">{t({ en: 'Seller Email', el: 'Email Πωλητή' })}</Label>
-            <Input id="sellerEmail" name="email" type="email" value={offerData.sellerInfo.email || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_EMAIL} />
+            <Input id="sellerEmail" name="email" type="email" value={offerData.sellerInfo.email || ''} onChange={handleSellerInfoChange} placeholder={t({en: "contact@yourcompany.com", el:"contact@yourcompany.com"})} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="sellerPhone">{t({ en: 'Seller Phone', el: 'Τηλέφωνο Πωλητή' })}</Label>
-            <Input id="sellerPhone" name="phone" type="tel" value={offerData.sellerInfo.phone || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_PHONE} />
+            <Input id="sellerPhone" name="phone" type="tel" value={offerData.sellerInfo.phone || ''} onChange={handleSellerInfoChange} placeholder={t({en: "e.g., +1 234 567 890", el: "π.χ. +30 210 123 4567"})} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="sellerGemhNumber">{t({ en: 'Seller General Commercial Registry Number', el: 'Αριθμός ΓΕΜΗ Πωλητή' })}</Label>
-            <Input id="sellerGemhNumber" name="gemhNumber" value={offerData.sellerInfo.gemhNumber || ''} onChange={handleSellerInfoChange} placeholder={DEFAULT_SELLER_GEMH} />
+            <Input id="sellerGemhNumber" name="gemhNumber" value={offerData.sellerInfo.gemhNumber || ''} onChange={handleSellerInfoChange} placeholder={t({en: "e.g., 1234567890000", el:"π.χ. 1234567890000"})} />
           </div>
 
           <div className="space-y-2 md:col-span-2">

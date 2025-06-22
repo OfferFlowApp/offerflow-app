@@ -11,42 +11,23 @@ import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import type { SettingsData, SellerInfo } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocalization } from '@/hooks/useLocalization';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { useRouter } from 'next/navigation';
 
-const PREDEFINED_SELLER_NAMES = [
-  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ',
-  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - MEDIA STROM',
-  'ΓΙΩΡΓΑΡΑΣ ΕΠΙΠΛΑ - DROMEAS',
-  'GIORGARAS FURNITURE',
-];
-const OTHER_SELLER_NAME_VALUE = 'other_seller_name';
-
-const PREDEFINED_SELLER_ADDRESSES = [
-  'ΚΑΝΑΔΑ 11 ΡΟΔΟΣ',
-  'KANADA 11 RHODES',
-];
-const OTHER_SELLER_ADDRESS_VALUE = 'other_seller_address';
-const DEFAULT_SELLER_GEMH = '071970120000';
-const DEFAULT_SELLER_EMAIL = 'epiplagiorgaras@gmail.com';
-const DEFAULT_SELLER_PHONE = '2241021087';
 
 export default function DefaultLogoSettings() {
   const { currentEntitlements } = useAuth();
   const router = useRouter();
   const [defaultSellerInfo, setDefaultSellerInfo] = useState<Partial<SellerInfo>>({
-    name: PREDEFINED_SELLER_NAMES[0] || '',
-    address: PREDEFINED_SELLER_ADDRESSES[0] || '',
-    email: DEFAULT_SELLER_EMAIL,
-    phone: DEFAULT_SELLER_PHONE,
+    name: '',
+    address: '',
+    email: '',
+    phone: '',
     logoUrl: undefined,
-    gemhNumber: DEFAULT_SELLER_GEMH,
+    gemhNumber: '',
   });
   const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
-  const [selectedDefaultSellerNameKey, setSelectedDefaultSellerNameKey] = useState<string>(PREDEFINED_SELLER_NAMES[0] || OTHER_SELLER_NAME_VALUE);
-  const [selectedDefaultSellerAddressKey, setSelectedDefaultSellerAddressKey] = useState<string>(PREDEFINED_SELLER_ADDRESSES[0] || OTHER_SELLER_ADDRESS_VALUE);
   const { toast } = useToast();
   const { t } = useLocalization();
 
@@ -56,42 +37,18 @@ export default function DefaultLogoSettings() {
     if (savedSettings) {
       try {
         const parsedSettings: SettingsData = JSON.parse(savedSettings);
-        let sellerNameFromStorage: string | undefined = undefined;
-        let sellerLogoFromStorage: string | undefined = undefined;
-        let sellerAddressFromStorage: string | undefined = undefined;
-        let sellerEmailFromStorage: string | undefined = undefined;
-        let sellerPhoneFromStorage: string | undefined = undefined;
-        let sellerGemhFromStorage: string | undefined = undefined;
-
-        if (parsedSettings.defaultSellerInfo) {
-            sellerNameFromStorage = parsedSettings.defaultSellerInfo.name;
-            sellerLogoFromStorage = parsedSettings.defaultSellerInfo.logoUrl;
-            sellerAddressFromStorage = parsedSettings.defaultSellerInfo.address;
-            sellerEmailFromStorage = parsedSettings.defaultSellerInfo.email;
-            sellerPhoneFromStorage = parsedSettings.defaultSellerInfo.phone;
-            sellerGemhFromStorage = parsedSettings.defaultSellerInfo.gemhNumber;
-        } else if (parsedSettings.defaultLogoUrl) { // Legacy support for only logo
-            sellerLogoFromStorage = parsedSettings.defaultLogoUrl;
-        }
+        const savedInfo = parsedSettings.defaultSellerInfo || {};
         
-        const effectiveName = sellerNameFromStorage || PREDEFINED_SELLER_NAMES[0] || '';
-        const keyForNameSelect = PREDEFINED_SELLER_NAMES.includes(effectiveName) ? effectiveName : OTHER_SELLER_NAME_VALUE;
-        
-        const effectiveAddress = sellerAddressFromStorage || PREDEFINED_SELLER_ADDRESSES[0] || '';
-        const keyForAddressSelect = PREDEFINED_SELLER_ADDRESSES.includes(effectiveAddress) ? effectiveAddress : OTHER_SELLER_ADDRESS_VALUE;
-
-        const effectiveLogo = currentEntitlements.canUseCustomBranding ? sellerLogoFromStorage : undefined;
+        const effectiveLogo = currentEntitlements.canUseCustomBranding ? savedInfo.logoUrl : undefined;
 
         setDefaultSellerInfo({
-            name: effectiveName,
+            name: savedInfo.name || '',
             logoUrl: effectiveLogo,
-            address: effectiveAddress,
-            email: sellerEmailFromStorage || DEFAULT_SELLER_EMAIL,
-            phone: sellerPhoneFromStorage || DEFAULT_SELLER_PHONE,
-            gemhNumber: sellerGemhFromStorage || DEFAULT_SELLER_GEMH,
+            address: savedInfo.address || '',
+            email: savedInfo.email || '',
+            phone: savedInfo.phone || '',
+            gemhNumber: savedInfo.gemhNumber || '',
         });
-        setSelectedDefaultSellerNameKey(keyForNameSelect);
-        setSelectedDefaultSellerAddressKey(keyForAddressSelect);
 
         if (effectiveLogo) {
             setLogoPreview(effectiveLogo);
@@ -99,36 +56,16 @@ export default function DefaultLogoSettings() {
 
       } catch (e) {
         console.error("Failed to parse default seller settings", e);
-        const fallbackName = PREDEFINED_SELLER_NAMES[0] || '';
-        const fallbackAddress = PREDEFINED_SELLER_ADDRESSES[0] || '';
-        setDefaultSellerInfo(prev => ({
-            ...prev, 
-            name: fallbackName, 
-            address: fallbackAddress, 
-            email: DEFAULT_SELLER_EMAIL,
-            phone: DEFAULT_SELLER_PHONE,
-            gemhNumber: DEFAULT_SELLER_GEMH,
-            logoUrl: undefined, // Ensure logo is cleared
-        }));
-        setSelectedDefaultSellerNameKey(fallbackName || OTHER_SELLER_NAME_VALUE);
-        setSelectedDefaultSellerAddressKey(fallbackAddress || OTHER_SELLER_ADDRESS_VALUE);
+        setDefaultSellerInfo({
+            name: '', address: '', email: '', phone: '', gemhNumber: '', logoUrl: undefined
+        });
         setLogoPreview(undefined);
       }
     } else {
-      // No settings found, use hardcoded defaults
-      const initialName = PREDEFINED_SELLER_NAMES[0] || '';
-      const initialAddress = PREDEFINED_SELLER_ADDRESSES[0] || '';
-      setDefaultSellerInfo(prev => ({
-          ...prev, 
-          name: initialName, 
-          address: initialAddress,
-          email: DEFAULT_SELLER_EMAIL,
-          phone: DEFAULT_SELLER_PHONE,
-          gemhNumber: DEFAULT_SELLER_GEMH,
-          logoUrl: undefined, // Ensure logo is cleared
-      }));
-      setSelectedDefaultSellerNameKey(initialName || OTHER_SELLER_NAME_VALUE);
-      setSelectedDefaultSellerAddressKey(initialAddress || OTHER_SELLER_ADDRESS_VALUE);
+      // No settings found, use empty defaults
+      setDefaultSellerInfo({
+          name: '', address: '', email: '', phone: '', gemhNumber: '', logoUrl: undefined
+      });
       setLogoPreview(undefined);
     }
   }, [currentEntitlements.canUseCustomBranding]); // Re-run if branding entitlement changes
@@ -157,37 +94,6 @@ export default function DefaultLogoSettings() {
     const {name, value} = e.target;
     setDefaultSellerInfo(prev => ({...prev, [name]: value}));
   };
-
-  const handleDefaultSellerNameSelectionChange = (value: string) => {
-    setSelectedDefaultSellerNameKey(value);
-    if (value !== OTHER_SELLER_NAME_VALUE) {
-      setDefaultSellerInfo(prev => ({ ...prev, name: value }));
-    } else {
-      if (PREDEFINED_SELLER_NAMES.includes(defaultSellerInfo.name || '')) {
-        setDefaultSellerInfo(prev => ({ ...prev, name: '' }));
-      }
-    }
-  };
-
-  const handleCustomDefaultSellerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setDefaultSellerInfo(prev => ({ ...prev, name: e.target.value }));
-  };
-  
-  const handleDefaultSellerAddressSelectionChange = (value: string) => {
-    setSelectedDefaultSellerAddressKey(value);
-    if (value !== OTHER_SELLER_ADDRESS_VALUE) {
-      setDefaultSellerInfo(prev => ({ ...prev, address: value }));
-    } else {
-       if (PREDEFINED_SELLER_ADDRESSES.includes(defaultSellerInfo.address || '')) {
-        setDefaultSellerInfo(prev => ({ ...prev, address: '' }));
-      }
-    }
-  };
-
-  const handleCustomDefaultSellerAddressChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setDefaultSellerInfo(prev => ({ ...prev, address: e.target.value }));
-  };
-
 
   const handleSaveSettings = () => {
     const existingSettingsRaw = localStorage.getItem('offerSheetSettings');
@@ -230,71 +136,39 @@ export default function DefaultLogoSettings() {
       </div>
 
       <div className="space-y-4">
-        <div>
-            <Label htmlFor="defaultSellerNameSelect">{t({en: "Default Seller Name", el: "Προεπιλεγμένο Όνομα Πωλητή"})}</Label>
-            <Select value={selectedDefaultSellerNameKey} onValueChange={handleDefaultSellerNameSelectionChange}>
-              <SelectTrigger id="defaultSellerNameSelect">
-                <SelectValue placeholder={t({ en: "Select or type default seller name", el: "Επιλέξτε ή πληκτρολογήστε προεπιλεγμένο όνομα πωλητή" })} />
-              </SelectTrigger>
-              <SelectContent>
-                {PREDEFINED_SELLER_NAMES.map(name => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
-                ))}
-                <SelectItem value={OTHER_SELLER_NAME_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectedDefaultSellerNameKey === OTHER_SELLER_NAME_VALUE && (
-              <div className="mt-2 space-y-1">
-                <Label htmlFor="customDefaultSellerName" className="text-sm font-normal">{t({ en: 'Custom Default Seller Name', el: 'Προσαρμοσμένο Προεπιλεγμένο Όνομα Πωλητή' })}</Label>
-                <Input
-                  id="customDefaultSellerName"
-                  name="name" 
-                  value={defaultSellerInfo.name || ''}
-                  onChange={handleCustomDefaultSellerNameChange}
-                  placeholder={t({en: "Enter custom default seller name", el: "Εισαγάγετε προσαρμοσμένο προεπιλεγμένο όνομα πωλητή"})}
-                />
-              </div>
-            )}
+        <div className="space-y-2">
+            <Label htmlFor="defaultSellerName">{t({en: "Default Seller Name", el: "Προεπιλεγμένο Όνομα Πωλητή"})}</Label>
+            <Input
+                id="defaultSellerName"
+                name="name" 
+                value={defaultSellerInfo.name || ''}
+                onChange={handleInfoChange}
+                placeholder={t({en: "Your Company Name", el: "Όνομα Εταιρείας"})}
+            />
         </div>
         
-        <div>
-            <Label htmlFor="defaultSellerAddressSelect">{t({en: "Default Seller Address", el: "Προεπιλεγμένη Διεύθυνση Πωλητή"})}</Label>
-            <Select value={selectedDefaultSellerAddressKey} onValueChange={handleDefaultSellerAddressSelectionChange}>
-              <SelectTrigger id="defaultSellerAddressSelect">
-                <SelectValue placeholder={t({ en: "Select or type default seller address", el: "Επιλέξτε ή πληκτρολογήστε προεπιλεγμένη διεύθυνση πωλητή" })} />
-              </SelectTrigger>
-              <SelectContent>
-                {PREDEFINED_SELLER_ADDRESSES.map(addr => (
-                  <SelectItem key={addr} value={addr}>{addr}</SelectItem>
-                ))}
-                <SelectItem value={OTHER_SELLER_ADDRESS_VALUE}>{t({ en: "Other (Specify below)", el: "Άλλο (Καθορίστε παρακάτω)" })}</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectedDefaultSellerAddressKey === OTHER_SELLER_ADDRESS_VALUE && (
-              <div className="mt-2 space-y-1">
-                <Label htmlFor="customDefaultSellerAddress" className="text-sm font-normal">{t({ en: 'Custom Default Seller Address', el: 'Προσαρμοσμένη Προεπιλεγμένη Διεύθυνση Πωλητή' })}</Label>
-                <Textarea
-                  id="customDefaultSellerAddress"
-                  name="address" 
-                  value={defaultSellerInfo.address || ''}
-                  onChange={handleCustomDefaultSellerAddressChange}
-                  placeholder={t({en: "Enter custom default seller address", el: "Εισαγάγετε προσαρμοσμένη προεπιλεγμένη διεύθυνση πωλητή"})}
-                />
-              </div>
-            )}
+        <div className="space-y-2">
+            <Label htmlFor="defaultSellerAddress">{t({en: "Default Seller Address", el: "Προεπιλεγμένη Διεύθυνση Πωλητή"})}</Label>
+            <Textarea
+                id="defaultSellerAddress"
+                name="address" 
+                value={defaultSellerInfo.address || ''}
+                onChange={handleInfoChange}
+                placeholder={t({ en: "123 Business Rd, Suite 400, City, Country", el: "Οδός Επιχείρησης 123, Γραφείο 400, Πόλη, Χώρα" })}
+            />
         </div>
 
         <div className="space-y-2">
             <Label htmlFor="defaultSellerEmail">{t({en: "Default Seller Email", el: "Προεπιλεγμένο Email Πωλητή"})}</Label>
-            <Input id="defaultSellerEmail" name="email" value={defaultSellerInfo.email || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_EMAIL}/>
+            <Input id="defaultSellerEmail" name="email" value={defaultSellerInfo.email || ''} onChange={handleInfoChange} placeholder={t({en: "contact@yourcompany.com", el:"contact@yourcompany.com"})}/>
         </div>
         <div className="space-y-2">
             <Label htmlFor="defaultSellerPhone">{t({en: "Default Seller Phone", el: "Προεπιλεγμένο Τηλέφωνο Πωλητή"})}</Label>
-            <Input id="defaultSellerPhone" name="phone" value={defaultSellerInfo.phone || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_PHONE}/>
+            <Input id="defaultSellerPhone" name="phone" value={defaultSellerInfo.phone || ''} onChange={handleInfoChange} placeholder={t({en: "e.g., +1 234 567 890", el: "π.χ. +30 210 123 4567"})}/>
         </div>
         <div className="space-y-2">
             <Label htmlFor="defaultSellerGemh">{t({en: "Default Seller General Commercial Registry Number", el: "Προεπιλεγμένος Αριθμός ΓΕΜΗ Πωλητή"})}</Label>
-            <Input id="defaultSellerGemh" name="gemhNumber" value={defaultSellerInfo.gemhNumber || ''} onChange={handleInfoChange} placeholder={DEFAULT_SELLER_GEMH}/>
+            <Input id="defaultSellerGemh" name="gemhNumber" value={defaultSellerInfo.gemhNumber || ''} onChange={handleInfoChange} placeholder={t({en: "e.g., 1234567890000", el:"π.χ. 1234567890000"})}/>
         </div>
       </div>
       
