@@ -5,19 +5,31 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserSubscription, PlanId } from '@/lib/types';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+let stripe: Stripe | undefined;
+if (stripeSecretKey) {
+  stripe = new Stripe(stripeSecretKey);
+} else {
+  console.warn("Stripe secret key is not set. Stripe webhook functionality will be disabled.");
+}
 
 export async function POST(request: NextRequest) {
+  if (!stripe || !webhookSecret) {
+    console.error("[Stripe Webhook] Error: Stripe environment variables are not configured on the server.");
+    return NextResponse.json({ error: 'Webhook processing error: server not configured.' }, { status: 500 });
+  }
+
   try {
     const rawBody = await request.text();
     const sig = request.headers.get('stripe-signature');
 
     let event: Stripe.Event;
     try {
-      if (!sig || !webhookSecret) {
-        console.error("[Stripe Webhook] Error: Missing signature or webhook secret.");
-        return NextResponse.json({ error: 'Webhook signature verification failed. Config missing.' }, { status: 400 });
+      if (!sig) {
+        console.error("[Stripe Webhook] Error: Missing signature from webhook request.");
+        return NextResponse.json({ error: 'Webhook signature verification failed. Missing signature.' }, { status: 400 });
       }
       event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     } catch (err: any) {

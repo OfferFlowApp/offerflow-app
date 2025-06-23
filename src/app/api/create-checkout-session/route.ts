@@ -6,11 +6,22 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlanId } from '@/lib/types';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+let stripe: Stripe | undefined;
+if (stripeSecretKey) {
+  stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2024-06-20',
+  });
+} else {
+  console.warn("Stripe secret key is not set. Stripe functionality will be disabled.");
+}
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: { message: 'Stripe is not configured on the server.' } }, { status: 500 });
+  }
+
   try {
     const { planId, userId } = await request.json();
 
