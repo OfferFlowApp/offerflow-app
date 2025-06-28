@@ -81,7 +81,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     listPriceKey: { en: '€143.76', el: '€143.76' },
     priceKey: { en: '€83.79', el: '€83.79' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
-    descriptionKey: { en: 'Save ~1.5 months with the yearly plan!', el: 'Εξοικονομήστε ~1.5 μήνα με το ετήσιο!' },
+    descriptionKey: { en: 'Limited Time Deal! Save ~1.5 months.', el: 'Προσφορά για λίγο! Εξοικονομήστε ~1.5 μήνα.' },
     features: [
         { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
@@ -120,7 +120,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     listPriceKey: { en: '€467.76', el: '€467.76' },
     priceKey: { en: '€389.80', el: '€389.80' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
-    descriptionKey: { en: 'Save 2 months with the yearly plan!', el: 'Εξοικονομήστε 2 μήνες με το ετήσιο!' },
+    descriptionKey: { en: 'Limited Time Deal! Save 2 months.', el: 'Προσφορά για λίγο! Εξοικονομήστε 2 μήνες.' },
     features: [
         { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
         { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },

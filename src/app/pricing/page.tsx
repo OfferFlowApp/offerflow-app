@@ -155,7 +155,7 @@ export default function PricingPage() {
             >
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="monthly">{t({ en: 'Monthly', el: 'Μηνιαία' })}</TabsTrigger>
-                    <TabsTrigger value="yearly">{t({ en: 'Yearly', el: 'Ετήσια' })} <span className="hidden sm:inline ml-2 bg-accent/20 text-accent font-semibold px-2 py-0.5 rounded-full text-xs">SAVE!</span></TabsTrigger>
+                    <TabsTrigger value="yearly">{t({ en: 'Yearly', el: 'Ετήσια' })} <span className="hidden sm:inline ml-2 bg-destructive text-destructive-foreground font-semibold px-2.5 py-1 rounded-full text-xs animate-pulse">SAVE BIG!</span></TabsTrigger>
                 </TabsList>
             </Tabs>
 
@@ -193,16 +193,22 @@ export default function PricingPage() {
                       <CardDescription className="text-center text-muted-foreground min-h-[40px]">
                       {t(plan.descriptionKey)}
                       </CardDescription>
+                      {billingInterval === 'yearly' && (
+                        <div className="flex items-center justify-center gap-2 text-destructive font-semibold pt-2">
+                          <Clock className="h-5 w-5 animate-pulse" />
+                          <span>{t({en: "Limited Time Offer!", el: "Προσφορά Περιορισμένου Χρόνου!"})}</span>
+                        </div>
+                      )}
                   </CardHeader>
                   <CardContent className="flex-grow">
                       <div className="text-center mb-6">
                         <div className="flex items-baseline justify-center gap-2">
                           {plan.listPriceKey && t(plan.listPriceKey) !== t(plan.priceKey) && (
-                            <span className="text-2xl font-medium text-destructive line-through">
+                            <span className="text-2xl font-medium text-muted-foreground line-through decoration-destructive decoration-2">
                               {t(plan.listPriceKey)}
                             </span>
                           )}
-                          <span className="text-4xl font-extrabold">{t(plan.priceKey)}</span>
+                          <span className="text-4xl font-extrabold text-foreground">{t(plan.priceKey)}</span>
                         </div>
                         {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
                       </div>
