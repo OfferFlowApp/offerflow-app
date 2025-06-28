@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogIn, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocalization } from '@/hooks/useLocalization';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4">
@@ -135,7 +137,7 @@ export default function LoginPage() {
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
                 {loading ? (
                     <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <LoadingSpinner className="mr-2 h-4 w-4" />
                         {t({en: "Logging in...", el: "Γίνεται σύνδεση..."})}
                     </>
                 ) : (
@@ -156,7 +158,7 @@ export default function LoginPage() {
             </div>
 
             <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+              {loading ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <GoogleIcon />}
               {t({en: "Log in with Google", el: "Σύνδεση με Google"})}
             </Button>
 

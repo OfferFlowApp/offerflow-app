@@ -14,7 +14,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useToast } from "@/hooks/use-toast";
 import type { LocalUserProfile } from '@/lib/types';
-import { Save, UserCircle, Loader2 } from 'lucide-react';
+import { Save, UserCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const LOCAL_PROFILE_STORAGE_KEY = 'offerFlowLocalProfile';
 
@@ -79,7 +80,7 @@ export default function ProfilePage() {
         <Header />
         <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
           <div className="flex items-center space-x-2 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <LoadingSpinner className="h-6 w-6" />
             <span>{t({en: "Loading profile...", el: "Φόρτωση προφίλ..."})}</span>
           </div>
         </main>
@@ -128,7 +129,7 @@ export default function ProfilePage() {
               />
             </div>
             <Button onClick={handleSaveProfile} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSavingProfile || authLoading}>
-              {isSavingProfile ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              {isSavingProfile ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}
               {isSavingProfile ? t({en: "Saving...", el: "Αποθήκευση..."}) : t({en: "Save to This Browser", el: "Αποθήκευση σε Αυτόν τον Περιηγητή"})}
             </Button>
             {/* Logout and Login to Sync buttons are removed */}
@@ -139,5 +140,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

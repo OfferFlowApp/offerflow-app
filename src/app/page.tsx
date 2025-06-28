@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, Loader2, ShieldAlert } from 'lucide-react'; 
+import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, ShieldAlert } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
@@ -14,6 +14,7 @@ import type { OfferSheetData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -120,7 +121,7 @@ export default function HomePage() {
         <div className="flex flex-col min-h-screen">
             <Header />
             <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <LoadingSpinner className="h-12 w-12" />
             </main>
             <Footer />
         </div>

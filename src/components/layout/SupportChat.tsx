@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, X, Send, Loader2 } from 'lucide-react';
+import { Bot, X, Send } from 'lucide-react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { askAppSupport, type AppSupportInput, type AppSupportOutput } from '@/ai/flows/app-support-flow';
+import { LoadingSpinner } from '../ui/loading-spinner';
 
 interface Message {
   id: string;
@@ -131,7 +132,7 @@ export default function SupportChat() {
                  {isLoading && (
                     <div className="flex justify-start">
                         <div className="max-w-[85%] rounded-lg px-3 py-2 text-sm bg-muted text-muted-foreground flex items-center shadow-sm">
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <LoadingSpinner className="h-4 w-4 mr-2" />
                             {t({en: "Thinking...", el: "Σκέφτομαι..."})}
                         </div>
                     </div>
@@ -151,7 +152,7 @@ export default function SupportChat() {
                 autoFocus
               />
               <Button type="submit" size="icon" className="h-9 w-9 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading || !inputValue.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {isLoading ? <LoadingSpinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}
               </Button>
             </form>
           </CardFooter>

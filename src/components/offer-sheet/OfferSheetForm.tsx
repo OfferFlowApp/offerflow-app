@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp, Loader2, BookTemplate, UserPlus as UserPlusIcon, ShieldAlert } from 'lucide-react';
+import { UploadCloud, PlusCircle, Trash2, FileDown, Share2, Save, Euro, DollarSign as DollarIcon, PoundSterling, FileText, Image as ImageIconLucide, Percent, Package, Building, User, Phone, Mail, FileUp, BookTemplate, UserPlus as UserPlusIcon, ShieldAlert } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
@@ -31,6 +31,7 @@ import ReactDOM from 'react-dom/client';
 import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { getPlanDetails } from '@/config/plans'; // Import getPlanDetails
+import { LoadingSpinner } from '../ui/loading-spinner';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -899,7 +900,7 @@ export default function OfferSheetForm() {
   if (authLoading) {
     return (
         <div className="flex flex-col min-h-screen items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <LoadingSpinner className="h-12 w-12" />
             <p className="mt-4 text-muted-foreground">{t({en: "Loading offer sheet...", el: "Φόρτωση δελτίου προσφοράς..."})}</p>
         </div>
     );
@@ -1001,7 +1002,7 @@ export default function OfferSheetForm() {
           <CardTitle className="font-headline text-xl md:text-2xl">{t({ en: 'Customer Information & Offer Validity', el: 'Στοιχεία Πελάτη & Ισχύς Προσφοράς' })}</CardTitle>
           {currentEntitlements.canSaveCustomers && (
             <Button type="button" variant="outline" onClick={handleSaveCustomer} disabled={isSavingCustomer}>
-              {isSavingCustomer ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlusIcon className="mr-2 h-5 w-5" />}
+              {isSavingCustomer ? <LoadingSpinner className="h-4 w-4 mr-2" /> : <UserPlusIcon className="mr-2 h-5 w-5" />}
               {t({en: "Save Customer", el: "Αποθήκευση Πελάτη"})}
             </Button>
           )}
@@ -1152,7 +1153,7 @@ export default function OfferSheetForm() {
           <CardTitle className="font-headline text-xl md:text-2xl">{t({ en: 'Notes / Terms & Conditions', el: 'Σημειώσεις / Όροι & Προϋποθέσεις' })}</CardTitle>
            {currentEntitlements.canSaveTemplates && (
              <Button type="button" variant="outline" onClick={handleSaveTemplate} disabled={isSavingTemplate}>
-                {isSavingTemplate ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <BookTemplate className="mr-2 h-5 w-5" />}
+                {isSavingTemplate ? <LoadingSpinner className="h-4 w-4 mr-2"/> : <BookTemplate className="mr-2 h-5 w-5" />}
                 {t({en:"Save as Template", el:"Αποθήκευση ως Πρότυπο"})}
              </Button>
            )}
@@ -1169,7 +1170,7 @@ export default function OfferSheetForm() {
 
       <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 md:space-x-4 pt-6 border-t mt-8">
         <Button type="button" variant="outline" onClick={handleShare} disabled={isSharing || isExportingPdf}>
-          {isSharing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Share2 className="mr-2 h-5 w-5" />}
+          {isSharing ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <Share2 className="mr-2 h-5 w-5" />}
           {isSharing ? t({ en: 'Sharing...', el: 'Κοινοποίηση...' }) : t({ en: 'Share Offer', el: 'Κοινοποίηση Προσφοράς' })}
         </Button>
         
@@ -1180,37 +1181,37 @@ export default function OfferSheetForm() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel}>
-              {isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
+              {isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <FileDown className="mr-2 h-5 w-5" />}
               {t({ en: 'Export', el: 'Εξαγωγή' })}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf || !currentEntitlements.allowedExportFormats.includes('pdf')}>
-              {isExportingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              {isExportingPdf ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingPdf ? t({en: 'Generating PDF...', el: 'Δημιουργία PDF...'}) : t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF' })}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportJpeg} disabled={isExportingJpeg || !currentEntitlements.allowedExportFormats.includes('jpeg')}>
-               {isExportingJpeg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIconLucide className="mr-2 h-4 w-4" />}
+               {isExportingJpeg ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <ImageIconLucide className="mr-2 h-4 w-4" />}
               {isExportingJpeg ? t({en: 'Generating JPEG...', el: 'Δημιουργία JPEG...'}) : t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)' })}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportJson} disabled={isExportingJson || !currentEntitlements.allowedExportFormats.includes('json')}>
-              {isExportingJson ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
+              {isExportingJson ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
               {isExportingJson ? t({en: 'Exporting Data...', el: 'Εξαγωγή Δεδομένων...'}) : t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
             </DropdownMenuItem>
             { (currentEntitlements.allowedExportFormats.includes('csv') || currentEntitlements.allowedExportFormats.includes('excel')) && <DropdownMenuSeparator />}
             <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv || !currentEntitlements.allowedExportFormats.includes('csv')}>
-              {isExportingCsv ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              {isExportingCsv ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingCsv ? t({en: 'Exporting CSV...', el: 'Εξαγωγή CSV...'}) : t({en: 'Export as CSV (Placeholder)', el: 'Εξαγωγή CSV (Placeholder)'})}
             </DropdownMenuItem>
              <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel || !currentEntitlements.allowedExportFormats.includes('excel')}>
-              {isExportingExcel ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              {isExportingExcel ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel (Placeholder)', el: 'Εξαγωγή Excel (Placeholder)'})}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel}>
-          {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+          {isSaving ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}
           {isSaving ? t({ en: 'Saving...', el: 'Αποθήκευση...' }) : t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
         </Button>
       </div>

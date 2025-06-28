@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -9,9 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalization } from '@/hooks/useLocalization';
 import Link from 'next/link';
-import { UserPlus, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4">
@@ -172,7 +174,7 @@ export default function SignupPage() {
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
                 {loading ? (
                     <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <LoadingSpinner className="mr-2 h-4 w-4" />
                         {t({en: "Creating account...", el: "Δημιουργία λογαριασμού..."})}
                     </>
                 ) : (
@@ -193,7 +195,7 @@ export default function SignupPage() {
             </div>
 
             <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+              {loading ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <GoogleIcon />}
               {t({en: "Sign up with Google", el: "Εγγραφή με Google"})}
             </Button>
 

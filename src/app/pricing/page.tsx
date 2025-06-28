@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle, Info, ShoppingCart, Loader2, Sparkles, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Info, ShoppingCart, Sparkles, Clock } from 'lucide-react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { PLANS, type PricingPlanDetails } from '@/config/plans';
 import type { PlanId } from '@/lib/types';
@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { differenceInDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const proPlanMonthly = PLANS['pro-monthly'];
 const proPlanYearly = PLANS['pro-yearly'];
@@ -224,7 +225,7 @@ export default function PricingPage() {
                       disabled={isDisabled}
                       >
                       {isLoadingPlan === plan.id ? (
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          <LoadingSpinner className="mr-2 h-5 w-5" />
                       ) : isCurrentPlan ? (
                           <>
                             <CheckCircle className="mr-2 h-5 w-5" />
