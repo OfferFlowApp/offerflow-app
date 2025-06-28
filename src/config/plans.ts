@@ -64,7 +64,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     features: [
         { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
-        { textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος' }, available: true, icon: 'check' },
+        { textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος "Made with OfferFlow"' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
@@ -85,7 +85,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     features: [
         { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
-        { textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος' }, available: true, icon: 'check' },
+        { textKey: { en: 'Remove "Made with OfferFlow" watermark', el: 'Αφαίρεση υδατογραφήματος "Made with OfferFlow"' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
