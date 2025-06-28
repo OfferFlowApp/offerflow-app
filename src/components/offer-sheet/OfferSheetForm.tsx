@@ -760,7 +760,7 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingJson(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, t, toast, currentEntitlements.allowedExportFormats]);
+  }, [offerData, isFinalPriceVatInclusive, t, toast, currentEntitlements]);
 
   const handleExportCsv = React.useCallback(async () => {
     if (!currentEntitlements.allowedExportFormats.includes('csv')) {
@@ -773,7 +773,7 @@ export default function OfferSheetForm() {
     await new Promise(resolve => setTimeout(resolve, 300));
     toast({ title: t({en: "CSV Export (Placeholder)", el: "Εξαγωγή CSV (Placeholder)"}), description: t({en: "CSV export functionality is not yet implemented.", el: "Η λειτουργία δεν έχει υλοποιηθεί."}) });
     setIsExportingCsv(false);
-  }, [t, toast, currentEntitlements.allowedExportFormats]);
+  }, [t, toast, currentEntitlements]);
 
   const handleExportExcel = React.useCallback(async () => {
     if (!currentEntitlements.allowedExportFormats.includes('excel')) {
@@ -786,7 +786,7 @@ export default function OfferSheetForm() {
     await new Promise(resolve => setTimeout(resolve, 300));
     toast({ title: t({en: "Excel Export (Placeholder)", el: "Εξαγωγή Excel (Placeholder)"}), description: t({en: "Excel export functionality is not yet implemented.", el: "Η λειτουργία δεν έχει υλοποιηθεί."}) });
     setIsExportingExcel(false);
-  }, [t, toast, currentEntitlements.allowedExportFormats]);
+  }, [t, toast, currentEntitlements]);
 
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1212,24 +1212,24 @@ export default function OfferSheetForm() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf || !currentEntitlements.allowedExportFormats.includes('pdf')}>
+            <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf}>
               {isExportingPdf ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingPdf ? t({en: 'Generating PDF...', el: 'Δημιουργία PDF...'}) : t({ en: 'Export as PDF', el: 'Εξαγωγή ως PDF' })}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportJpeg} disabled={isExportingJpeg || !currentEntitlements.allowedExportFormats.includes('jpeg')}>
+            <DropdownMenuItem onClick={handleExportJpeg} disabled={isExportingJpeg}>
                {isExportingJpeg ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <ImageIconLucide className="mr-2 h-4 w-4" />}
               {isExportingJpeg ? t({en: 'Generating JPEG...', el: 'Δημιουργία JPEG...'}) : t({ en: 'Export as JPEG (Page 1)', el: 'Εξαγωγή ως JPEG (Σελίδα 1)' })}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportJson} disabled={isExportingJson || !currentEntitlements.allowedExportFormats.includes('json')}>
+            <DropdownMenuItem onClick={handleExportJson} disabled={isExportingJson}>
               {isExportingJson ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
               {isExportingJson ? t({en: 'Exporting Data...', el: 'Εξαγωγή Δεδομένων...'}) : t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
             </DropdownMenuItem>
             { (currentEntitlements.allowedExportFormats.includes('csv') || currentEntitlements.allowedExportFormats.includes('excel')) && <DropdownMenuSeparator />}
-            <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv || !currentEntitlements.allowedExportFormats.includes('csv')}>
+            <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv}>
               {isExportingCsv ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingCsv ? t({en: 'Exporting CSV...', el: 'Εξαγωγή CSV...'}) : t({en: 'Export as CSV (Placeholder)', el: 'Εξαγωγή CSV (Placeholder)'})}
             </DropdownMenuItem>
-             <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel || !currentEntitlements.allowedExportFormats.includes('excel')}>
+             <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel}>
               {isExportingExcel ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel (Placeholder)', el: 'Εξαγωγή Excel (Placeholder)'})}
             </DropdownMenuItem>
