@@ -73,6 +73,7 @@ export interface PlanEntitlements {
   maxOfferSheetsPerMonth: number | 'unlimited';
   canUseCustomBranding: boolean;
   canRemoveWatermark: boolean;
+  canReplaceHeaderLogo: boolean;
   canSaveTemplates: boolean; // Pro and up
   canSaveCustomers: boolean; // Pro and up
   canUseDashboard: boolean; // Pro and up

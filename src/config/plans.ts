@@ -5,6 +5,7 @@ const defaultEntitlements: PlanEntitlements = {
   maxOfferSheetsPerMonth: 0,
   canUseCustomBranding: false,
   canRemoveWatermark: false,
+  canReplaceHeaderLogo: false,
   canSaveTemplates: false,
   canSaveCustomers: false,
   canUseDashboard: false,
@@ -17,7 +18,8 @@ const defaultEntitlements: PlanEntitlements = {
 const proEntitlements: PlanEntitlements = {
   maxOfferSheetsPerMonth: 'unlimited',
   canUseCustomBranding: true,
-  canRemoveWatermark: false, // Pro users will have the watermark
+  canRemoveWatermark: true, // Pro users can remove the watermark
+  canReplaceHeaderLogo: false,
   canSaveTemplates: true,
   canSaveCustomers: true,
   canUseDashboard: true,
@@ -30,7 +32,8 @@ const proEntitlements: PlanEntitlements = {
 const businessEntitlements: PlanEntitlements = {
   maxOfferSheetsPerMonth: 'unlimited',
   canUseCustomBranding: true,
-  canRemoveWatermark: true, // Only Business users can remove the watermark
+  canRemoveWatermark: true,
+  canReplaceHeaderLogo: true, // Business users can replace the header logo
   canSaveTemplates: true,
   canSaveCustomers: true,
   canUseDashboard: true,
@@ -64,6 +67,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     features: [
         { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
+        { textKey: { en: 'Remove "Made with OfferFlow" Watermark', el: 'Αφαίρεση Υδατογραφήματος "Made with OfferFlow"' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
@@ -84,6 +88,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
     features: [
         { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
+        { textKey: { en: 'Remove "Made with OfferFlow" Watermark', el: 'Αφαίρεση Υδατογραφήματος "Made with OfferFlow"' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
         { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
         { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
@@ -97,14 +102,13 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'business-monthly': {
     id: 'business-monthly',
     nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
-    listPriceKey: { en: '€49.98', el: '€49.98' },
     priceKey: { en: '€38.98', el: '€38.98' },
     priceSuffixKey: { en: '/ month', el: '/ μήνα' },
-    descriptionKey: { en: 'Limited Time Deal! For growing businesses.', el: 'Προσφορά για λίγο! Για αναπτυσσόμενες επιχειρήσεις.' },
+    descriptionKey: { en: 'For growing teams and businesses.', el: 'Για αναπτυσσόμενες ομάδες και επιχειρήσεις.' },
     features: [
         { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
+        { textKey: { en: 'Replace Header Logo with Yours', el: 'Αντικατάσταση Λογοτύπου Κεφαλίδας' }, available: true, icon: 'check' },
         { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
-        { textKey: { en: 'Full White-Labeling Option', el: 'Επιλογή πλήρους White-Labeling' }, available: true, icon: 'check' },
         { textKey: { en: 'CSV & Excel Export Options', el: 'Επιλογές Εξαγωγής CSV & Excel' }, available: true, icon: 'check' },
         { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
@@ -116,14 +120,13 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'business-yearly': {
     id: 'business-yearly',
     nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
-    listPriceKey: { en: '€467.76', el: '€467.76' },
     priceKey: { en: '€389.80', el: '€389.80' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
-    descriptionKey: { en: 'Limited Time Deal! Save 2 months.', el: 'Προσφορά για λίγο! Εξοικονομήστε 2 μήνες.' },
+    descriptionKey: { en: 'Save 2 months! For growing businesses.', el: 'Εξοικονομήστε 2 μήνες! Για αναπτυσσόμενες επιχειρήσεις.' },
     features: [
         { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
+        { textKey: { en: 'Replace Header Logo with Yours', el: 'Αντικατάσταση Λογοτύπου Κεφαλίδας' }, available: true, icon: 'check' },
         { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
-        { textKey: { en: 'Full White-Labeling Option', el: 'Επιλογή πλήρους White-Labeling' }, available: true, icon: 'check' },
         { textKey: { en: 'CSV & Excel Export Options', el: 'Επιλογές Εξαγωγής CSV & Excel' }, available: true, icon: 'check' },
         { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
         { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },

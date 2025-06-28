@@ -193,10 +193,12 @@ export default function PricingPage() {
                       <CardDescription className="text-center text-muted-foreground min-h-[40px]">
                       {t(plan.descriptionKey)}
                       </CardDescription>
-                      <div className="flex items-center justify-center gap-2 text-destructive font-semibold pt-2">
-                        <Clock className="h-5 w-5 animate-pulse" />
-                        <span>{t({en: "Limited Time Offer!", el: "Προσφορά Περιορισμένου Χρόνου!"})}</span>
-                      </div>
+                      {plan.isFeatured && (
+                        <div className="flex items-center justify-center gap-2 text-destructive font-semibold pt-2">
+                          <Clock className="h-5 w-5 animate-pulse" />
+                          <span>{t({en: "Limited Time Offer!", el: "Προσφορά Περιορισμένου Χρόνου!"})}</span>
+                        </div>
+                      )}
                   </CardHeader>
                   <CardContent className="flex-grow">
                       <div className="text-center mb-6">
