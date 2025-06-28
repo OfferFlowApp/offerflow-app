@@ -120,6 +120,7 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'business-yearly': {
     id: 'business-yearly',
     nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
+    listPriceKey: { en: '€467.76', el: '€467.76' },
     priceKey: { en: '€389.80', el: '€389.80' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
     descriptionKey: { en: 'Save 2 months! For growing businesses.', el: 'Εξοικονομήστε 2 μήνες! Για αναπτυσσόμενες επιχειρήσεις.' },
