@@ -63,16 +63,18 @@ export default function Header() {
             <CreditCard className="mr-1 h-4 w-4" />
             {t({ en: 'Pricing', el: 'Τιμολόγηση' })}
           </Link>
-          <Link href="/settings" className="transition-colors hover:text-primary flex items-center">
-            <Settings className="mr-1 h-4 w-4" />
-            {t({ en: 'Settings', el: 'Ρυθμίσεις' })}
-          </Link>
-          <Link href="/help" className="transition-colors hover:text-primary flex items-center">
-            <HelpCircle className="mr-1 h-4 w-4" />
-            {t({ en: 'Help', el: 'Βοήθεια' })}
-          </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4">
+           <Button asChild variant="ghost" size="icon">
+             <Link href="/settings" aria-label={t({ en: 'Settings', el: 'Ρυθμίσεις' })}>
+              <Settings className="h-5 w-5" />
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/help" aria-label={t({ en: 'Help', el: 'Βοήθεια' })}>
+              <HelpCircle className="h-5 w-5" />
+            </Link>
+          </Button>
           <Select value={language} onValueChange={handleLanguageChange}>
             <SelectTrigger className="w-auto h-9 px-3 text-sm">
               <Languages className="h-4 w-4 mr-2" />
