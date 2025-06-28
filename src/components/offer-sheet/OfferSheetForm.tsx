@@ -897,17 +897,48 @@ export default function OfferSheetForm() {
     }
   }, [exportAsPdfInternal, offerData.customerInfo, offerData.sellerInfo.name, t, toast]);
 
-  // Placeholder functions for Pro/Business features
   const handleSaveTemplate = async () => {
+    // Client-side check for immediate UI feedback.
     if (!currentEntitlements.canSaveTemplates) {
       setUpgradeReason(t({en:"Saving templates is a Pro/Business feature.", el:"Η αποθήκευση προτύπων είναι Pro/Business λειτουργία."}));
       setShowUpgradeModal(true);
       return;
     }
+    
+    if (!currentUser) {
+        toast({ title: t({en: "Authentication Error", el: "Σφάλμα Ελέγχου Ταυτότητας"}), description: t({en: "You must be logged in to save templates.", el: "Πρέπει να είστε συνδεδεμένοι."}), variant: "destructive" });
+        return;
+    }
+
     setIsSavingTemplate(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    toast({ title: t({en:"Save as Template (Placeholder)", el:"Αποθήκευση ως Πρότυπο (Placeholder)"}), description: t({en:"This feature is coming soon for Pro users!", el: "Η λειτουργία έρχεται σύντομα!"}) });
-    setIsSavingTemplate(false);
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/save-template', {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
+          // In a real implementation, you'd send the offer data as the template
+          // body: JSON.stringify({ offerData }), 
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+          throw new Error(result.error?.message || 'Failed to save template.');
+      }
+
+      toast({ 
+          title: t({en:"Save as Template", el:"Αποθήκευση ως Πρότυπο"}), 
+          description: t({en:"Server confirmed you have access! (Feature coming soon)", el: "Ο διακομιστής επιβεβαίωσε την πρόσβαση! (Η λειτουργία έρχεται σύντομα)"})
+      });
+
+    } catch (error: any) {
+        toast({ title: t({en: "Error", el: "Σφάλμα"}), description: error.message, variant: "destructive" });
+    } finally {
+        setIsSavingTemplate(false);
+    }
   };
 
   const handleSaveCustomer = async () => {
