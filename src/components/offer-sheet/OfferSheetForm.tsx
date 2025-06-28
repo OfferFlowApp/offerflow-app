@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language, SettingsData, UserSubscription, PlanEntitlements } from '@/lib/types';
+import type { OfferSheetData, Product, CustomerInfo, Currency, SellerInfo, Language, SettingsData, PlanEntitlements } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,6 @@ import PdfPageLayout from './PdfPageLayout';
 import ReactDOM from 'react-dom/client';
 import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
-import { getPlanDetails } from '@/config/plans'; // Import getPlanDetails
 import { LoadingSpinner } from '../ui/loading-spinner';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
@@ -500,11 +499,31 @@ export default function OfferSheetForm() {
   const handleSubmit = React.useCallback(async (e: FormEvent) => {
     e.preventDefault();
     
-    // Offer limit check for free users when saving a *new* offer sheet
-    if (!currentOfferId && userSubscription?.planId === 'free') {
-        const offersThisPeriod = userSubscription.offersCreatedThisPeriod || 0;
-        if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offersThisPeriod >= currentEntitlements.maxOfferSheetsPerMonth) {
-            setUpgradeReason(t({en:"You've reached your monthly limit of {limit} offer sheets for the Free plan.", el:"Έχετε φτάσει το μηνιαίο όριο των {limit} δελτίων προσφορών για το Free πρόγραμμα."}).replace('{limit}', String(currentEntitlements.maxOfferSheetsPerMonth)));
+    const isNewOffer = !currentOfferId;
+
+    if (isNewOffer) {
+        const countLocalOffers = () => {
+            if (typeof window === 'undefined') return 0;
+            let count = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(OFFER_SHEET_STORAGE_PREFIX)) count++;
+            }
+            return count;
+        };
+
+        const offerCount = currentUser ? (userSubscription?.offersCreatedThisPeriod || 0) : countLocalOffers();
+        
+        if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offerCount >= currentEntitlements.maxOfferSheetsPerMonth) {
+            let reason = '';
+            if (userSubscription?.status === 'trialing') {
+                reason = t({en:"You've reached your trial limit of {limit} offer. Please upgrade to create unlimited offers.", el:"Φτάσατε το όριο του {limit} για τη δοκιμή σας. Αναβαθμίστε για απεριόριστες προσφορές."}).replace('{limit}', String(currentEntitlements.maxOfferSheetsPerMonth));
+            } else if (currentUser) {
+                reason = t({en:"You've reached your monthly limit of {limit} offer(s) for your current plan. Please upgrade for more.", el:"Φτάσατε το μηνιαίο όριο του {limit} για το πλάνο σας. Αναβαθμίστε για περισσότερα."}).replace('{limit}', String(currentEntitlements.maxOfferSheetsPerMonth));
+            } else {
+                reason = t({en:"You've used your free offer. Please create an account to get a 30-day trial or subscribe to create more.", el:"Χρησιμοποιήσατε τη δωρεάν προσφορά σας. Δημιουργήστε λογαριασμό για δωρεάν δοκιμή 30 ημερών ή εγγραφείτε για περισσότερα."});
+            }
+            setUpgradeReason(reason);
             setShowUpgradeModal(true);
             return;
         }
@@ -512,17 +531,13 @@ export default function OfferSheetForm() {
 
     setIsSaving(true);
     try {
-      const offerDataToSave = {
-          ...offerData,
-          isFinalPriceVatInclusive: isFinalPriceVatInclusive,
-      };
-      
+      const offerDataToSave = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
       await new Promise(resolve => setTimeout(resolve, 500)); 
 
       const saveId = currentOfferId || Date.now().toString();
       localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
 
-      if (!currentOfferId && userSubscription?.planId === 'free') { // Only increment for new offers on free plan
+      if (isNewOffer && currentUser) {
         await incrementOfferCountForCurrentUser();
       }
 
@@ -531,17 +546,28 @@ export default function OfferSheetForm() {
         description: t({ en: "Your offer sheet data has been saved.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν." }),
         variant: "default",
       });
-      if (!currentOfferId) { 
-          setCurrentOfferId(saveId);
-           // Update URL to include the new ID if it's a new save
-          router.replace(`/offer-sheet/edit?id=${saveId}`, { scroll: false });
+      
+      if (isNewOffer) { 
+        setCurrentOfferId(saveId);
+        router.replace(`/offer-sheet/edit?id=${saveId}`, { scroll: false });
       }
     } catch (error) {
         toast({ title: t({en: "Save Error", el: "Σφάλμα Αποθήκευσης"}), description: t({en: "Could not save the offer sheet.", el: "Δεν ήταν δυνατή η αποθήκευση."}), variant: "destructive" });
     } finally {
         setIsSaving(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, currentOfferId, t, toast, router, userSubscription, currentEntitlements, incrementOfferCountForCurrentUser]);
+  }, [
+      offerData, 
+      isFinalPriceVatInclusive, 
+      currentOfferId, 
+      t, 
+      toast, 
+      router, 
+      currentUser,
+      userSubscription, 
+      currentEntitlements, 
+      incrementOfferCountForCurrentUser
+  ]);
   
   const triggerDownload = (dataUrl: string, filename: string) => {
     const link = document.createElement('a');
@@ -587,7 +613,7 @@ export default function OfferSheetForm() {
             calculatedTotals={currentCalculatedTotals} 
             creationDate={creationDate}
             t={t}
-            currentPlanId={userSubscription?.planId} // Pass planId for watermark
+            entitlements={currentEntitlements}
           />
         </React.StrictMode>
       );
@@ -640,7 +666,7 @@ export default function OfferSheetForm() {
       toast({ title: t({en: "PDF Generated", el: "Το PDF δημιουργήθηκε"}), description: t({en: "Your PDF has been downloaded.", el: "Το PDF σας έχει ληφθεί."}), variant: "default" });
       return null;
     }
-  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, userSubscription?.planId]);
+  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, currentEntitlements]);
 
   const handleExportPdf = async () => {
     if (!currentEntitlements.allowedExportFormats.includes('pdf')) {
@@ -686,7 +712,7 @@ export default function OfferSheetForm() {
             calculatedTotals={currentCalculatedTotals}
             creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}
             t={t}
-            currentPlanId={userSubscription?.planId}
+            entitlements={currentEntitlements}
           />
         );
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -706,7 +732,7 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingJpeg(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, userSubscription?.planId, currentEntitlements.allowedExportFormats]);
+  }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, currentEntitlements]);
 
   const handleExportJson = React.useCallback(async () => {
      if (!currentEntitlements.allowedExportFormats.includes('json')) {

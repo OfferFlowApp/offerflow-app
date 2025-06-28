@@ -238,18 +238,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
   
   const incrementOfferCountForCurrentUser = async (): Promise<boolean> => {
-    if (!currentUser || !userSubscription) {
-        // This case might be fine for non-subscribed users hitting their limit of 1
-        if (currentUser && !userSubscription) {
-             const subRef = doc(db, 'users', currentUser.uid, 'offers', 'count');
-             // This part is tricky without a subscription doc.
-             // For simplicity, we'll assume the check happens client-side based on entitlements.
-             // If we really need to track usage for non-subscribed users, a different structure is needed.
-             // Let's rely on client-side check for now.
-             console.log("Incrementing offer for non-subscribed user (not implemented server-side).");
-             return true;
-        }
-      return false;
+    // This function should only be called for logged-in users.
+    if (!currentUser) return false;
+
+    // If there is no subscription document, we don't need to do anything.
+    // The usage is for users with a 'trialing' or 'active' subscription record.
+    if (!userSubscription) {
+        console.log("No subscription document found to increment offer count for.");
+        // This is not a failure, but there's nothing to do server-side.
+        return true; 
     }
 
     const subRef = doc(db, 'users', currentUser.uid, 'subscription', 'current');
@@ -257,11 +254,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       await updateDoc(subRef, {
         offersCreatedThisPeriod: increment(1)
       });
+      // Optimistically update the local state to reflect the change immediately
       setUserSubscription(prev => prev ? ({ ...prev, offersCreatedThisPeriod: (prev.offersCreatedThisPeriod || 0) + 1 }) : null);
       return true;
     } catch (error) {
       console.error("Error incrementing offer count:", error);
-      toast({ title: t({en:"Update Failed", el: "Η ενημέρωση απέτυχε"}), description: t({en: "Could not update offer count.", el:"Δεν ήταν δυνατή η ενημέρωση."}), variant: "destructive" });
+      toast({ title: t({en:"Update Failed", el: "Η ενημέρωση απέτυχε"}), description: t({en: "Could not update your usage count.", el:"Δεν ήταν δυνατή η ενημέρωση του μετρητή χρήσης."}), variant: "destructive" });
       return false;
     }
   };

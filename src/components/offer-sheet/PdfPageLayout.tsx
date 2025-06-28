@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react'; // Ensure React is imported
-import type { OfferSheetData, Product, Language, PlanId } from '@/lib/types';
+import type { OfferSheetData, Product, Language, PlanEntitlements } from '@/lib/types';
 import Image from 'next/image';
 
 interface PdfPageLayoutProps {
@@ -19,7 +19,7 @@ interface PdfPageLayoutProps {
   };
   creationDate: string;
   t: (translations: { [key in Language]?: string } | string, fallback?: string) => string;
-  currentPlanId?: PlanId; // Pass current plan to decide on watermark
+  entitlements: PlanEntitlements;
 }
 
 const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
@@ -32,7 +32,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
     calculatedTotals,
     creationDate,
     t,
-    currentPlanId
+    entitlements
   } = props;
 
   const {
@@ -44,7 +44,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
     vatRate
   } = offerData; 
 
-  const showWatermark = currentPlanId === 'free';
+  const showWatermark = !entitlements.canRemoveWatermark;
 
   return (
     <>
