@@ -380,7 +380,7 @@ export default function OfferSheetForm() {
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => { 
     if (!currentEntitlements.canUseCustomBranding) {
-      setUpgradeReason(t({en:"Custom branding is a Pro feature.", el: "Η προσαρμοσμένη επωνυμία είναι Pro λειτουργία."}));
+      setUpgradeReason(t({en:"Custom branding is a Pro/Business feature.", el: "Η προσαρμοσμένη επωνυμία είναι Pro/Business λειτουργία."}));
       setShowUpgradeModal(true);
       return;
     }
@@ -874,7 +874,7 @@ export default function OfferSheetForm() {
   // Placeholder functions for Pro/Business features
   const handleSaveTemplate = async () => {
     if (!currentEntitlements.canSaveTemplates) {
-      setUpgradeReason(t({en:"Saving templates is a Pro feature.", el:"Η αποθήκευση προτύπων είναι Pro λειτουργία."}));
+      setUpgradeReason(t({en:"Saving templates is a Pro/Business feature.", el:"Η αποθήκευση προτύπων είναι Pro/Business λειτουργία."}));
       setShowUpgradeModal(true);
       return;
     }
@@ -886,7 +886,7 @@ export default function OfferSheetForm() {
 
   const handleSaveCustomer = async () => {
      if (!currentEntitlements.canSaveCustomers) {
-      setUpgradeReason(t({en:"Saving customer profiles is a Pro feature.", el: "Η αποθήκευση πελατών είναι Pro λειτουργία."}));
+      setUpgradeReason(t({en:"Saving customer profiles is a Pro/Business feature.", el: "Η αποθήκευση πελατών είναι Pro/Business λειτουργία."}));
       setShowUpgradeModal(true);
       return;
     }
@@ -988,7 +988,7 @@ export default function OfferSheetForm() {
               )}
               <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" disabled={!currentEntitlements.canUseCustomBranding} />
               {!currentEntitlements.canUseCustomBranding && (
-                <p className="text-xs text-amber-600">{t({en:"Logo upload is a Pro feature.", el:"Η μεταφόρτωση λογότυπου είναι Pro λειτουργία."})} <Button variant="link" size="sm" className="p-0 h-auto text-amber-600 hover:text-amber-700" onClick={() => router.push('/pricing')}>{t({en:"Upgrade", el:"Αναβάθμιση"})}</Button></p>
+                <p className="text-xs text-amber-600">{t({en:"Logo upload is a Pro/Business feature.", el:"Η μεταφόρτωση λογότυπου είναι Pro/Business λειτουργία."})} <Button variant="link" size="sm" className="p-0 h-auto text-amber-600 hover:text-amber-700" onClick={() => router.push('/pricing')}>{t({en:"Upgrade", el:"Αναβάθμιση"})}</Button></p>
               )}
                {currentEntitlements.canUseCustomBranding && <p className="text-xs text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</p>}
             </div>
