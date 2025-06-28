@@ -31,6 +31,7 @@ import ReactDOM from 'react-dom/client';
 import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { LoadingSpinner } from '../ui/loading-spinner';
+import * as XLSX from 'xlsx';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -769,11 +770,31 @@ export default function OfferSheetForm() {
         return;
     }
     setIsExportingCsv(true);
-    // Placeholder for CSV export logic
-    await new Promise(resolve => setTimeout(resolve, 300));
-    toast({ title: t({en: "CSV Export (Placeholder)", el: "Εξαγωγή CSV (Placeholder)"}), description: t({en: "CSV export functionality is not yet implemented.", el: "Η λειτουργία δεν έχει υλοποιηθεί."}) });
-    setIsExportingCsv(false);
-  }, [t, toast, currentEntitlements]);
+    try {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const worksheetData = offerData.products.map(p => ({
+            'Product Title': p.title,
+            'Quantity': p.quantity,
+            'Original Unit Price (excl. VAT)': p.originalPrice,
+            'Discounted Unit Price': p.discountedPrice,
+            'Discounted Price Type': p.discountedPriceType,
+            'Description': p.description,
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+        const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([`\uFEFF${csvOutput}`], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const customerIdentifier = offerData.customerInfo.name || offerData.customerInfo.company || 'offer';
+        const filename = `offer-sheet-${customerIdentifier.replace(/\s+/g, '_')}.csv`;
+        triggerDownload(url, filename);
+        toast({ title: t({en: "CSV Exported", el: "Το CSV Εξήχθη"}), description: t({en: "Product data exported as CSV.", el: "Τα δεδομένα προϊόντων εξήχθησαν."}) });
+    } catch (error) {
+        console.error("Error exporting CSV:", error);
+        toast({ title: t({en: "Export Error", el: "Σφάλμα Εξαγωγής"}), description: t({en: "Could not export data as CSV.", el: "Δεν ήταν δυνατή η εξαγωγή."}), variant: "destructive" });
+    } finally {
+        setIsExportingCsv(false);
+    }
+  }, [offerData, t, toast, currentEntitlements]);
 
   const handleExportExcel = React.useCallback(async () => {
     if (!currentEntitlements.allowedExportFormats.includes('excel')) {
@@ -782,11 +803,45 @@ export default function OfferSheetForm() {
         return;
     }
     setIsExportingExcel(true);
-    // Placeholder for Excel export logic
-    await new Promise(resolve => setTimeout(resolve, 300));
-    toast({ title: t({en: "Excel Export (Placeholder)", el: "Εξαγωγή Excel (Placeholder)"}), description: t({en: "Excel export functionality is not yet implemented.", el: "Η λειτουργία δεν έχει υλοποιηθεί."}) });
-    setIsExportingExcel(false);
-  }, [t, toast, currentEntitlements]);
+     try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const wb = XLSX.utils.book_new();
+
+        const productsData = offerData.products.map(p => ({
+            'Product Title': p.title,
+            'Quantity': p.quantity,
+            'Original Unit Price': p.originalPrice,
+            'Discounted Unit Price': p.discountedPrice,
+            'Description': p.description,
+        }));
+        const productsWs = XLSX.utils.json_to_sheet(productsData);
+        XLSX.utils.book_append_sheet(wb, productsWs, "Products");
+        
+        const totals = calculateTotals();
+        const summaryData = [
+            { Item: "Customer Name", Value: offerData.customerInfo.name },
+            { Item: "Company", Value: offerData.customerInfo.company },
+            { Item: "Offer Currency", Value: offerData.currency },
+            { Item: "", Value: "" },
+            { Item: "Subtotal (Discounted)", Value: totals.subtotalDiscounted },
+            { Item: `VAT (${offerData.vatRate || 0}%)`, Value: totals.vatAmount },
+            { Item: "Grand Total", Value: totals.grandTotal },
+        ];
+        const summaryWs = XLSX.utils.json_to_sheet(summaryData, { skipHeader: true });
+        XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+        
+        const customerIdentifier = offerData.customerInfo.name || offerData.customerInfo.company || 'offer';
+        const filename = `offer-sheet-${customerIdentifier.replace(/\s+/g, '_')}.xlsx`;
+        XLSX.writeFile(wb, filename);
+
+        toast({ title: t({en: "Excel Exported", el: "Το Excel Εξήχθη"}), description: t({en: "Offer data exported as XLSX.", el: "Τα δεδομένα της προσφοράς εξήχθησαν."}) });
+    } catch (error) {
+        console.error("Error exporting Excel:", error);
+        toast({ title: t({en: "Export Error", el: "Σφάλμα Εξαγωγής"}), description: t({en: "Could not export data as Excel.", el: "Δεν ήταν δυνατή η εξαγωγή."}), variant: "destructive" });
+    } finally {
+        setIsExportingExcel(false);
+    }
+  }, [offerData, calculateTotals, t, toast, currentEntitlements]);
 
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1258,11 +1313,11 @@ export default function OfferSheetForm() {
             { (currentEntitlements.allowedExportFormats.includes('csv') || currentEntitlements.allowedExportFormats.includes('excel')) && <DropdownMenuSeparator />}
             <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv}>
               {isExportingCsv ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
-              {isExportingCsv ? t({en: 'Exporting CSV...', el: 'Εξαγωγή CSV...'}) : t({en: 'Export as CSV (Placeholder)', el: 'Εξαγωγή CSV (Placeholder)'})}
+              {isExportingCsv ? t({en: 'Exporting CSV...', el: 'Εξαγωγή CSV...'}) : t({en: 'Export as CSV', el: 'Εξαγωγή CSV'})}
             </DropdownMenuItem>
              <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel}>
               {isExportingExcel ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
-              {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel (Placeholder)', el: 'Εξαγωγή Excel (Placeholder)'})}
+              {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel', el: 'Εξαγωγή Excel'})}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, ArrowLeft, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -87,6 +87,12 @@ export default function Header() {
             <FileText className="mr-1 h-4 w-4" />
             {t({ en: 'Create Offer', el: 'Δημιουργία' })}
           </Link>
+          {currentUser && currentEntitlements.canUseDashboard && (
+              <Link href="/dashboard" className="transition-colors hover:text-primary flex items-center">
+                  <LayoutDashboard className="mr-1 h-4 w-4" />
+                  {t({ en: 'Dashboard', el: 'Πίνακας' })}
+              </Link>
+          )}
            <Link href="/pricing" className="transition-colors hover:text-primary flex items-center">
             <CreditCard className="mr-1 h-4 w-4" />
             {t({ en: 'Pricing', el: 'Τιμολόγηση' })}
