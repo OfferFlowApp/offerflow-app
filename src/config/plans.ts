@@ -18,11 +18,11 @@ const defaultEntitlements: PlanEntitlements = {
 const proEntitlements: PlanEntitlements = {
   maxOfferSheetsPerMonth: 'unlimited',
   canUseCustomBranding: true,
-  canRemoveWatermark: true, // Pro users can remove the watermark
+  canRemoveWatermark: true,
   canReplaceHeaderLogo: false,
   canSaveTemplates: true,
   canSaveCustomers: true,
-  canUseDashboard: true,
+  canUseDashboard: false,
   allowedExportFormats: ['pdf', 'jpeg', 'json'],
   maxTeamMembers: 1,
   hasAnalytics: false,

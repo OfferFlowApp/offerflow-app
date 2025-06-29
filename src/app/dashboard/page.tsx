@@ -4,7 +4,7 @@
 import React from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, LineChart, PieChart, Eye, Target, Users, ArrowUpRight, ShieldAlert } from 'lucide-react';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, Pie } from 'recharts';
@@ -98,13 +98,13 @@ export default function DashboardPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center text-primary">
                         <ShieldAlert className="mr-2 h-6 w-6" />
-                        {t({en: "Upgrade to Pro/Business", el: "Αναβάθμιση σε Pro/Business"})}
+                        {t({en: "Upgrade to Business", el: "Αναβάθμιση σε Business"})}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">{t({en: "The Analytics Dashboard is a premium feature.", el: "Ο Πίνακας Αναλυτικών είναι premium."})}</p>
+                    <p className="text-sm text-muted-foreground mb-4">{t({en: "The Analytics Dashboard is a Business plan feature.", el: "Ο Πίνακας Αναλυτικών είναι λειτουργία του Business πλάνου."})}</p>
                     <p className="text-sm text-muted-foreground">
-                      {t({en: "Please upgrade your plan to access detailed offer performance analytics.", el: "Αναβαθμίστε το πρόγραμμά σας."})}
+                      {t({en: "Please upgrade your plan to the Business tier to access detailed offer performance analytics.", el: "Παρακαλώ αναβαθμίστε το πλάνο σας σε Business για πρόσβαση."})}
                     </p>
                 </CardContent>
                 <CardFooter className="flex justify-end space-x-2">
