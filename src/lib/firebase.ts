@@ -2,7 +2,13 @@
 // Import the functions you need from the SDKs you need
 import {initializeApp, getApps, getApp, type FirebaseApp} from 'firebase/app';
 import {getAuth, type Auth} from 'firebase/auth';
-import {getFirestore, type Firestore, enableIndexedDbPersistence} from 'firebase/firestore';
+import { 
+  getFirestore, 
+  type Firestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from 'firebase/firestore';
 import {getStorage, type FirebaseStorage} from 'firebase/storage';
 
 // Your web app's Firebase configuration
@@ -57,19 +63,25 @@ if (
   } else {
     app = getApp();
   }
+  
   auth = getAuth(app);
-  db = getFirestore(app);
   storage = getStorage(app);
 
+  // Initialize Firestore with persistence. This replaces the deprecated enableIndexedDbPersistence().
+  // We check for `window` to ensure this only runs on the client-side.
   if (typeof window !== 'undefined') {
-    enableIndexedDbPersistence(db)
-      .catch((err) => {
-        if (err.code == 'failed-precondition') {
-          console.warn('[Firebase] Firestore persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.');
-        } else if (err.code == 'unimplemented') {
-          console.warn('[Firebase] Firestore persistence failed: The browser does not support all of the features required to enable persistence.');
-        }
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
       });
+    } catch (error: any) {
+        console.warn('[Firebase] Could not initialize persistent cache. Some features might not work offline.', error);
+        // Fallback to in-memory cache if persistent cache fails.
+        db = getFirestore(app);
+    }
+  } else {
+    // For server-side rendering, just get the default instance without persistence.
+    db = getFirestore(app);
   }
 }
 
