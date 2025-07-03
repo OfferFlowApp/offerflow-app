@@ -1,9 +1,10 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserSubscription, PlanId } from '@/lib/types';
+import { adminDb } from '@/lib/firebase-admin';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -14,6 +15,41 @@ if (stripeSecretKey) {
 } else {
   console.warn("Stripe secret key is not set. Stripe webhook functionality will be disabled.");
 }
+
+async function updateSubscription(subscription: Stripe.Subscription) {
+    const stripeCustomerId = subscription.customer as string;
+    const userRef = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+
+    if (userRef.empty) {
+        console.error(`[Stripe Webhook] Could not find user with Stripe Customer ID: ${stripeCustomerId}`);
+        return;
+    }
+    const userId = userRef.docs[0].id;
+
+    // The plan ID should be in the metadata of the subscription price
+    const planId = subscription.items.data[0].price.metadata.planId as PlanId;
+
+    if (!planId) {
+        console.error(`[Stripe Webhook] Price metadata is missing planId for subscription: ${subscription.id}`);
+        return;
+    }
+
+    const userSubRef = doc(db, 'users', userId, 'subscription', 'current');
+    
+    const newSubscriptionData: UserSubscription = {
+      planId: planId,
+      status: subscription.status,
+      stripeCustomerId: stripeCustomerId,
+      stripeSubscriptionId: subscription.id,
+      currentPeriodStart: subscription.current_period_start * 1000,
+      currentPeriodEnd: subscription.current_period_end * 1000,
+      offersCreatedThisPeriod: 0, // Reset counter on any subscription update/renewal
+    };
+    
+    await setDoc(userSubRef, newSubscriptionData, { merge: true });
+    console.log(`[Stripe Webhook] Subscription for user ${userId} updated. Status: ${subscription.status}, Plan: ${planId}`);
+}
+
 
 export async function POST(request: NextRequest) {
   if (!stripe || !webhookSecret) {
@@ -46,42 +82,46 @@ export async function POST(request: NextRequest) {
         console.log('[Stripe Webhook] Checkout session completed:', session.id);
 
         const userId = session.metadata?.userId;
-        const planId = session.metadata?.planId as PlanId;
         const stripeCustomerId = session.customer as string;
-        const stripeSubscriptionId = session.subscription as string;
 
-        if (!userId || !planId || !stripeCustomerId || !stripeSubscriptionId) {
+        if (!userId || !stripeCustomerId) {
           console.error('[Stripe Webhook] Missing metadata from checkout session:', session.id, session.metadata);
           return NextResponse.json({ error: 'Missing metadata from session.' }, { status: 400 });
         }
 
-        const userSubRef = doc(db, 'users', userId, 'subscription', 'current');
-        
-        // Let's get the subscription object from Stripe to get the period dates
-        const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+        // Store the stripeCustomerId on the user document for future lookups
+        const userDocRef = adminDb.collection('users').doc(userId);
+        await userDocRef.set({ stripeCustomerId: stripeCustomerId }, { merge: true });
 
-        const newSubscriptionData: UserSubscription = {
-          planId: planId,
-          status: 'active',
-          stripeCustomerId: stripeCustomerId,
-          stripeSubscriptionId: stripeSubscriptionId,
-          currentPeriodStart: stripeSubscription.current_period_start * 1000, // Stripe uses seconds, convert to ms
-          currentPeriodEnd: stripeSubscription.current_period_end * 1000,     // Stripe uses seconds, convert to ms
-          offersCreatedThisPeriod: 0, // Reset on new subscription
-        };
-
-        // setDoc will create or overwrite the document
-        await setDoc(userSubRef, newSubscriptionData, { merge: true });
-        console.log(`[Stripe Webhook] User ${userId} subscription updated to ${planId}.`);
+        // The subscription data will be set by the customer.subscription.created/updated events.
         break;
-      
-      // You can add more event handlers here in the future
-      // case 'invoice.payment_succeeded':
-      //   // Handle recurring payments
-      //   break;
-      // case 'customer.subscription.deleted':
-      //   // Handle cancellations
-      //   break;
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const subscriptionUpdated = event.data.object as Stripe.Subscription;
+        await updateSubscription(subscriptionUpdated);
+        break;
+
+      case 'invoice.payment_succeeded':
+        // This is crucial for renewals.
+        const invoice = event.data.object as Stripe.Invoice;
+        if (invoice.subscription) {
+            const subscriptionRenewed = await stripe.subscriptions.retrieve(invoice.subscription as string);
+            await updateSubscription(subscriptionRenewed);
+        }
+        break;
+        
+      case 'invoice.payment_failed':
+        // The user's subscription status will automatically become 'past_due' or 'unpaid'.
+        // The customer.subscription.updated event will fire, and we'll handle the status update there.
+        const failedInvoice = event.data.object as Stripe.Invoice;
+         if (failedInvoice.subscription) {
+            const subscriptionFailed = await stripe.subscriptions.retrieve(failedInvoice.subscription as string);
+            await updateSubscription(subscriptionFailed);
+        }
+        console.log(`[Stripe Webhook] Invoice payment failed for subscription: ${failedInvoice.subscription}`);
+        break;
 
       default:
         console.log(`[Stripe Webhook] Unhandled event type ${event.type}`);

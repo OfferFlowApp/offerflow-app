@@ -83,7 +83,14 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setLoading(true);
       const sub = await fetchUserSubscription(currentUser.uid);
       setUserSubscription(sub);
-      setCurrentEntitlements(getEntitlements(sub?.planId));
+
+      // Gate access based on status. If not 'active' or 'trialing', they get no entitlements.
+      if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
+        setCurrentEntitlements(getEntitlements(sub.planId));
+      } else {
+        // Canceled, past_due, or no subscription all result in 'none' plan entitlements
+        setCurrentEntitlements(getEntitlements('none'));
+      }
       setLoading(false);
     }
   }, [currentUser, fetchUserSubscription]);
@@ -104,7 +111,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (user) {
         const sub = await fetchUserSubscription(user.uid);
         setUserSubscription(sub);
-        setCurrentEntitlements(getEntitlements(sub?.planId));
+        // Gate access based on status
+        if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
+          setCurrentEntitlements(getEntitlements(sub.planId));
+        } else {
+          setCurrentEntitlements(getEntitlements('none'));
+        }
       } else {
         setUserSubscription(null);
         setCurrentEntitlements(defaultNoPlanEntitlements);
@@ -124,24 +136,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Automatically create a 30-day trial subscription for the 'pro-monthly' plan on signup
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 30);
-      
-      const newTrialSubscription: UserSubscription = {
-        planId: 'pro-monthly', // Trial is for the Pro Monthly plan
-        status: 'trialing',
-        currentPeriodStart: Date.now(),
-        currentPeriodEnd: trialEndDate.getTime(),
-        offersCreatedThisPeriod: 0,
-      };
-
-      const userSubRef = doc(db, 'users', userCredential.user.uid, 'subscription', 'current');
-      await setDoc(userSubRef, newTrialSubscription);
-      
-      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Welcome! Your 30-day free trial has started.", el: "Καλώς ήρθατε! Η δωρεάν δοκιμή 30 ημερών ξεκίνησε."}) });
-      router.push('/'); // Go to homepage after signup, they can see trial status there/on pricing page
+      // Let the Stripe webhook for 'customer.subscription.created' handle the trial record creation.
+      // This keeps the logic centralized.
+      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Welcome! Check our plans to get started.", el: "Καλώς ήρθατε! Δείτε τα πλάνα μας για να ξεκινήσετε."}) });
+      router.push('/pricing');
       return userCredential.user;
     } catch (error: any) {
       console.error("Sign up error:", error);
@@ -163,7 +161,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
       router.push('/');
       return userCredential.user;
-    } catch (error: any) {
+    } catch (error: any)
+       {
       console.error("Sign in error:", error);
       toast({ title: t({en: "Sign In Failed", el: "Η Σύνδεση Απέτυχε"}), description: error.message || t({en: "Could not sign in.", el: "Δεν ήταν δυνατή η σύνδεση."}), variant: "destructive" });
       return null;
@@ -182,29 +181,16 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     try {
       const result = await signInWithPopup(auth, provider);
       
-      // Check if user is new. If so, create a trial subscription.
       const subRef = doc(db, 'users', result.user.uid, 'subscription', 'current');
       const subSnap = await getDoc(subRef);
       
       if (!subSnap.exists()) {
-        // This is a new user, create a trial for them.
-        const trialEndDate = new Date();
-        trialEndDate.setDate(trialEndDate.getDate() + 30);
-      
-        const newTrialSubscription: UserSubscription = {
-          planId: 'pro-monthly',
-          status: 'trialing',
-          currentPeriodStart: Date.now(),
-          currentPeriodEnd: trialEndDate.getTime(),
-          offersCreatedThisPeriod: 0,
-        };
-        await setDoc(subRef, newTrialSubscription);
-        toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Welcome! Your 30-day free trial has started.", el: "Καλώς ήρθατε! Η δωρεάν δοκιμή 30 ημερών ξεκίνησε."}) });
+        toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Welcome! Check out our plans to start a trial.", el: "Καλώς ήρθατε! Δείτε τα πλάνα μας για να ξεκινήσετε μια δοκιμή."}) });
+         router.push('/pricing');
       } else {
          toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
+         router.push('/');
       }
-      
-      router.push('/'); // Always go to homepage after google sign in now
       return result.user;
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
@@ -238,14 +224,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
   
   const incrementOfferCountForCurrentUser = async (): Promise<boolean> => {
-    // This function should only be called for logged-in users.
     if (!currentUser) return false;
 
-    // If there is no subscription document, we don't need to do anything.
-    // The usage is for users with a 'trialing' or 'active' subscription record.
     if (!userSubscription) {
         console.log("No subscription document found to increment offer count for.");
-        // This is not a failure, but there's nothing to do server-side.
         return true; 
     }
 
@@ -254,7 +236,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       await updateDoc(subRef, {
         offersCreatedThisPeriod: increment(1)
       });
-      // Optimistically update the local state to reflect the change immediately
       setUserSubscription(prev => prev ? ({ ...prev, offersCreatedThisPeriod: (prev.offersCreatedThisPeriod || 0) + 1 }) : null);
       return true;
     } catch (error) {
@@ -263,7 +244,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return false;
     }
   };
-
 
   const value = {
     currentUser,

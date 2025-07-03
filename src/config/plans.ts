@@ -139,6 +139,9 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
 };
 
 export const getPlanDetails = (planId: PlanId | undefined | null): PricingPlanDetails => {
+  // A 'canceled' subscription should not grant entitlements.
+  // We can refine this logic based on how we want to handle grace periods.
+  // For now, if a plan exists, they get its details. The AuthContext can decide what to do with a 'canceled' status.
   return PLANS[planId || 'none'] || PLANS.none;
 };
 
