@@ -56,10 +56,10 @@ const qnaPairs: QnaPair[] = [
   },
   {
     id: 'q5',
-    question: { en: "Why use this instead of building my own?", el: "Γιατί να το χρησιμοποιήσω αντί να φτιάξω το δικό μου;" },
+    question: { en: "Why use this instead of Microsoft Word?", el: "Γιατί να το χρησιμοποιήσω αντί για το Microsoft Word;" },
     answer: {
-      en: "Great question! OfferFlow is designed to save you time and effort. We handle the complex parts like professional PDF generation, automatic price calculations, user management, and plan entitlements. This lets you focus on making sales, not on building and maintaining an application from scratch.",
-      el: "Εξαιρετική ερώτηση! Το OfferFlow είναι σχεδιασμένο για να σας εξοικονομεί χρόνο και κόπο. Διαχειριζόμαστε τα πολύπλοκα μέρη όπως η επαγγελματική δημιουργία PDF, οι αυτόματοι υπολογισμοί τιμών, η διαχείριση χρηστών και τα δικαιώματα πλάνου. Αυτό σας επιτρέπει να εστιάσετε στις πωλήσεις, όχι στην κατασκευή και συντήρηση μιας εφαρμογής από την αρχή."
+      en: "That's a key question! While you can create offers in a word processor, OfferFlow automates the entire process. It handles all price calculations (subtotals, VAT, grand totals) instantly, saving you from manual math errors. You can save and reuse product details and customer info, ensuring consistency. Plus, exporting to a clean, professional PDF is just one click away. It's all about saving time, reducing errors, and making you look more professional.",
+      el: "Πολύ καλή ερώτηση! Ενώ μπορείτε να δημιουργήσετε προσφορές σε έναν επεξεργαστή κειμένου, το OfferFlow αυτοματοποιεί όλη τη διαδικασία. Διαχειρίζεται αυτόματα όλους τους υπολογισμούς τιμών (μερικά σύνολα, ΦΠΑ, γενικά σύνολα), γλιτώνοντάς σας από χειροκίνητα λάθη. Μπορείτε να αποθηκεύσετε και να επαναχρησιμοποιήσετε στοιχεία προϊόντων και πελατών, διασφαλίζοντας συνέπεια. Επιπλέον, η εξαγωγή σε ένα καθαρό, επαγγελματικό PDF γίνεται με ένα μόνο κλικ. Ο στόχος είναι η εξοικονόμηση χρόνου, η μείωση των σφαλμάτων και η επαγγελματικότερη παρουσίασή σας."
     }
   },
   {
