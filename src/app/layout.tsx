@@ -10,7 +10,6 @@ import SupportChat from '@/components/layout/SupportChat';
 export const metadata: Metadata = {
   title: 'OfferFlow App',
   description: 'Create and manage professional offer sheets.',
-  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -22,7 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
         <meta name="theme-color" content="#3F51B5" />
       </head>
