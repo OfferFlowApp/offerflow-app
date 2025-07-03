@@ -42,8 +42,8 @@ const qnaPairs: QnaPair[] = [
     id: 'q3',
     question: { en: "Where do I change my logo?", el: "Πού αλλάζω το λογότυπό μου;" },
     answer: {
-      en: "You can set a default logo for all new offers by going to Settings > Branding & Seller Defaults. You can also upload a logo for a specific offer directly on the offer sheet form.",
-      el: "Μπορείτε να ορίσετε ένα προεπιλεγμένο λογότυπο για όλες τις νέες προσφορές πηγαίνοντας στις Ρυθμίσεις > Προεπιλογές Επωνυμίας & Πωλητή. Μπορείτε επίσης να ανεβάσετε ένα λογότυπο για μια συγκεκριμένη προσφορά απευθείας στη φόρμα."
+      en: "You can set a default logo for all new offers by going to Settings > Branding & Seller Defaults. You can also upload a logo for a specific offer directly on the offer sheet form. Note that custom branding is a Pro/Business feature.",
+      el: "Μπορείτε να ορίσετε ένα προεπιλεγμένο λογότυπο για όλες τις νέες προσφορές πηγαίνοντας στις Ρυθμίσεις > Προεπιλογές Επωνυμίας & Πωλητή. Μπορείτε επίσης να ανεβάσετε ένα λογότυπο για μια συγκεκριμένη προσφορά απευθείας στη φόρμα. Σημειώστε ότι η προσαρμοσμένη επωνυμία είναι λειτουργία Pro/Business."
     }
   },
   {
@@ -52,6 +52,30 @@ const qnaPairs: QnaPair[] = [
     answer: {
       en: "Offers are saved to your browser's local storage when you click 'Save Offer Sheet'. This means they are available on the same browser you used to create them. For signed-in users, we plan to add cloud sync in the future!",
       el: "Οι προσφορές αποθηκεύονται στην τοπική αποθήκευση του προγράμματος περιήγησής σας όταν κάνετε κλικ στην 'Αποθήκευση Δελτίου Προσφοράς'. Για τους συνδεδεμένους χρήστες, σχεδιάζουμε να προσθέσουμε συγχρονισμό στο cloud στο μέλλον!"
+    }
+  },
+  {
+    id: 'q5',
+    question: { en: "Why use this instead of building my own?", el: "Γιατί να το χρησιμοποιήσω αντί να φτιάξω το δικό μου;" },
+    answer: {
+      en: "Great question! OfferFlow is designed to save you time and effort. We handle the complex parts like professional PDF generation, automatic price calculations, user management, and plan entitlements. This lets you focus on making sales, not on building and maintaining an application from scratch.",
+      el: "Εξαιρετική ερώτηση! Το OfferFlow είναι σχεδιασμένο για να σας εξοικονομεί χρόνο και κόπο. Διαχειριζόμαστε τα πολύπλοκα μέρη όπως η επαγγελματική δημιουργία PDF, οι αυτόματοι υπολογισμοί τιμών, η διαχείριση χρηστών και τα δικαιώματα πλάνου. Αυτό σας επιτρέπει να εστιάσετε στις πωλήσεις, όχι στην κατασκευή και συντήρηση μιας εφαρμογής από την αρχή."
+    }
+  },
+  {
+    id: 'q6',
+    question: { en: "Do I need a subscription to use this?", el: "Χρειάζομαι συνδρομή για να το χρησιμοποιήσω;" },
+    answer: {
+      en: "You can create your first offer sheet for free! If you need more, you can choose one of our affordable subscription plans. Creating an account automatically starts a 30-day free trial of our Pro features.",
+      el: "Μπορείτε να δημιουργήσετε το πρώτο σας δελτίο προσφοράς δωρεάν! Εάν χρειάζεστε περισσότερα, μπορείτε να επιλέξετε ένα από τα οικονομικά συνδρομητικά μας πλάνα. Η δημιουργία λογαριασμού ξεκινά αυτόματα μια δωρεάν δοκιμή 30 ημερών των Pro χαρακτηριστικών μας."
+    }
+  },
+  {
+    id: 'q7',
+    question: { en: "Is my data safe?", el: "Είναι τα δεδομένα μου ασφαλή;" },
+    answer: {
+      en: "Yes. When you're not logged in, all your offer data is saved locally in your browser. For logged-in users, we use Firebase, a secure platform from Google, to manage accounts and subscription data. We take your privacy seriously.",
+      el: "Ναι. Όταν δεν είστε συνδεδεμένοι, όλα τα δεδομένα της προσφοράς σας αποθηκεύονται τοπικά στο πρόγραμμα περιήγησής σας. Για τους συνδεδεμένους χρήστες, χρησιμοποιούμε το Firebase, μια ασφαλή πλατφόρμα από την Google, για τη διαχείριση λογαριασμών και δεδομένων συνδρομής. Λαμβάνουμε σοβαρά υπόψη το απόρρητό σας."
     }
   }
 ];
