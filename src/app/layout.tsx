@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import AppProviders from '@/components/layout/AppProviders';
 import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
 import TopProgressBar from '@/components/layout/TopProgressBar';
+import SupportChat from '@/components/layout/SupportChat';
 
 export const metadata: Metadata = {
   title: 'OfferFlow App',
@@ -31,6 +32,7 @@ export default function RootLayout({
             <TopProgressBar />
             {children}
             <Toaster />
+            <SupportChat />
           </AppProviders>
         </AuthProvider>
       </body>
