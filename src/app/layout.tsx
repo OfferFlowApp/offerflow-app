@@ -4,7 +4,6 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import AppProviders from '@/components/layout/AppProviders';
 import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
-import SupportChat from '@/components/layout/SupportChat'; // Import SupportChat
 import TopProgressBar from '@/components/layout/TopProgressBar';
 
 export const metadata: Metadata = {
@@ -32,7 +31,6 @@ export default function RootLayout({
             <TopProgressBar />
             {children}
             <Toaster />
-            <SupportChat /> {/* Add SupportChat here */}
           </AppProviders>
         </AuthProvider>
       </body>
