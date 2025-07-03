@@ -39,7 +39,7 @@ export default function DefaultLogoSettings() {
         const parsedSettings: SettingsData = JSON.parse(savedSettings);
         const savedInfo = parsedSettings.defaultSellerInfo || {};
         
-        const effectiveLogo = currentEntitlements.canUseCustomBranding ? savedInfo.logoUrl : undefined;
+        const effectiveLogo = savedInfo.logoUrl;
 
         setDefaultSellerInfo({
             name: savedInfo.name || '',
@@ -68,17 +68,9 @@ export default function DefaultLogoSettings() {
       });
       setLogoPreview(undefined);
     }
-  }, [currentEntitlements.canUseCustomBranding]); // Re-run if branding entitlement changes
+  }, []);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!currentEntitlements.canUseCustomBranding) {
-        toast({
-            title: t({en: "Feature Unavailable", el: "Λειτουργία Μη Διαθέσιμη"}),
-            description: t({en: "Logo upload is a Pro/Business feature.", el: "Η μεταφόρτωση λογότυπου είναι Pro/Business."}),
-            variant: "destructive"
-        });
-        return;
-    }
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -107,11 +99,6 @@ export default function DefaultLogoSettings() {
     }
 
     const finalSellerInfoToSave = { ...defaultSellerInfo };
-    // Ensure logo is only saved if allowed
-    if (!currentEntitlements.canUseCustomBranding) {
-        finalSellerInfoToSave.logoUrl = undefined;
-    }
-
 
     const settingsToSave: SettingsData = {
         ...existingSettings,
@@ -174,25 +161,14 @@ export default function DefaultLogoSettings() {
       
       <div className="flex flex-col items-start space-y-4">
         <Label htmlFor="defaultLogoUpload" className="text-base">{t({en: "Default Company Logo", el: "Προεπιλεγμένο Λογότυπο Εταιρείας"})}</Label>
-        {logoPreview && currentEntitlements.canUseCustomBranding ? (
+        {logoPreview ? (
           <Image src={logoPreview} alt={t({en:"Default Logo Preview", el:"Προεπισκόπηση Προεπιλεγμένου Λογότυπου"})} width={150} height={150} className="rounded-md object-contain border p-2" data-ai-hint="company brand" />
         ) : (
           <div className="w-40 h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
             <UploadCloud className="h-16 w-16" />
           </div>
         )}
-        <Input id="defaultLogoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" disabled={!currentEntitlements.canUseCustomBranding} />
-        {!currentEntitlements.canUseCustomBranding && (
-             <div className="flex items-center text-sm text-amber-600 p-2 border border-amber-300 bg-amber-50 rounded-md">
-                <ShieldAlert className="h-5 w-5 mr-2 shrink-0" />
-                <span>
-                {t({en:"Default logo upload is a Pro/Business feature.", el:"Η μεταφόρτωση προεπιλεγμένου λογότυπου είναι Pro/Business."})}{' '}
-                <Button variant="link" size="sm" className="p-0 h-auto text-amber-600 hover:text-amber-700" onClick={() => router.push('/pricing')}>
-                    {t({en:"Upgrade your plan.", el:"Αναβαθμίστε το πλάνο σας."})}
-                </Button>
-                </span>
-            </div>
-        )}
+        <Input id="defaultLogoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
       </div>
       <Button onClick={handleSaveSettings} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
         <Save className="mr-2 h-5 w-5" /> {t({en: "Save Default Seller Info", el: "Αποθήκευση Προεπιλεγμένων Πληροφοριών Πωλητή"})}

@@ -277,14 +277,7 @@ export default function OfferSheetForm() {
           const parsedSettings: SettingsData = JSON.parse(savedSettingsRaw);
           if (parsedSettings.defaultSellerInfo) {
             userDefaultSellerInfo = parsedSettings.defaultSellerInfo;
-            // Apply default logo from settings if user plan allows custom branding
-            if (currentEntitlements.canUseCustomBranding && parsedSettings.defaultSellerInfo.logoUrl) {
-              userDefaultSellerInfo.logoUrl = parsedSettings.defaultSellerInfo.logoUrl;
-            } else if (!currentEntitlements.canUseCustomBranding) {
-              // If plan doesn't allow custom branding, ensure logoUrl is not set from defaults
-              if (userDefaultSellerInfo) userDefaultSellerInfo.logoUrl = undefined;
-            }
-          } else if (parsedSettings.defaultLogoUrl && currentEntitlements.canUseCustomBranding) { // Legacy support
+          } else if (parsedSettings.defaultLogoUrl) { // Legacy support
             userDefaultSellerInfo = { logoUrl: parsedSettings.defaultLogoUrl };
           }
 
@@ -304,10 +297,6 @@ export default function OfferSheetForm() {
         ...baseInitialData.sellerInfo,
         ...(userDefaultSellerInfo || {}),
       };
-      // Ensure logo is cleared if not allowed
-      if (!currentEntitlements.canUseCustomBranding) {
-        effectiveSellerInfo.logoUrl = undefined;
-      }
 
       setOfferData({
         ...baseInitialData,
@@ -333,11 +322,7 @@ export default function OfferSheetForm() {
           
           const customerInfo = { ...initialCustomerInfo, ...(loadedData.customerInfo || {}) };
           let sellerInfo = { ...initialSellerInfo, ...(loadedData.sellerInfo || {}) };
-          // Respect branding entitlement for loaded data
-          if (!currentEntitlements.canUseCustomBranding) {
-            sellerInfo.logoUrl = undefined;
-          }
-
+          
           const products = (loadedData.products || []).map(p => ({ ...initialProduct, ...p, discountedPriceType: p.discountedPriceType || 'exclusive' }));
 
           const fullLoadedData: OfferSheetData = {
@@ -371,7 +356,7 @@ export default function OfferSheetForm() {
       initializeNewOfferSheet();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, t, currentEntitlements.canUseCustomBranding]); // Added currentEntitlements
+  }, [searchParams, t]);
 
   React.useEffect(() => {
     setOfferData(prev => ({ ...prev, isFinalPriceVatInclusive: isFinalPriceVatInclusive }));
@@ -379,11 +364,6 @@ export default function OfferSheetForm() {
 
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => { 
-    if (!currentEntitlements.canUseCustomBranding) {
-      setUpgradeReason(t({en:"Custom branding is a Pro/Business feature.", el: "Η προσαρμοσμένη επωνυμία είναι Pro/Business λειτουργία."}));
-      setShowUpgradeModal(true);
-      return;
-    }
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -874,11 +854,6 @@ export default function OfferSheetForm() {
           isFinalPriceVatInclusive: typeof importedRawData.isFinalPriceVatInclusive === 'boolean' ? importedRawData.isFinalPriceVatInclusive : false,
         };
         
-        // Respect branding entitlement for imported data
-        if (!currentEntitlements.canUseCustomBranding) {
-          importedOfferData.sellerInfo.logoUrl = undefined;
-        }
-
         setOfferData(importedOfferData);
         setIsFinalPriceVatInclusive(importedOfferData.isFinalPriceVatInclusive || false);
         setCurrentOfferId(null); // Import as a new offer, don't overwrite existing by ID
@@ -894,7 +869,7 @@ export default function OfferSheetForm() {
     if (importFileRef.current) {
       importFileRef.current.value = "";
     }
-  }, [t, toast, currentEntitlements.canUseCustomBranding]);
+  }, [t, toast]);
 
   const triggerImportFileDialog = React.useCallback(() => {
     importFileRef.current?.click();
@@ -1091,18 +1066,15 @@ export default function OfferSheetForm() {
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="logoUpload">{t({ en: 'Seller Logo', el: 'Λογότυπο Πωλητή' })}</Label>
             <div className="flex flex-col items-start space-y-2">
-              {offerData.sellerInfo.logoUrl && currentEntitlements.canUseCustomBranding ? (
+              {offerData.sellerInfo.logoUrl ? (
                 <Image src={offerData.sellerInfo.logoUrl} alt={t({ en: "Seller Logo Preview", el: "Προεπισκόπηση Λογοτύπου Πωλητή"})} width={150} height={75} className="rounded-md object-contain border p-2" data-ai-hint="company brand" />
               ) : (
                 <div className="w-32 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
                   <UploadCloud className="h-8 w-8" />
                 </div>
               )}
-              <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" disabled={!currentEntitlements.canUseCustomBranding} />
-              {!currentEntitlements.canUseCustomBranding && (
-                <p className="text-xs text-amber-600">{t({en:"Logo upload is a Pro/Business feature.", el:"Η μεταφόρτωση λογότυπου είναι Pro/Business λειτουργία."})} <Button variant="link" size="sm" className="p-0 h-auto text-amber-600 hover:text-amber-700" onClick={() => router.push('/pricing')}>{t({en:"Upgrade", el:"Αναβάθμιση"})}</Button></p>
-              )}
-               {currentEntitlements.canUseCustomBranding && <p className="text-xs text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</p>}
+              <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-sm file:text-primary file:font-medium" />
+              <p className="text-xs text-muted-foreground">{t({ en: 'Upload your company logo (PNG, JPG, SVG)', el: 'Μεταφορτώστε το λογότυπο της εταιρείας σας (PNG, JPG, SVG)' })}</p>
             </div>
           </div>
         </CardContent>
