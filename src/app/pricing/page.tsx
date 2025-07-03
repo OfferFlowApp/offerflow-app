@@ -231,7 +231,10 @@ export default function PricingPage() {
                       disabled={isDisabled}
                       >
                       {isLoadingPlan === plan.id ? (
+                        <>
                           <LoadingSpinner className="mr-2 h-5 w-5" />
+                          {t({ en: 'Redirecting...', el: 'Ανακατεύθυνση...' })}
+                        </>
                       ) : isCurrentPlan ? (
                           <>
                             <CheckCircle className="mr-2 h-5 w-5" />

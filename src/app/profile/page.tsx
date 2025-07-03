@@ -14,6 +14,7 @@ import { CheckCircle, Clock, XCircle, ExternalLink, UserCircle, ShieldCheck } fr
 import { getPlanDetails } from '@/config/plans';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 export default function ProfilePage() {
   const { currentUser, userSubscription, loading: authLoading, logOut, refreshSubscription } = useAuth();
@@ -168,8 +169,17 @@ export default function ProfilePage() {
              <CardFooter className="flex flex-col items-start gap-2">
                 {userSubscription?.stripeCustomerId ? (
                     <Button onClick={handleManageSubscription} className="w-full" disabled={isRedirecting}>
-                        {isRedirecting ? <LoadingSpinner className="mr-2" /> : <ExternalLink className="mr-2" />}
-                        {t({en: "Manage Subscription & Billing", el: "Διαχείριση Συνδρομής & Χρέωσης"})}
+                        {isRedirecting ? (
+                            <>
+                                <LoadingSpinner className="mr-2" />
+                                {t({en: "Redirecting...", el: "Ανακατεύθυνση..."})}
+                            </>
+                        ) : (
+                            <>
+                                <ExternalLink className="mr-2" />
+                                {t({en: "Manage Subscription & Billing", el: "Διαχείριση Συνδρομής & Χρέωσης"})}
+                            </>
+                        )}
                     </Button>
                 ) : (
                     <Button onClick={() => router.push('/pricing')} className="w-full">

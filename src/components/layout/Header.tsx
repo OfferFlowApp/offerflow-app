@@ -18,6 +18,7 @@ import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard,
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '../ui/loading-spinner';
 
 const languageOptions: { value: Language; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -29,6 +30,7 @@ export default function Header() {
   const { currentUser, currentEntitlements, loading: authLoading, logOut } = useAuth();
   const router = useRouter();
   const [headerLogoUrl, setHeaderLogoUrl] = useState<string | undefined>(undefined);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && currentEntitlements.canReplaceHeaderLogo) {
@@ -52,8 +54,11 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     await logOut();
-    router.push('/'); 
+    // The logOut function from AuthContext handles navigation.
+    // If it fails, the user remains on the page, so we stop the spinner.
+    setIsLoggingOut(false);
   };
 
   return (
@@ -130,8 +135,15 @@ export default function Header() {
               <Button variant="ghost" size="icon" onClick={() => router.push('/profile')} aria-label={t({en: "Profile", el: "Προφίλ"})}>
                   <UserCircle className="h-5 w-5" />
               </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                {t({ en: 'Logout', el: 'Αποσύνδεση' })}
+              <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut}>
+                {isLoggingOut ? (
+                  <>
+                    <LoadingSpinner className="mr-2 h-4 w-4" />
+                    {t({ en: 'Logging out...', el: 'Αποσύνδεση...' })}
+                  </>
+                ) : (
+                  t({ en: 'Logout', el: 'Αποσύνδεση' })
+                )}
               </Button>
             </>
           ) : (
