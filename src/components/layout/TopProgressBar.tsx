@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
@@ -14,7 +15,7 @@ function ProgressBar() {
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 750); // The loading bar will be visible for this duration
+    }, 500); // The loading bar will be visible for this duration
 
     return () => {
       clearTimeout(timer);

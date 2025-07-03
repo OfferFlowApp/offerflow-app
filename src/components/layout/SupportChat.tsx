@@ -108,7 +108,7 @@ export default function SupportChat() {
       };
       setMessages(prev => [...prev, botMessage]);
       setIsAnswering(false);
-    }, 800); // Simulate bot thinking
+    }, 300); // Simulate bot thinking
   };
 
   useEffect(() => {
@@ -142,7 +142,7 @@ export default function SupportChat() {
       )}
 
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-80 sm:w-96 h-[28rem] sm:h-[32rem] shadow-xl z-[100] flex flex-col rounded-lg border bg-card">
+        <Card className="fixed bottom-6 right-6 w-80 sm:w-96 h-[32rem] sm:h-[36rem] shadow-xl z-[100] flex flex-col rounded-lg border bg-card">
           <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
             <CardTitle className="text-lg font-semibold flex items-center">
               <Bot className="h-5 w-5 mr-2 text-primary" />

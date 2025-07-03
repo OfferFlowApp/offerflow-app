@@ -533,7 +533,7 @@ export default function OfferSheetForm() {
     setIsSaving(true);
     try {
       const offerDataToSave = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+      await new Promise(resolve => setTimeout(resolve, 100)); 
 
       const saveId = currentOfferId || Date.now().toString();
       localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
@@ -619,7 +619,7 @@ export default function OfferSheetForm() {
         </React.StrictMode>
       );
 
-      await new Promise(resolve => setTimeout(resolve, 200)); 
+      await new Promise(resolve => setTimeout(resolve, 100)); 
 
       try {
         const canvas = await html2canvas(tempPdfPageContainer, { 
@@ -716,7 +716,7 @@ export default function OfferSheetForm() {
             entitlements={currentEntitlements}
           />
         );
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         toast({ title: t({en: "Generating JPEG...", el: "Δημιουργία JPEG..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
         const canvas = await html2canvas(tempPdfPageContainer, { scale: 2, useCORS: true, windowWidth: tempPdfPageContainer.scrollWidth, windowHeight: tempPdfPageContainer.scrollHeight });
@@ -743,7 +743,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingJson(true);
     try {
-        await new Promise(resolve => setTimeout(resolve, 300)); 
+        await new Promise(resolve => setTimeout(resolve, 100)); 
         const dataToExport = {
           ...offerData,
           isFinalPriceVatInclusive: isFinalPriceVatInclusive, 
@@ -771,7 +771,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingCsv(true);
     try {
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 100));
         const worksheetData = offerData.products.map(p => ({
             'Product Title': p.title,
             'Quantity': p.quantity,
@@ -804,7 +804,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingExcel(true);
      try {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 100));
         const wb = XLSX.utils.book_new();
 
         const productsData = offerData.products.map(p => ({
@@ -1003,7 +1003,7 @@ export default function OfferSheetForm() {
       return;
     }
     setIsSavingCustomer(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 100));
     toast({ title: t({en:"Save Customer (Placeholder)", el:"Αποθήκευση Πελάτη (Placeholder)"}), description: t({en:"This feature is coming soon for Pro users!", el: "Η λειτουργία έρχεται σύντομα!"}) });
     setIsSavingCustomer(false);
   };
