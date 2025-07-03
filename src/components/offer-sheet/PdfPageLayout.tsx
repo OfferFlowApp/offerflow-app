@@ -44,8 +44,6 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
     vatRate
   } = offerData; 
 
-  const showWatermark = !entitlements.canRemoveWatermark;
-
   return (
     <>
       <div
@@ -61,7 +59,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
         {/* Header */}
         <header className="flex justify-between items-start pb-4 border-b border-gray-300">
           <div className="w-2/5">
-            {sellerInfo.logoUrl ? ( // Assuming Pro/Business can have logoUrl from sellerInfo
+            {sellerInfo.logoUrl ? (
               <Image src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} width={120} height={60} className="max-h-20 object-contain mb-2" data-ai-hint="company brand"/>
             ) : (
               <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
@@ -165,15 +163,6 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
                 )}
               </div>
             </div>
-             {showWatermark && (
-              <div className="text-center text-gray-400 text-[9px] pt-3">
-                {t({ en: "Made with", el: "Δημιουργήθηκε με το" })}{' '}
-                <span style={{ fontWeight: 'bold' }}>
-                    <span style={{ color: '#3F51B5' }}>Offer</span>
-                    <span style={{ color: '#4CAF50' }}>Flow</span>
-                </span>
-              </div>
-            )}
             <div className="text-center mt-2 text-gray-500 text-[10px]">
               {t({en: "Thank you for your business!", el: "Ευχαριστούμε για την προτίμησή σας!"})}
             </div>
