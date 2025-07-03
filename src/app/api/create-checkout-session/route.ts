@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: { message: 'Invalid plan ID.' } }, { status: 400 });
     }
 
-    const planDetails = PLANS[planId];
+    const planDetails = PLANS[planId as PlanId];
     if (!planDetails || !planDetails.stripePriceId || planDetails.stripePriceId.startsWith('YOUR_')) {
       console.error(`Stripe Price ID not configured or is a placeholder for plan: ${planId}. Actual value: ${planDetails?.stripePriceId}`);
       return NextResponse.json({ error: { message: 'Stripe Price ID not configured for this plan. Please check server logs.' } }, { status: 500 });
