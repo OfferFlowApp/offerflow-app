@@ -24,14 +24,11 @@ import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
 import { useLocalization } from '@/hooks/useLocalization';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import PdfPageLayout from './PdfPageLayout'; 
 import ReactDOM from 'react-dom/client';
+import PdfPageLayout from './PdfPageLayout'; 
 import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { LoadingSpinner } from '../ui/loading-spinner';
-import * as XLSX from 'xlsx';
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -561,6 +558,9 @@ export default function OfferSheetForm() {
   };
 
   const exportAsPdfInternal = React.useCallback(async (returnAsBlob: boolean = false): Promise<Blob | null> => {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: html2canvas } = await import('html2canvas');
+
     const PRODUCTS_PER_PAGE = 3; 
     const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -673,6 +673,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingJpeg(true);
     try {
+        const { default: html2canvas } = await import('html2canvas');
         const tempPdfPageContainer = document.createElement('div');
         tempPdfPageContainer.style.position = 'absolute';
         tempPdfPageContainer.style.left = '-210mm';
@@ -751,6 +752,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingCsv(true);
     try {
+        const XLSX = await import('xlsx');
         await new Promise(resolve => setTimeout(resolve, 100));
         const worksheetData = offerData.products.map(p => ({
             'Product Title': p.title,
@@ -784,6 +786,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingExcel(true);
      try {
+        const XLSX = await import('xlsx');
         await new Promise(resolve => setTimeout(resolve, 100));
         const wb = XLSX.utils.book_new();
 
