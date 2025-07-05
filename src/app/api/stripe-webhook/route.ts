@@ -1,8 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { UserSubscription, PlanId } from '@/lib/types';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -18,13 +16,13 @@ if (stripeSecretKey) {
 
 async function updateSubscription(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
-    const userRef = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
 
-    if (userRef.empty) {
+    if (userQuery.empty) {
         console.error(`[Stripe Webhook] Could not find user with Stripe Customer ID: ${stripeCustomerId}`);
         return;
     }
-    const userId = userRef.docs[0].id;
+    const userId = userQuery.docs[0].id;
 
     // The plan ID should be in the metadata of the subscription price
     const planId = subscription.items.data[0].price.metadata.planId as PlanId;
@@ -34,7 +32,7 @@ async function updateSubscription(subscription: Stripe.Subscription) {
         return;
     }
 
-    const userSubRef = doc(db, 'users', userId, 'subscription', 'current');
+    const userSubRef = adminDb.collection('users').doc(userId).collection('subscription').doc('current');
     
     const newSubscriptionData: UserSubscription = {
       planId: planId,
@@ -46,7 +44,8 @@ async function updateSubscription(subscription: Stripe.Subscription) {
       offersCreatedThisPeriod: 0, // Reset counter on any subscription update/renewal
     };
     
-    await setDoc(userSubRef, newSubscriptionData, { merge: true });
+    // Use the admin SDK's set method
+    await userSubRef.set(newSubscriptionData, { merge: true });
     console.log(`[Stripe Webhook] Subscription for user ${userId} updated. Status: ${subscription.status}, Plan: ${planId}`);
 }
 
