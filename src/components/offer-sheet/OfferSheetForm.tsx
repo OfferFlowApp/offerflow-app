@@ -25,7 +25,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
 import { useLocalization } from '@/hooks/useLocalization';
 import ReactDOM from 'react-dom/client';
-import PdfPageLayout from './PdfPageLayout'; 
 import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { LoadingSpinner } from '../ui/loading-spinner';
@@ -559,6 +558,7 @@ export default function OfferSheetForm() {
   const exportAsPdfInternal = React.useCallback(async (returnAsBlob: boolean = false): Promise<Blob | null> => {
     const { default: jsPDF } = await import('jspdf');
     const { default: html2canvas } = await import('html2canvas');
+    const { default: PdfPageLayout } = await import('./PdfPageLayout');
 
     const PRODUCTS_PER_PAGE = 3; 
     const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
@@ -673,6 +673,7 @@ export default function OfferSheetForm() {
     setIsExportingJpeg(true);
     try {
         const { default: html2canvas } = await import('html2canvas');
+        const { default: PdfPageLayout } = await import('./PdfPageLayout');
         const tempPdfPageContainer = document.createElement('div');
         tempPdfPageContainer.style.position = 'absolute';
         tempPdfPageContainer.style.left = '-210mm';
