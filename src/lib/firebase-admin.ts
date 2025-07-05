@@ -23,14 +23,21 @@ if (!admin.apps.length) {
 let adminAuth: admin.auth.Auth;
 let adminDb: admin.firestore.Firestore;
 
-try {
-    adminAuth = admin.auth();
-    adminDb = admin.firestore();
-} catch (error) {
-    console.error("[Firebase Admin] Failed to get auth or firestore service. The app will not function correctly.");
-    // Provide non-functional mocks if admin SDK failed to initialize
-    adminAuth = {} as admin.auth.Auth;
-    adminDb = {} as admin.firestore.Firestore;
+// It's crucial to only get the services if the app has been initialized.
+// If admin.apps.length is 0, calling admin.auth() or admin.firestore() will throw.
+// By checking the length, we ensure we don't try to get services from an uninitialized app.
+// If initialization failed, the server will throw a clear error when an API route that
+// needs admin services is called, which is better than a silent build failure.
+if (admin.apps.length > 0) {
+  adminAuth = admin.auth();
+  adminDb = admin.firestore();
+} else {
+  // In a scenario where initialization failed, we create placeholder objects
+  // with a warning. This allows the app to build but will show errors at runtime
+  // if these services are used, pointing to the initialization issue.
+  console.warn('[Firebase Admin] SDK not initialized. Admin services will not be available.');
+  adminAuth = {} as admin.auth.Auth;
+  adminDb = {} as admin.firestore.Firestore;
 }
 
 
