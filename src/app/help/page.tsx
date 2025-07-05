@@ -105,7 +105,7 @@ export default function HelpPage() {
                     <ul className="list-disc list-inside space-y-1 pl-4">
                       <li><DownloadIcon className="inline mr-1 h-4 w-4" /><strong>{t({ en: "PDF:", el: "PDF:" })}</strong> {t({ en: "Generates a professional PDF document.", el: "Δημιουργεί ένα επαγγελματικό έγγραφο PDF." })}</li>
                       <li><DownloadIcon className="inline mr-1 h-4 w-4" /><strong>{t({ en: "JPEG/JSON:", el: "JPEG/JSON:" })}</strong> {t({ en: "Export an image of page 1 or the raw offer data.", el: "Εξάγετε μια εικόνα της σελίδας 1 ή τα ακατέργαστα δεδομένα της προσφοράς." })}</li>
-                      <li><DownloadIcon className="inline mr-1 h-4 w-4" /><strong>{t({ en: "CSV/Excel:", el: "CSV/Excel:" })}</strong> {t({ en: "Export product data for analysis (Business feature).", el: "Εξαγωγή δεδομένων προϊόντων για ανάλυση (λειτουργία Business)." })}</li>
+                      <li><DownloadIcon className="inline mr-1 h-4 w-4" /><strong>{t({ en: "CSV:", el: "CSV:" })}</strong> {t({ en: "Export product data for analysis (Business feature).", el: "Εξαγωγή δεδομένων προϊόντων για ανάλυση (λειτουργία Business)." })}</li>
                     </ul>
                   </div>
                    <div>

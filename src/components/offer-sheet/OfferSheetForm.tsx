@@ -253,7 +253,6 @@ export default function OfferSheetForm() {
   const [isExportingJpeg, setIsExportingJpeg] = React.useState(false);
   const [isExportingJson, setIsExportingJson] = React.useState(false);
   const [isExportingCsv, setIsExportingCsv] = React.useState(false);
-  const [isExportingExcel, setIsExportingExcel] = React.useState(false);
   const [isSharing, setIsSharing] = React.useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = React.useState(false);
   const [isSavingCustomer, setIsSavingCustomer] = React.useState(false);
@@ -778,54 +777,6 @@ export default function OfferSheetForm() {
     }
   }, [offerData, t, toast, currentEntitlements]);
 
-  const handleExportExcel = React.useCallback(async () => {
-    if (!currentEntitlements.allowedExportFormats.includes('excel')) {
-        setUpgradeReason(t({en:"Excel export is a Business feature.", el: "Η εξαγωγή Excel είναι Business λειτουργία."}));
-        setShowUpgradeModal(true);
-        return;
-    }
-    setIsExportingExcel(true);
-     try {
-        const XLSX = await import('xlsx');
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const wb = XLSX.utils.book_new();
-
-        const productsData = offerData.products.map(p => ({
-            'Product Title': p.title,
-            'Quantity': p.quantity,
-            'Original Unit Price': p.originalPrice,
-            'Discounted Unit Price': p.discountedPrice,
-            'Description': p.description,
-        }));
-        const productsWs = XLSX.utils.json_to_sheet(productsData);
-        XLSX.utils.book_append_sheet(wb, productsWs, "Products");
-        
-        const totals = calculateTotals();
-        const summaryData = [
-            { Item: "Customer Name", Value: offerData.customerInfo.name },
-            { Item: "Company", Value: offerData.customerInfo.company },
-            { Item: "Offer Currency", Value: offerData.currency },
-            { Item: "", Value: "" },
-            { Item: "Subtotal (Discounted)", Value: totals.subtotalDiscounted },
-            { Item: `VAT (${offerData.vatRate || 0}%)`, Value: totals.vatAmount },
-            { Item: "Grand Total", Value: totals.grandTotal },
-        ];
-        const summaryWs = XLSX.utils.json_to_sheet(summaryData, { skipHeader: true });
-        XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
-        
-        const customerIdentifier = offerData.customerInfo.name || offerData.customerInfo.company || 'offer';
-        const filename = `offer-sheet-${customerIdentifier.replace(/\s+/g, '_')}.xlsx`;
-        XLSX.writeFile(wb, filename);
-
-        toast({ title: t({en: "Excel Exported", el: "Το Excel Εξήχθη"}), description: t({en: "Offer data exported as XLSX.", el: "Τα δεδομένα της προσφοράς εξήχθησαν."}) });
-    } catch (error) {
-        console.error("Error exporting Excel:", error);
-        toast({ title: t({en: "Export Error", el: "Σφάλμα Εξαγωγής"}), description: t({en: "Could not export data as Excel.", el: "Δεν ήταν δυνατή η εξαγωγή."}), variant: "destructive" });
-    } finally {
-        setIsExportingExcel(false);
-    }
-  }, [offerData, calculateTotals, t, toast, currentEntitlements]);
-
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1267,8 +1218,8 @@ export default function OfferSheetForm() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel}>
-              {isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <FileDown className="mr-2 h-5 w-5" />}
+            <Button variant="outline" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv}>
+              {isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <FileDown className="mr-2 h-5 w-5" />}
               {t({ en: 'Export', el: 'Εξαγωγή' })}
             </Button>
           </DropdownMenuTrigger>
@@ -1285,19 +1236,15 @@ export default function OfferSheetForm() {
               {isExportingJson ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
               {isExportingJson ? t({en: 'Exporting Data...', el: 'Εξαγωγή Δεδομένων...'}) : t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
             </DropdownMenuItem>
-            { (currentEntitlements.allowedExportFormats.includes('csv') || currentEntitlements.allowedExportFormats.includes('excel')) && <DropdownMenuSeparator />}
+            {currentEntitlements.allowedExportFormats.includes('csv') && <DropdownMenuSeparator />}
             <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv}>
               {isExportingCsv ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingCsv ? t({en: 'Exporting CSV...', el: 'Εξαγωγή CSV...'}) : t({en: 'Export as CSV', el: 'Εξαγωγή CSV'})}
             </DropdownMenuItem>
-             <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel}>
-              {isExportingExcel ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
-              {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel', el: 'Εξαγωγή Excel'})}
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv || isExportingExcel}>
+        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isSharing || isExportingPdf || isExportingJpeg || isExportingJson || isExportingCsv}>
           {isSaving ? <LoadingSpinner className="mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}
           {isSaving ? t({ en: 'Saving...', el: 'Αποθήκευση...' }) : t({ en: 'Save Offer Sheet', el: 'Αποθήκευση Δελτίου Προσφοράς' })}
         </Button>

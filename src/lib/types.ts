@@ -77,7 +77,7 @@ export interface PlanEntitlements {
   canSaveTemplates: boolean; // Pro and up
   canSaveCustomers: boolean; // Pro and up
   canUseDashboard: boolean; // Pro and up
-  allowedExportFormats: ('pdf' | 'jpeg' | 'json' | 'csv' | 'excel')[];
+  allowedExportFormats: ('pdf' | 'jpeg' | 'json' | 'csv')[];
   maxTeamMembers: number; // 1 for Free/Pro, 4 for Business
   hasAnalytics: boolean; // Business
   prioritySupportLevel: 'basic' | 'standard' | 'priority';
