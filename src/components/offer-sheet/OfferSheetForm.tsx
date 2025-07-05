@@ -888,7 +888,6 @@ export default function OfferSheetForm() {
   }, [exportAsPdfInternal, offerData.customerInfo, offerData.sellerInfo.name, t, toast]);
 
   const handleSaveTemplate = async () => {
-    // Client-side check for immediate UI feedback.
     if (!currentEntitlements.canSaveTemplates) {
       setUpgradeReason(t({en:"Saving templates is a Pro/Business feature.", el:"Η αποθήκευση προτύπων είναι Pro/Business λειτουργία."}));
       setShowUpgradeModal(true);
@@ -896,7 +895,7 @@ export default function OfferSheetForm() {
     }
     
     if (!currentUser) {
-        toast({ title: t({en: "Authentication Error", el: "Σφάλμα Ελέγχου Ταυτότητας"}), description: t({en: "You must be logged in to save templates.", el: "Πρέπει να είστε συνδεδεμένοι."}), variant: "destructive" });
+        toast({ title: t({en: "Authentication Required", el: "Απαιτείται Σύνδεση"}), description: t({en: "You must be logged in to save templates.", el: "Πρέπει να είστε συνδεδεμένοι."}), variant: "destructive" });
         return;
     }
 
@@ -909,8 +908,7 @@ export default function OfferSheetForm() {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
           },
-          // In a real implementation, you'd send the offer data as the template
-          // body: JSON.stringify({ offerData }), 
+          body: JSON.stringify({ offerData }), 
       });
 
       const result = await response.json();
@@ -920,8 +918,8 @@ export default function OfferSheetForm() {
       }
 
       toast({ 
-          title: t({en:"Save as Template", el:"Αποθήκευση ως Πρότυπο"}), 
-          description: t({en:"Server confirmed you have access! (Feature coming soon)", el: "Ο διακομιστής επιβεβαίωσε την πρόσβαση! (Η λειτουργία έρχεται σύντομα)"})
+          title: t({en:"Template Saved", el:"Το Πρότυπο Αποθηκεύτηκε"}), 
+          description: result.message
       });
 
     } catch (error: any) {
@@ -937,10 +935,45 @@ export default function OfferSheetForm() {
       setShowUpgradeModal(true);
       return;
     }
+
+    if (!currentUser) {
+        toast({ title: t({en: "Authentication Required", el: "Απαιτείται Σύνδεση"}), description: t({en: "You must be logged in to save customers.", el: "Πρέπει να είστε συνδεδεμένοι."}), variant: "destructive" });
+        return;
+    }
+
+    if (!offerData.customerInfo.name && !offerData.customerInfo.company) {
+        toast({ title: t({en: "Missing Information", el: "Λείπουν Πληροφορίες"}), description: t({en: "Please provide a customer name or company before saving.", el: "Παρακαλώ δώστε ένα όνομα πελάτη ή εταιρείας."}), variant: "destructive" });
+        return;
+    }
+    
     setIsSavingCustomer(true);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    toast({ title: t({en:"Save Customer (Placeholder)", el:"Αποθήκευση Πελάτη (Placeholder)"}), description: t({en:"This feature is coming soon for Pro users!", el: "Η λειτουργία έρχεται σύντομα!"}) });
-    setIsSavingCustomer(false);
+    try {
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/save-customer', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ customerInfo: offerData.customerInfo }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error?.message || 'Failed to save customer.');
+        }
+
+        toast({
+            title: t({en: "Customer Saved", el: "Ο Πελάτης Αποθηκεύτηκε"}),
+            description: result.message,
+        });
+
+    } catch (error: any) {
+        toast({ title: t({en: "Error", el: "Σφάλμα"}), description: error.message, variant: "destructive" });
+    } finally {
+        setIsSavingCustomer(false);
+    }
   };
 
   // If auth is loading, show a loader for the whole form

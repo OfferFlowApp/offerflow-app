@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,24 +14,22 @@ import { useRouter } from 'next/navigation';
 import { useLocalization } from '@/hooks/useLocalization';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import type { ChartConfig } from '@/components/ui/chart';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// --- MOCK DATA FOR DEMONSTRATION ---
-const overviewChartData = [
-  { name: 'Jan', views: 400, conversions: 24 },
-  { name: 'Feb', views: 300, conversions: 13 },
-  { name: 'Mar', views: 500, conversions: 48 },
-  { name: 'Apr', views: 278, conversions: 39 },
-  { name: 'May', views: 189, conversions: 18 },
-  { name: 'Jun', views: 239, conversions: 38 },
-];
+type KpiData = {
+    totalViews: { value: string, change: string };
+    conversions: { value: string, change: string };
+    conversionRate: { value: string, change: string };
+    activeOffers: { value: string, change: string };
+};
 
-const topProductsData = [
-    { name: 'Premium Widget', value: 400, fill: 'hsl(var(--chart-1))' },
-    { name: 'Standard Unit', value: 300, fill: 'hsl(var(--chart-2))' },
-    { name: 'Basic Component', value: 300, fill: 'hsl(var(--chart-3))' },
-    { name: 'Advanced Gizmo', value: 200, fill: 'hsl(var(--chart-4))' },
-];
+type DashboardData = {
+    kpi: KpiData;
+    overviewChartData: any[];
+    topProductsData: any[];
+};
 
+// --- CHART CONFIGS (STATIC) ---
 const overviewChartConfig = {
   views: {
     label: 'Views',
@@ -61,23 +59,91 @@ const topProductsConfig = {
     }
 } satisfies ChartConfig
 
+const DashboardSkeleton = () => (
+    <div className="space-y-8">
+      <Skeleton className="h-12 w-1/3" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-4 w-1/3 mt-1" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="lg:col-span-4">
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardHeader>
+          <CardContent className="pl-2">
+            <Skeleton className="h-[350px] w-full" />
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardHeader>
+          <CardContent className="flex items-center justify-center">
+            <Skeleton className="h-[350px] w-[350px] rounded-full" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+);
+
+
 export default function DashboardPage() {
   const { currentUser, currentEntitlements, loading: authLoading } = useAuth();
   const router = useRouter();
   const { t } = useLocalization();
-  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!authLoading && !currentUser) {
       router.push('/login?redirect=/dashboard');
+      return;
     }
     
     if (!authLoading && currentUser && !currentEntitlements.canUseDashboard) {
-        setShowUpgradeModal(true);
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (currentUser) {
+        const fetchData = async () => {
+            setIsDataLoading(true);
+            try {
+                const token = await currentUser.getIdToken();
+                const response = await fetch('/api/dashboard-data', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch dashboard data');
+                }
+                const data: DashboardData = await response.json();
+                setDashboardData(data);
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+                // Optionally, set an error state to show a message to the user
+            } finally {
+                setIsDataLoading(false);
+            }
+        };
+        fetchData();
     }
   }, [currentUser, currentEntitlements, authLoading, router]);
 
-  if (authLoading || !currentUser) {
+  if (authLoading || (!currentUser && !showUpgradeModal)) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -124,94 +190,102 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
-        <div className="space-y-8">
-          <h1 className="text-4xl font-bold font-headline text-primary">
-            {t({en: "Analytics Dashboard", el: "Πίνακας Αναλυτικών"})}
-          </h1>
-          <p className="text-lg text-amber-600 p-3 bg-amber-50 border border-amber-200 rounded-md">
-            <strong>{t({en: "Please Note:", el: "Σημείωση:"})}</strong> {t({en: "This dashboard is currently for demonstration purposes using sample data. The full tracking functionality will be enabled soon.", el: "Αυτός ο πίνακας είναι για επίδειξη. Η πλήρης λειτουργικότητα θα ενεργοποιηθεί σύντομα."})}
-          </p>
+        {isDataLoading ? (
+            <DashboardSkeleton />
+        ) : !dashboardData ? (
+            <div className="text-center">
+                <p>{t({en: "Could not load dashboard data.", el: "Δεν ήταν δυνατή η φόρτωση των δεδομένων."})}</p>
+            </div>
+        ) : (
+            <div className="space-y-8">
+                <h1 className="text-4xl font-bold font-headline text-primary">
+                    {t({en: "Analytics Dashboard", el: "Πίνακας Αναλυτικών"})}
+                </h1>
+                <p className="text-lg text-amber-600 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <strong>{t({en: "Please Note:", el: "Σημείωση:"})}</strong> {t({en: "This dashboard is currently for demonstration purposes. The full tracking functionality will be enabled soon.", el: "Αυτός ο πίνακας είναι για επίδειξη. Η πλήρης λειτουργικότητα θα ενεργοποιηθεί σύντομα."})}
+                </p>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t({en: "Total Views", el: "Συνολικές Προβολές"})}</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">12,345</div>
-                <p className="text-xs text-muted-foreground">+20.1% {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t({en: "Conversions", el: "Μετατροπές"})}</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">+235</div>
-                <p className="text-xs text-muted-foreground">+180.1% {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t({en: "Conversion Rate", el: "Ποσοστό Μετατροπής"})}</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1.92%</div>
-                <p className="text-xs text-muted-foreground">+0.5% {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t({en: "Active Offers", el: "Ενεργές Προσφορές"})}</CardTitle>
-                <LineChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">57</div>
-                <p className="text-xs text-muted-foreground">+2 {t({en: "since last week", el: "από την προηγούμενη εβδομάδα"})}</p>
-              </CardContent>
-            </Card>
-          </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t({en: "Total Views", el: "Συνολικές Προβολές"})}</CardTitle>
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{dashboardData.kpi.totalViews.value}</div>
+                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.totalViews.change} {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t({en: "Conversions", el: "Μετατροπές"})}</CardTitle>
+                            <Target className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{dashboardData.kpi.conversions.value}</div>
+                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.conversions.change} {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t({en: "Conversion Rate", el: "Ποσοστό Μετατροπής"})}</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{dashboardData.kpi.conversionRate.value}</div>
+                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.conversionRate.change} {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t({en: "Active Offers", el: "Ενεργές Προσφορές"})}</CardTitle>
+                            <LineChart className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{dashboardData.kpi.activeOffers.value}</div>
+                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.activeOffers.change} {t({en: "since last week", el: "από την προηγούμενη εβδομάδα"})}</p>
+                        </CardContent>
+                    </Card>
+                </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="lg:col-span-4">
-              <CardHeader>
-                <CardTitle>{t({en: "Performance Overview", el: "Επισκόπηση Απόδοσης"})}</CardTitle>
-                <CardDescription>{t({en: "Offer views and conversions over the last 6 months.", el: "Προβολές και μετατροπές τους τελευταίους 6 μήνες."})}</CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ChartContainer config={overviewChartConfig} className="h-[350px] w-full">
-                    <BarChart data={overviewChartData}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Legend />
-                        <Bar dataKey="views" fill="var(--color-views)" radius={4} />
-                        <Bar dataKey="conversions" fill="var(--color-conversions)" radius={4} />
-                    </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                    <Card className="lg:col-span-4">
+                    <CardHeader>
+                        <CardTitle>{t({en: "Performance Overview", el: "Επισκόπηση Απόδοσης"})}</CardTitle>
+                        <CardDescription>{t({en: "Offer views and conversions over the last 6 months.", el: "Προβολές και μετατροπές τους τελευταίους 6 μήνες."})}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <ChartContainer config={overviewChartConfig} className="h-[350px] w-full">
+                            <BarChart data={dashboardData.overviewChartData}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                                <YAxis />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Legend />
+                                <Bar dataKey="views" fill="var(--color-views)" radius={4} />
+                                <Bar dataKey="conversions" fill="var(--color-conversions)" radius={4} />
+                            </BarChart>
+                        </ChartContainer>
+                    </CardContent>
+                    </Card>
 
-            <Card className="lg:col-span-3">
-              <CardHeader>
-                <CardTitle>{t({en: "Top Performing Products", el: "Κορυφαία Προϊόντα"})}</CardTitle>
-                <CardDescription>{t({en: "Products with the most interactions across all offers.", el: "Προϊόντα με τις περισσότερες αλληλεπιδράσεις."})}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-center">
-                 <ChartContainer config={topProductsConfig} className="h-[350px] w-full">
-                    <PieChart>
-                        <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                        <Pie data={topProductsData} dataKey="value" nameKey="name" />
-                    </PieChart>
-                 </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle>{t({en: "Top Performing Products", el: "Κορυφαία Προϊόντα"})}</CardTitle>
+                        <CardDescription>{t({en: "Products with the most interactions across all offers.", el: "Προϊόντα με τις περισσότερες αλληλεπιδράσεις."})}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-center">
+                        <ChartContainer config={topProductsConfig} className="h-[350px] w-full">
+                            <PieChart>
+                                <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                <Pie data={dashboardData.topProductsData} dataKey="value" nameKey="name" />
+                            </PieChart>
+                        </ChartContainer>
+                    </CardContent>
+                    </Card>
+                </div>
+            </div>
+        )}
       </main>
       <Footer />
     </div>
