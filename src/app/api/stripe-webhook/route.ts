@@ -25,7 +25,7 @@ async function updateSubscription(subscription: Stripe.Subscription) {
     const userId = userQuery.docs[0].id;
 
     // The plan ID should be in the metadata of the subscription price
-    const planId = subscription.items.data[0].price.metadata.planId as PlanId;
+    const planId = subscription.items.data[0]?.price?.metadata?.planId as PlanId;
 
     if (!planId) {
         console.error(`[Stripe Webhook] Price metadata is missing planId for subscription: ${subscription.id}`);
