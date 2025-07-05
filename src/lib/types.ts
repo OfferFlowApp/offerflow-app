@@ -1,4 +1,5 @@
 
+
 export type Currency = 'EUR' | 'USD' | 'GBP';
 export type Language = 'en' | 'el';
 export type Theme = 'light' | 'dark';
@@ -50,8 +51,7 @@ export interface OfferSheetData {
   currency: Currency;
   vatRate?: number;
   isFinalPriceVatInclusive?: boolean;
-  // Fields for plan tracking if needed directly on offer
-  // createdByPlan?: PlanId;
+  lastSaved?: any; // Used on server, will be a Firestore Timestamp
 }
 
 export interface LocalUserProfile {

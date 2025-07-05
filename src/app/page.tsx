@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, ShieldAlert } from 'lucide-react'; 
+import { PlusCircle, ListChecks, ChevronRight, Palette, ClipboardList, Share2, User, Briefcase, ShieldAlert, Cloud } from 'lucide-react'; 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
@@ -15,6 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { format } from 'date-fns';
+
 
 const OFFER_SHEET_STORAGE_PREFIX = 'offerSheet-';
 
@@ -24,15 +26,19 @@ interface DisplayOfferInfo {
   customerCompany?: string;
   customerContact?: string;
   formattedDate: string;
-  offerSheetName: string; 
+  offerSheetName: string;
+  isCloud?: boolean;
 }
 
 export default function HomePage() {
   const { t, language } = useLocalization(); 
   const { currentUser, userSubscription, currentEntitlements, loading: authLoading, refreshSubscription } = useAuth();
   const router = useRouter();
-  const [recentOffers, setRecentOffers] = useState<DisplayOfferInfo[]>([]);
-  const [isLoadingRecentOffers, setIsLoadingRecentOffers] = useState(true);
+  
+  const [localRecentOffers, setLocalRecentOffers] = useState<DisplayOfferInfo[]>([]);
+  const [cloudRecentOffers, setCloudRecentOffers] = useState<DisplayOfferInfo[]>([]);
+  const [isLoadingOffers, setIsLoadingOffers] = useState(true);
+
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('');
 
@@ -54,8 +60,8 @@ export default function HomePage() {
     return count;
   };
 
+  // Effect for loading local offers (always runs)
   useEffect(() => {
-    setIsLoadingRecentOffers(true);
     if (typeof window !== 'undefined') {
       const loadedOffers: DisplayOfferInfo[] = [];
       try {
@@ -77,12 +83,9 @@ export default function HomePage() {
                   customerName: offerData.customerInfo.name,
                   customerCompany: offerData.customerInfo.company,
                   customerContact: offerData.customerInfo.contact,
-                  formattedDate: date.toLocaleDateString(language, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  }),
+                  formattedDate: date.toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' }),
                   offerSheetName: offerSheetName,
+                  isCloud: false,
                 });
               }
             }
@@ -92,29 +95,67 @@ export default function HomePage() {
         console.error("Failed to parse offer sheet from localStorage:", e);
       }
       loadedOffers.sort((a, b) => parseInt(b.id, 10) - parseInt(a.id, 10));
-      setRecentOffers(loadedOffers.slice(0, 5)); 
+      setLocalRecentOffers(loadedOffers.slice(0, 5)); 
     }
-    setIsLoadingRecentOffers(false);
-  }, [language, t, userSubscription]); // Rerun when subscription changes
+  }, [language, t]);
+
+  // Effect for loading cloud offers (only for logged-in users)
+  useEffect(() => {
+    if (currentUser) {
+      setIsLoadingOffers(true);
+      const fetchCloudOffers = async () => {
+        try {
+          const token = await currentUser.getIdToken();
+          const response = await fetch('/api/offer-sheets', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) throw new Error('Failed to fetch cloud offers');
+          
+          const offers: any[] = await response.json();
+          const formattedOffers: DisplayOfferInfo[] = offers.map(offer => ({
+            id: offer.id,
+            customerName: offer.customerInfo.name,
+            customerCompany: offer.customerInfo.company,
+            customerContact: offer.customerInfo.contact,
+            formattedDate: format(new Date(offer.lastSaved), 'PPP'),
+            offerSheetName: offer.customerInfo.name || offer.customerInfo.company || t({en: "Unnamed Offer", el: "Ανώνυμη Προσφορά"}),
+            isCloud: true,
+          }));
+          setCloudRecentOffers(formattedOffers);
+        } catch (error) {
+          console.error("Error fetching cloud offers:", error);
+          setCloudRecentOffers([]);
+        } finally {
+          setIsLoadingOffers(false);
+        }
+      };
+      fetchCloudOffers();
+    } else {
+      setCloudRecentOffers([]); // Clear cloud offers on logout
+      setIsLoadingOffers(false);
+    }
+  }, [currentUser, language, t]);
 
   const handleCreateNewOffer = () => {
     if (currentUser) {
-      // For logged-in users, check against their entitlements
-      const offerCount = userSubscription?.offersCreatedThisPeriod || countLocalOffers();
+      const offerCount = userSubscription?.offersCreatedThisPeriod || 0; // Cloud count is definitive for logged in users
       if (currentEntitlements.maxOfferSheetsPerMonth !== 'unlimited' && offerCount >= currentEntitlements.maxOfferSheetsPerMonth) {
-        if (userSubscription) {
-          setUpgradeReason(t({en:"You've reached your monthly limit. Please upgrade your plan for unlimited offers.", el:"Έχετε φτάσει το μηνιαίο όριο. Παρακαλώ αναβαθμίστε το πρόγραμμά σας."}));
-        } else {
-          setUpgradeReason(t({en:"You've used your trial offer. Please start a subscription to create more.", el:"Χρησιμοποιήσατε τη δοκιμαστική προσφορά σας. Παρακαλώ ξεκινήστε μια συνδρομή."}));
-        }
+         setUpgradeReason(t({en:"You've reached your monthly limit. Please upgrade your plan for unlimited offers.", el:"Έχετε φτάσει το μηνιαίο όριο. Παρακαλώ αναβαθμίστε το πρόγραμμά σας."}));
+        setShowUpgradeModal(true);
+        return;
+      }
+    } else {
+      // Logic for logged-out users
+      if (countLocalOffers() >= currentEntitlements.maxOfferSheetsPerMonth) {
+        setUpgradeReason(t({en:"You've used your free offer. Please create an account to get a 30-day trial or subscribe to create more.", el:"Χρησιμοποιήσατε τη δωρεάν προσφορά σας. Δημιουργήστε λογαριασμό για δωρεάν δοκιμή 30 ημερών ή εγγραφείτε για περισσότερα."}));
         setShowUpgradeModal(true);
         return;
       }
     }
-    // If no user, or user is within limits, allow creation.
     router.push('/offer-sheet/edit');
   };
 
+  const offersToDisplay = currentUser ? cloudRecentOffers : localRecentOffers;
 
   if (authLoading) {
     return (
@@ -137,7 +178,7 @@ export default function HomePage() {
                 <CardHeader>
                     <CardTitle className="flex items-center text-primary">
                         <ShieldAlert className="mr-2 h-6 w-6" />
-                        {userSubscription ? t({en: "Upgrade Required", el: "Απαιτείται Αναβάθμιση"}) : t({en: "Start a Trial", el: "Ξεκινήστε μια Δοκιμή"})}
+                        {userSubscription ? t({en: "Upgrade Required", el: "Απαιτείται Αναβάθμιση"}) : t({en: "Account Required", el: "Απαιτείται Λογαριασμός"})}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -145,8 +186,8 @@ export default function HomePage() {
                 </CardContent>
                 <CardFooter className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>{t({en: "Close", el: "Κλείσιμο"})}</Button>
-                    <Button onClick={() => { setShowUpgradeModal(false); router.push('/pricing'); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                      {t({en: "View Plans", el: "Δείτε τα Πλάνα"})}
+                    <Button onClick={() => { setShowUpgradeModal(false); router.push(currentUser ? '/pricing' : '/signup'); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                      {currentUser ? t({en: "View Plans", el: "Δείτε τα Πλάνα"}) : t({en: "Sign Up", el: "Εγγραφή"})}
                     </Button>
                 </CardFooter>
             </Card>
@@ -171,7 +212,7 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-6 text-center text-muted-foreground">
             {t({ en: 'Recent Offer Sheets', el: 'Πρόσφατες Προσφορές' })}
           </h2>
-          {isLoadingRecentOffers ? (
+          {isLoadingOffers ? (
             <div className="space-y-4 max-w-2xl mx-auto">
               {[...Array(3)].map((_, index) => (
                 <Card key={index} className="bg-card rounded-xl border">
@@ -186,16 +227,19 @@ export default function HomePage() {
                 </Card>
               ))}
             </div>
-          ) : recentOffers.length > 0 ? (
+          ) : offersToDisplay.length > 0 ? (
             <div className="space-y-4 max-w-2xl mx-auto">
-              {recentOffers.map((offer) => (
+              {offersToDisplay.map((offer) => (
                 <Link href={`/offer-sheet/edit?id=${offer.id}`} key={offer.id} className="block">
                   <Card className="hover:shadow-lg transition-shadow duration-300 group bg-card rounded-xl border">
                     <CardContent className="p-5 flex items-center justify-between">
                       <div className="flex-grow overflow-hidden">
-                        <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors truncate" title={offer.offerSheetName}>
-                          {offer.offerSheetName}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                           {offer.isCloud && <Cloud className="h-4 w-4 text-blue-400 shrink-0" title={t({en: 'Saved in Cloud', el: 'Αποθηκευμένο στο Cloud'})} />}
+                           <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors truncate" title={offer.offerSheetName}>
+                              {offer.offerSheetName}
+                           </h3>
+                        </div>
                         {offer.customerCompany && offer.customerCompany !== offer.customerName && (
                           <p className="text-sm text-muted-foreground flex items-center">
                             <Briefcase className="h-4 w-4 mr-2 shrink-0" />
@@ -209,7 +253,7 @@ export default function HomePage() {
                             </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t({ en: 'Created on', el: 'Δημιουργήθηκε στις' })}{' '}
+                          {t({ en: 'Saved on', el: 'Αποθηκεύτηκε στις' })}{' '}
                           {offer.formattedDate}
                         </p>
                       </div>
@@ -236,6 +280,8 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">{t({ en: 'Start by creating a new offer sheet above.', el: 'Ξεκινήστε δημιουργώντας ένα νέο δελτίο προσφοράς παραπάνω.' })}</p>
+                {currentUser && <p className="text-sm text-muted-foreground mt-2">{t({ en: 'Your saved offers will appear here.', el: 'Οι αποθηκευμένες προσφορές σας θα εμφανιστούν εδώ.' })}</p>}
+                {!currentUser && <p className="text-sm text-muted-foreground mt-2">{t({ en: 'Sign in to save offers to the cloud and access them anywhere!', el: 'Συνδεθείτε για να αποθηκεύσετε τις προσφορές σας στο cloud!' })}</p>}
               </CardContent>
             </Card>
           )}

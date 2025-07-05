@@ -1,6 +1,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { getUserIdFromToken } from '@/lib/server-utils';
+import { adminDb } from '@/lib/firebase-admin';
 
 export async function GET(request: NextRequest) {
     const authToken = request.headers.get('Authorization');
@@ -10,22 +11,27 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: { message: 'User not authenticated.' } }, { status: 401 });
     }
 
-    // Placeholder data - in a real implementation, this would query Firestore.
-    // For now, it returns the same mock data structure the dashboard expects.
-    const mockData = {
+    // Fetch real data from Firestore
+    const offerSheetsRef = adminDb.collection('users').doc(userId).collection('offerSheets');
+    const offerSheetsSnapshot = await offerSheetsRef.get();
+    
+    const totalOffersCreated = offerSheetsSnapshot.size;
+
+    // Data structure for the dashboard, now with some real data
+    const data = {
         kpi: {
-            totalViews: { value: '12,345', change: '+20.1%' },
-            conversions: { value: '+235', change: '+180.1%' },
-            conversionRate: { value: '1.92%', change: '+0.5%' },
-            activeOffers: { value: '57', change: '+2' },
+            totalOffers: { value: totalOffersCreated.toString(), change: '' },
+            conversions: { value: '+235', change: '+180.1%' }, // Mock data, to be implemented
+            conversionRate: { value: '1.92%', change: '+0.5%' }, // Mock data
+            avgOfferValue: { value: '€1,250', change: '+12%' }, // Mock data
         },
         overviewChartData: [
-            { name: 'Jan', views: 400, conversions: 24 },
-            { name: 'Feb', views: 300, conversions: 13 },
-            { name: 'Mar', views: 500, conversions: 48 },
-            { name: 'Apr', views: 278, conversions: 39 },
-            { name: 'May', views: 189, conversions: 18 },
-            { name: 'Jun', views: 239, conversions: 38 },
+            { name: 'Jan', created: 40, exported: 24 },
+            { name: 'Feb', created: 30, exported: 13 },
+            { name: 'Mar', created: 50, exported: 48 },
+            { name: 'Apr', created: 27, exported: 39 },
+            { name: 'May', created: 18, exported: 18 },
+            { name: 'Jun', created: 23, exported: 38 },
         ],
         topProductsData: [
             { name: 'Premium Widget', value: 400, fill: 'hsl(var(--chart-1))' },
@@ -35,5 +41,5 @@ export async function GET(request: NextRequest) {
         ]
     };
 
-    return NextResponse.json(mockData);
+    return NextResponse.json(data);
 }

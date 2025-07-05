@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart, LineChart, PieChart, Eye, Target, Users, ArrowUpRight, ShieldAlert } from 'lucide-react';
+import { BarChart, LineChart, PieChart, Eye, Target, Users, ArrowUpRight, ShieldAlert, FileSpreadsheet, Euro } from 'lucide-react';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, Pie } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,10 +17,10 @@ import type { ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type KpiData = {
-    totalViews: { value: string, change: string };
+    totalOffers: { value: string, change: string };
     conversions: { value: string, change: string };
     conversionRate: { value: string, change: string };
-    activeOffers: { value: string, change: string };
+    avgOfferValue: { value: string, change: string };
 };
 
 type DashboardData = {
@@ -31,12 +31,12 @@ type DashboardData = {
 
 // --- CHART CONFIGS (STATIC) ---
 const overviewChartConfig = {
-  views: {
-    label: 'Views',
+  created: {
+    label: 'Created',
     color: 'hsl(var(--primary))',
   },
-  conversions: {
-    label: 'Conversions',
+  exported: {
+    label: 'Exported',
     color: 'hsl(var(--accent))',
   },
 } satisfies ChartConfig;
@@ -202,23 +202,23 @@ export default function DashboardPage() {
                     {t({en: "Analytics Dashboard", el: "Πίνακας Αναλυτικών"})}
                 </h1>
                 <p className="text-lg text-amber-600 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                    <strong>{t({en: "Please Note:", el: "Σημείωση:"})}</strong> {t({en: "This dashboard is currently for demonstration purposes. The full tracking functionality will be enabled soon.", el: "Αυτός ο πίνακας είναι για επίδειξη. Η πλήρης λειτουργικότητα θα ενεργοποιηθεί σύντομα."})}
+                    <strong>{t({en: "Please Note:", el: "Σημείωση:"})}</strong> {t({en: "The dashboard is now showing real data for 'Total Offers'. Other statistics are for demonstration as tracking functionality is being enabled.", el: "Αυτός ο πίνακας δείχνει πραγματικά δεδομένα για τις 'Συνολικές Προσφορές'. Άλλες στατιστικές είναι για επίδειξη."})}
                 </p>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t({en: "Total Views", el: "Συνολικές Προβολές"})}</CardTitle>
-                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">{t({en: "Total Offers Created", el: "Σύνολο Προσφορών"})}</CardTitle>
+                            <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{dashboardData.kpi.totalViews.value}</div>
-                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.totalViews.change} {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
+                            <div className="text-2xl font-bold">{dashboardData.kpi.totalOffers.value}</div>
+                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.totalOffers.change}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t({en: "Conversions", el: "Μετατροπές"})}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t({en: "Conversions (Demo)", el: "Μετατροπές (Demo)"})}</CardTitle>
                             <Target className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t({en: "Conversion Rate", el: "Ποσοστό Μετατροπής"})}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t({en: "Conversion Rate (Demo)", el: "Ποσοστό Μετατροπής (Demo)"})}</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -238,12 +238,12 @@ export default function DashboardPage() {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t({en: "Active Offers", el: "Ενεργές Προσφορές"})}</CardTitle>
-                            <LineChart className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">{t({en: "Avg. Offer Value (Demo)", el: "Μέση Αξία Προσφοράς (Demo)"})}</CardTitle>
+                            <Euro className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{dashboardData.kpi.activeOffers.value}</div>
-                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.activeOffers.change} {t({en: "since last week", el: "από την προηγούμενη εβδομάδα"})}</p>
+                            <div className="text-2xl font-bold">{dashboardData.kpi.avgOfferValue.value}</div>
+                            <p className="text-xs text-muted-foreground">{dashboardData.kpi.avgOfferValue.change} {t({en: "from last month", el: "από τον προηγούμενο μήνα"})}</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -251,8 +251,8 @@ export default function DashboardPage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                     <Card className="lg:col-span-4">
                     <CardHeader>
-                        <CardTitle>{t({en: "Performance Overview", el: "Επισκόπηση Απόδοσης"})}</CardTitle>
-                        <CardDescription>{t({en: "Offer views and conversions over the last 6 months.", el: "Προβολές και μετατροπές τους τελευταίους 6 μήνες."})}</CardDescription>
+                        <CardTitle>{t({en: "Performance Overview (Demo)", el: "Επισκόπηση Απόδοσης (Demo)"})}</CardTitle>
+                        <CardDescription>{t({en: "Offers created vs. exported over the last 6 months.", el: "Δημιουργημένες vs. εξαγόμενες προσφορές τους τελευταίους 6 μήνες."})}</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <ChartContainer config={overviewChartConfig} className="h-[350px] w-full">
@@ -262,8 +262,8 @@ export default function DashboardPage() {
                                 <YAxis />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Legend />
-                                <Bar dataKey="views" fill="var(--color-views)" radius={4} />
-                                <Bar dataKey="conversions" fill="var(--color-conversions)" radius={4} />
+                                <Bar dataKey="created" fill="var(--color-created)" radius={4} />
+                                <Bar dataKey="exported" fill="var(--color-exported)" radius={4} />
                             </BarChart>
                         </ChartContainer>
                     </CardContent>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
 
                     <Card className="lg:col-span-3">
                     <CardHeader>
-                        <CardTitle>{t({en: "Top Performing Products", el: "Κορυφαία Προϊόντα"})}</CardTitle>
+                        <CardTitle>{t({en: "Top Performing Products (Demo)", el: "Κορυφαία Προϊόντα (Demo)"})}</CardTitle>
                         <CardDescription>{t({en: "Products with the most interactions across all offers.", el: "Προϊόντα με τις περισσότερες αλληλεπιδράσεις."})}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex items-center justify-center">
