@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
             totalOffers: { value: totalOffersCreated.toString(), change: '' },
             conversions: { value: '+235', change: '+180.1%' }, // Mock data, to be implemented
             conversionRate: { value: '1.92%', change: '+0.5%' }, // Mock data
-            avgOfferValue: { value: '€1,250', change: '+12%' }, // Mock data
+            avgOfferValue: { value: '€1,250', change: '+12%' }, // Mock data,
         },
         overviewChartData: [
             { name: 'Jan', created: 40, exported: 24 },
