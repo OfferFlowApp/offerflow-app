@@ -24,19 +24,19 @@ export async function POST(request: NextRequest) {
         }
         
         const body = await request.json();
-        const offerData: OfferSheetData = body.offerData;
+        const offerDataPayload = body.offerData;
 
-        if (!offerData || !offerData.customerInfo || !offerData.products) {
+        if (!offerDataPayload || !offerDataPayload.customerInfo || !offerDataPayload.products) {
             return NextResponse.json({ error: { message: 'Invalid template data provided.' } }, { status: 400 });
         }
 
         // Convert date strings from JSON back to Firestore Timestamps
         const templateToSave = {
-            ...offerData,
-            validityStartDate: offerData.validityStartDate ? Timestamp.fromDate(new Date(offerData.validityStartDate)) : null,
-            validityEndDate: offerData.validityEndDate ? Timestamp.fromDate(new Date(offerData.validityEndDate)) : null,
+            ...offerDataPayload,
+            validityStartDate: offerDataPayload.validityStartDate ? Timestamp.fromDate(new Date(offerDataPayload.validityStartDate)) : null,
+            validityEndDate: offerDataPayload.validityEndDate ? Timestamp.fromDate(new Date(offerDataPayload.validityEndDate)) : null,
             createdAt: Timestamp.now(),
-            templateName: offerData.customerInfo.company || offerData.customerInfo.name || `Template ${new Date().toLocaleDateString()}`
+            templateName: offerDataPayload.customerInfo.company || offerDataPayload.customerInfo.name || `Template ${new Date().toLocaleDateString()}`
         };
         
         const docRef = await adminDb.collection('users').doc(userId).collection('templates').add(templateToSave);
