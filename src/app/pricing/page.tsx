@@ -116,7 +116,10 @@ export default function PricingPage() {
     if (isTrialing) {
       return t({en: "You are on a free trial. Choose a plan below to activate it and continue after your trial ends.", el: "Βρίσκεστε σε δωρεάν δοκιμή. Επιλέξτε ένα πρόγραμμα παρακάτω για να το ενεργοποιήσετε και να συνεχίσετε μετά τη λήξη της."});
     }
-    // This is for logged-out users or users with no subscription info (should be rare if logged in)
+    if (currentUser && !userSubscription) {
+        return t({en: "Welcome! Choose a plan below to start your 30-day free trial.", el: "Καλώς ήρθατε! Επιλέξτε ένα πρόγραμμα για να ξεκινήσετε τη δωρεάν δοκιμή 30 ημερών."});
+    }
+    // This is for logged-out users
     return t({en: "Create an account to automatically start your 30-day free Pro trial. Choose a plan below to continue when the trial ends.", el: "Δημιουργήστε λογαριασμό για να ξεκινήσετε αυτόματα τη δωρεάν δοκιμή 30 ημερών. Επιλέξτε ένα πρόγραμμα παρακάτω για να συνεχίσετε μετά τη δοκιμή."});
   }
 

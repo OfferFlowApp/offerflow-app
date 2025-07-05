@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocalization } from '@/hooks/useLocalization';
 import Link from 'next/link';
-import { HelpCircle, LayoutDashboard, SettingsIcon, UserCircleIcon, FileTextIcon, PlusCircleIcon, SaveIcon, Share2Icon, DownloadIcon, UploadIcon, PaletteIcon, ListChecksIcon, CreditCardIcon, FileSignature, BarChart2 } from 'lucide-react';
+import { HelpCircle, LayoutDashboard, SettingsIcon, UserCircleIcon, FileTextIcon, PlusCircleIcon, SaveIcon, Share2Icon, DownloadIcon, UploadIcon, PaletteIcon, ListChecksIcon, CreditCardIcon, FileSignature, BarChart2, Cloud } from 'lucide-react';
 
 export default function HelpPage() {
   const { t } = useLocalization();
@@ -69,7 +69,7 @@ export default function HelpPage() {
                   </div>
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "2. Customer Information", el: "2. Στοιχεία Πελάτη" })}</h4>
-                    <p>{t({ en: "Fill in your client's details. You can save and reuse customer profiles with a Pro/Business plan (feature coming soon).", el: "Συμπληρώστε τα στοιχεία του πελάτη σας. Μπορείτε να αποθηκεύσετε και να επαναχρησιμοποιήσετε προφίλ πελατών με ένα πλάνο Pro/Business (η λειτουργία έρχεται σύντομα)." })}</p>
+                    <p>{t({ en: "Fill in your client's details. With a Pro/Business plan, you can use the 'Save Customer' button to save their profile for future use.", el: "Συμπληρώστε τα στοιχεία του πελάτη σας. Με το πρόγραμμα Pro/Business, μπορείτε να χρησιμοποιήσετε το κουμπί 'Αποθήκευση Πελάτη' για να αποθηκεύσετε το προφίλ τους για μελλοντική χρήση." })}</p>
                   </div>
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "3. Adding Products", el: "3. Προσθήκη Προϊόντων" })}</h4>
@@ -85,7 +85,7 @@ export default function HelpPage() {
                   </div>
                    <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "5. Notes / Terms & Conditions", el: "5. Σημειώσεις / Όροι & Προϋποθέσεις" })}</h4>
-                    <p>{t({ en: "Add any specific notes or payment terms. You can save default terms in Settings and even save entire offer sheets as reusable templates with a Pro/Business plan (feature coming soon).", el: "Προσθέστε τυχόν συγκεκριμένες σημειώσεις ή όρους πληρωμής. Μπορείτε να αποθηκεύσετε προεπιλεγμένους όρους στις Ρυθμίσεις και ακόμη και να αποθηκεύσετε ολόκληρα δελτία προσφορών ως επαναχρησιμοποιήσιμα πρότυπα με ένα πλάνο Pro/Business (η λειτουργία έρχεται σύντομα)." })}</p>
+                    <p>{t({ en: "Add any specific notes or payment terms. You can save default terms in Settings. With a Pro/Business plan, you can also save the entire offer sheet as a reusable template using the 'Save as Template' button.", el: "Προσθέστε συγκεκριμένες σημειώσεις ή όρους πληρωμής. Μπορείτε να ορίσετε προεπιλεγμένους όρους στις Ρυθμίσεις. Με το πρόγραμμα Pro/Business, μπορείτε επίσης να αποθηκεύσετε ολόκληρο το δελτίο ως επαναχρησιμοποιήσιμο πρότυπο με το κουμπί 'Αποθήκευση ως Πρότυπο'." })}</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -98,7 +98,10 @@ export default function HelpPage() {
                 <AccordionContent className="text-base pl-8 space-y-3">
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "Saving (Save Offer Sheet)", el: "Αποθήκευση (Αποθήκευση Δελτίου Προσφοράς)" })}</h4>
-                    <p>{t({ en: "Saves your current offer sheet to your browser's local storage. Access it later from the Homepage.", el: "Αποθηκεύει το τρέχον δελτίο προσφοράς στην τοπική αποθήκευση του προγράμματος περιήγησής σας. Αποκτήστε πρόσβαση αργότερα από την Αρχική σελίδα." })}</p>
+                    <p>
+                        <Cloud className="inline mr-1 h-4 w-4 text-blue-500" />
+                        {t({ en: "When you are logged in, clicking 'Save Offer Sheet' saves your work to the cloud. You can access it from any device. When logged out, it saves to your browser's local storage only.", el: "Όταν είστε συνδεδεμένοι, η 'Αποθήκευση' στέλνει την προσφορά στο cloud. Μπορείτε να την προσπελάσετε από οποιαδήποτε συσκευή. Όταν είστε αποσυνδεδεμένοι, αποθηκεύεται μόνο στον browser σας." })}
+                    </p>
                   </div>
                   <div>
                     <h4 className="font-medium text-primary mb-1">{t({ en: "Exporting (Export Button)", el: "Εξαγωγή (Κουμπί Εξαγωγής)" })}</h4>
@@ -121,7 +124,7 @@ export default function HelpPage() {
                   {t({ en: "Analytics Dashboard", el: "Πίνακας Αναλυτικών" })}
                 </AccordionTrigger>
                 <AccordionContent className="text-base pl-8">
-                  <p>{t({ en: "The Analytics Dashboard is a premium feature available on the Business plan. It provides insights into your offer performance, such as views, conversions, and top-performing products. Please note: This dashboard is currently in a demonstration phase and uses sample data. Full tracking functionality will be enabled soon.", el: "Ο Πίνακας Αναλυτικών είναι μια premium λειτουργία διαθέσιμη στο πλάνο Business. Παρέχει πληροφορίες για την απόδοση των προσφορών σας, όπως προβολές, μετατροπές και προϊόντα με την καλύτερη απόδοση. Σημείωση: Αυτός ο πίνακας βρίσκεται προς το παρόν σε φάση επίδειξης και χρησιμοποιεί δείγματα δεδομένων. Η πλήρης λειτουργικότητα παρακολούθησης θα ενεργοποιηθεί σύντομα." })}</p>
+                  <p>{t({ en: "The Analytics Dashboard is a premium feature available on the Business plan. It provides insights into your offer performance, such as your total number of created offers. Other statistics are for demonstration purposes as we continue to build out tracking functionality.", el: "Ο Πίνακας Αναλυτικών είναι μια premium λειτουργία διαθέσιμη στο πλάνο Business. Παρέχει πληροφορίες για την απόδοση των προσφορών σας, όπως ο συνολικός αριθμός των δημιουργημένων προσφορών. Άλλα στατιστικά είναι για επίδειξη καθώς συνεχίζουμε να αναπτύσσουμε τη λειτουργικότητα παρακολούθησης." })}</p>
                 </AccordionContent>
               </AccordionItem>
 
@@ -162,7 +165,7 @@ export default function HelpPage() {
                 </AccordionTrigger>
                 <AccordionContent className="text-base pl-8 space-y-2">
                   <p><strong>{t({ en: "Pop-ups:", el: "Αναδυόμενα παράθυρα:" })}</strong> {t({ en: "Ensure your browser allows pop-ups from this site for PDF downloads and email drafts to open correctly.", el: "Βεβαιωθείτε ότι το πρόγραμμα περιήγησής σας επιτρέπει αναδυόμενα παράθυρα από αυτόν τον ιστότοπο για να ανοίγουν σωστά οι λήψεις PDF και τα πρόχειρα email." })}</p>
-                  <p><strong>{t({ en: "Local Storage:", el: "Τοπική Αποθήκευση:" })}</strong> {t({ en: "Offer sheets and settings are saved in your browser's local storage. This means data is specific to the browser you are using and won't automatically sync across different devices or browsers unless you manually export/import JSON data. Cloud sync for signed-in users is a planned feature.", el: "Τα δελτία προσφορών και οι ρυθμίσεις αποθηκεύονται στην τοπική αποθήκευση του προγράμματος περιήγησής σας. Αυτό σημαίνει ότι τα δεδομένα είναι συγκεκριμένα για το πρόγραμμα περιήγησης που χρησιμοποιείτε και δεν θα συγχρονίζονται αυτόματα σε διαφορετικές συσκευές ή προγράμματα περιήγησης. Ο συγχρονισμός στο cloud για συνδεδεμένους χρήστες είναι μια προγραμματισμένη λειτουργία." })}</p>
+                  <p><strong>{t({ en: "Cloud Sync vs. Local Storage:", el: "Cloud Sync έναντι Τοπικής Αποθήκευσης:" })}</strong> {t({ en: "Offer sheets and settings are saved in your browser's local storage for logged-out users. For signed-in users, offers are saved to the cloud, making them accessible across devices.", el: "Οι προσφορές και οι ρυθμίσεις αποθηκεύονται στον browser για αποσυνδεδεμένους χρήστες. Για συνδεδεμένους χρήστες, οι προσφορές αποθηκεύονται στο cloud και είναι προσβάσιμες από παντού." })}</p>
                    <p><strong>{t({ en: "Performance:", el: "Απόδοση:" })}</strong> {t({ en: "If the app feels slow, ensure your internet connection is stable. Complex offer sheets with many high-resolution images might take longer to process for PDF/JPEG generation.", el: "Εάν η εφαρμογή φαίνεται αργή, βεβαιωθείτε ότι η σύνδεσή σας στο διαδίκτυο είναι σταθερή. Πολύπλοκα δελτία προσφορών με πολλές εικόνες υψηλής ανάλυσης ενδέχεται να χρειαστούν περισσότερο χρόνο για επεξεργασία κατά τη δημιουργία PDF/JPEG." })}</p>
                 </AccordionContent>
               </AccordionItem>

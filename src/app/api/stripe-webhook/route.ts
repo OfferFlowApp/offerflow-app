@@ -16,26 +16,29 @@ if (stripeSecretKey) {
 
 async function updateSubscription(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
-    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
-
-    if (userQuery.empty) {
-        console.error(`[Stripe Webhook] Could not find user with Stripe Customer ID: ${stripeCustomerId}`);
-        return;
-    }
-    const userId = userQuery.docs[0].id;
-
+    
     // The plan ID should be in the metadata of the subscription price
     const planId = subscription.items.data[0]?.price?.metadata?.planId as PlanId;
 
     if (!planId) {
         console.error(`[Stripe Webhook] Price metadata is missing planId for subscription: ${subscription.id}`);
+        // This can happen on plan cancellations where the price is deleted. The 'deleted' status is more important.
+        if (subscription.status !== 'canceled') return;
+    }
+    
+    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+
+    if (userQuery.empty) {
+        // This might happen if a user is deleted from Firebase but not Stripe. It's safe to ignore.
+        console.log(`[Stripe Webhook] Could not find user with Stripe Customer ID: ${stripeCustomerId}. This may not be an error.`);
         return;
     }
+    const userId = userQuery.docs[0].id;
 
     const userSubRef = adminDb.collection('users').doc(userId).collection('subscription').doc('current');
     
     const newSubscriptionData: UserSubscription = {
-      planId: planId,
+      planId: planId || 'none', // Fallback to 'none' if planId is missing (e.g., on cancellation)
       status: subscription.status,
       stripeCustomerId: stripeCustomerId,
       stripeSubscriptionId: subscription.id,
@@ -44,7 +47,6 @@ async function updateSubscription(subscription: Stripe.Subscription) {
       offersCreatedThisPeriod: 0, // Reset counter on any subscription update/renewal
     };
     
-    // Use the admin SDK's set method
     await userSubRef.set(newSubscriptionData, { merge: true });
     console.log(`[Stripe Webhook] Subscription for user ${userId} updated. Status: ${subscription.status}, Plan: ${planId}`);
 }
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
         // Store the stripeCustomerId on the user document for future lookups
         const userDocRef = adminDb.collection('users').doc(userId);
         await userDocRef.set({ stripeCustomerId: stripeCustomerId }, { merge: true });
+        console.log(`[Stripe Webhook] Stored Stripe Customer ID ${stripeCustomerId} for user ${userId}.`);
 
         // The subscription data will be set by the customer.subscription.created/updated events.
         break;
@@ -103,22 +106,22 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'invoice.payment_succeeded':
-        // This is crucial for renewals.
+        // This event often fires for renewals. The `customer.subscription.updated` event will
+        // also fire with the new billing period, which is our source of truth.
+        // We can log this for diagnostics, but no separate action is needed.
         const invoice = event.data.object as Stripe.Invoice;
-        if (invoice.subscription) {
-            const subscriptionRenewed = await stripe.subscriptions.retrieve(invoice.subscription as string);
-            await updateSubscription(subscriptionRenewed);
+        if (invoice.billing_reason === 'subscription_cycle') {
+            const subscriptionId = invoice.subscription as string;
+            const customerId = invoice.customer as string;
+            console.log(`[Stripe Webhook] Subscription renewal payment succeeded for sub: ${subscriptionId}, customer: ${customerId}. The 'customer.subscription.updated' event will handle the state change.`);
         }
         break;
         
       case 'invoice.payment_failed':
         // The user's subscription status will automatically become 'past_due' or 'unpaid'.
-        // The customer.subscription.updated event will fire, and we'll handle the status update there.
+        // The `customer.subscription.updated` event will fire, and we'll handle the status update there.
+        // No direct action is needed here as the subscription status change is the trigger we care about.
         const failedInvoice = event.data.object as Stripe.Invoice;
-         if (failedInvoice.subscription) {
-            const subscriptionFailed = await stripe.subscriptions.retrieve(failedInvoice.subscription as string);
-            await updateSubscription(subscriptionFailed);
-        }
         console.log(`[Stripe Webhook] Invoice payment failed for subscription: ${failedInvoice.subscription}`);
         break;
 

@@ -24,8 +24,8 @@ import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop, type XYCoord } from 'react-dnd'; 
 import { useLocalization } from '@/hooks/useLocalization';
-import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '../ui/loading-spinner';
 import dynamic from 'next/dynamic';
 
@@ -310,39 +310,57 @@ export default function OfferSheetForm() {
       }
     };
 
-    const loadOfferSheet = (id: string) => {
-      setCurrentOfferId(id);
-      const item = localStorage.getItem(OFFER_SHEET_STORAGE_PREFIX + id);
-      if (item) {
+    const loadOfferSheet = async (id: string) => {
+      if (currentUser) {
+        // Load from cloud for logged-in users
         try {
-          const loadedData: OfferSheetData = JSON.parse(item);
-          
-          const customerInfo = { ...initialCustomerInfo, ...(loadedData.customerInfo || {}) };
-          let sellerInfo = { ...initialSellerInfo, ...(loadedData.sellerInfo || {}) };
-          
-          const products = (loadedData.products || []).map(p => ({ ...initialProduct, ...p, discountedPriceType: p.discountedPriceType || 'exclusive' }));
-
-          const fullLoadedData: OfferSheetData = {
-            ...initialOfferSheetData(loadedData.currency || BASE_DEFAULT_CURRENCY, loadedData.termsAndConditions), 
-            ...loadedData,
-            customerInfo,
-            sellerInfo,
-            products,
-            validityStartDate: loadedData.validityStartDate ? new Date(loadedData.validityStartDate) : undefined,
-            validityEndDate: loadedData.validityEndDate ? new Date(loadedData.validityEndDate) : undefined,
-          };
-          
-          setOfferData(fullLoadedData);
-          setIsFinalPriceVatInclusive(fullLoadedData.isFinalPriceVatInclusive || false);
-          toast({ title: t({en: "Offer Sheet Loaded", el: "Το Δελτίο Προσφοράς Φορτώθηκε"}), description: `${t({en: "Loaded offer for", el: "Φορτώθηκε προσφορά για"})} ${fullLoadedData.customerInfo.name || t({en: "Unknown Customer", el: "Άγνωστος Πελάτης"})}.` });
+            const token = await currentUser.getIdToken();
+            const response = await fetch(`/api/offer-sheets?id=${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch offer sheet');
+            const loadedData = await response.json();
+            
+            const fullLoadedData: OfferSheetData = {
+              ...initialOfferSheetData(loadedData.currency || BASE_DEFAULT_CURRENCY, loadedData.termsAndConditions), 
+              ...loadedData,
+              validityStartDate: loadedData.validityStartDate ? new Date(loadedData.validityStartDate) : undefined,
+              validityEndDate: loadedData.validityEndDate ? new Date(loadedData.validityEndDate) : undefined,
+            };
+            setOfferData(fullLoadedData);
+            setIsFinalPriceVatInclusive(fullLoadedData.isFinalPriceVatInclusive || false);
+            setCurrentOfferId(id);
+            toast({ title: t({en: "Offer Sheet Loaded", el: "Το Δελτίο Προσφοράς Φορτώθηκε"}), description: `${t({en: "Loaded offer from the cloud.", el: "Φορτώθηκε προσφορά από το cloud."})}` });
         } catch (e) {
-          console.error("Failed to parse loaded offer sheet:", e);
+          console.error("Failed to load offer sheet from cloud:", e);
           toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Could not load the offer sheet.", el: "Δεν ήταν δυνατή η φόρτωση."}), variant: "destructive" });
-          initializeNewOfferSheet(); 
+          router.push('/offer-sheet/edit'); // Redirect to a new sheet
         }
       } else {
-        toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Offer sheet not found.", el: "Το δελτίο προσφοράς δεν βρέθηκε."}), variant: "destructive" });
-        initializeNewOfferSheet(); 
+        // Load from local storage for logged-out users
+        const item = localStorage.getItem(OFFER_SHEET_STORAGE_PREFIX + id);
+        if (item) {
+          try {
+            const loadedData: OfferSheetData = JSON.parse(item);
+            const fullLoadedData: OfferSheetData = {
+              ...initialOfferSheetData(loadedData.currency || BASE_DEFAULT_CURRENCY, loadedData.termsAndConditions), 
+              ...loadedData,
+              validityStartDate: loadedData.validityStartDate ? new Date(loadedData.validityStartDate) : undefined,
+              validityEndDate: loadedData.validityEndDate ? new Date(loadedData.validityEndDate) : undefined,
+            };
+            setOfferData(fullLoadedData);
+            setIsFinalPriceVatInclusive(fullLoadedData.isFinalPriceVatInclusive || false);
+            setCurrentOfferId(id);
+            toast({ title: t({en: "Offer Sheet Loaded", el: "Το Δελτίο Προσφοράς Φορτώθηκε"}), description: `${t({en: "Loaded offer from browser storage.", el: "Φορτώθηκε προσφορά από τον browser."})}` });
+          } catch (e) {
+            console.error("Failed to parse loaded offer sheet:", e);
+            toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Could not load the offer sheet.", el: "Δεν ήταν δυνατή η φόρτωση."}), variant: "destructive" });
+            router.push('/offer-sheet/edit');
+          }
+        } else {
+          toast({ title: t({en: "Load Error", el: "Σφάλμα Φόρτωσης"}), description: t({en: "Offer sheet not found.", el: "Το δελτίο προσφοράς δεν βρέθηκε."}), variant: "destructive" });
+          initializeNewOfferSheet();
+        }
       }
     };
 
@@ -353,7 +371,7 @@ export default function OfferSheetForm() {
       initializeNewOfferSheet();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, t]);
+  }, [searchParams, t, currentUser, router]);
 
   React.useEffect(() => {
     setOfferData(prev => ({ ...prev, isFinalPriceVatInclusive: isFinalPriceVatInclusive }));
@@ -431,7 +449,7 @@ export default function OfferSheetForm() {
     setOfferData({ ...offerData, vatRate: parseFloat(value) || 0 });
   };
 
-  const calculateTotals = React.useCallback(() => {
+  const currentCalculatedTotals = React.useMemo(() => {
     const currentVatRateAsDecimal = (offerData.vatRate || 0) / 100;
     const totalOriginalPriceExclVat = offerData.products.reduce((sum, p) => sum + ((p.originalPrice || 0) * (p.quantity || 1)), 0);
 
@@ -470,7 +488,6 @@ export default function OfferSheetForm() {
   }, [offerData.products, offerData.vatRate, isFinalPriceVatInclusive]);
 
 
-  const currentCalculatedTotals = calculateTotals();
   const currentCurrencySymbol = getCurrencySymbol(offerData.currency);
 
 
@@ -509,28 +526,44 @@ export default function OfferSheetForm() {
 
     setIsSaving(true);
     try {
-      const offerDataToSave = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive };
-      await new Promise(resolve => setTimeout(resolve, 100)); 
-
-      const saveId = currentOfferId || Date.now().toString();
-      localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
-
-      if (isNewOffer && currentUser) {
-        await incrementOfferCountForCurrentUser();
-      }
-
-      toast({
-        title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }),
-        description: t({ en: "Your offer sheet data has been saved.", el: "Τα δεδομένα του δελτίου προσφοράς αποθηκεύτηκαν." }),
-        variant: "default",
-      });
+      const offerDataToSave = { ...offerData, isFinalPriceVatInclusive: isFinalPriceVatInclusive, id: currentOfferId };
       
-      if (isNewOffer) { 
-        setCurrentOfferId(saveId);
-        router.replace(`/offer-sheet/edit?id=${saveId}`, { scroll: false });
+      if (currentUser) {
+        // Save to cloud
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/offer-sheets', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ offerData: offerDataToSave }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error?.message || 'Failed to save to cloud.');
+        }
+
+        if (isNewOffer) {
+          await incrementOfferCountForCurrentUser();
+          setCurrentOfferId(result.offerId);
+          router.replace(`/offer-sheet/edit?id=${result.offerId}`, { scroll: false });
+        }
+        toast({ title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }), description: t({ en: "Saved to the cloud.", el: "Αποθηκεύτηκε στο cloud." }) });
+      } else {
+        // Save to local storage
+        const saveId = currentOfferId || Date.now().toString();
+        localStorage.setItem(OFFER_SHEET_STORAGE_PREFIX + saveId, JSON.stringify(offerDataToSave));
+        
+        if (isNewOffer) {
+          setCurrentOfferId(saveId);
+          router.replace(`/offer-sheet/edit?id=${saveId}`, { scroll: false });
+        }
+        toast({ title: t({ en: "Offer Sheet Saved", el: "Το Δελτίο Προσφοράς Αποθηκεύτηκε" }), description: t({ en: "Saved to your browser.", el: "Αποθηκεύτηκε στον browser σας." }) });
       }
-    } catch (error) {
-        toast({ title: t({en: "Save Error", el: "Σφάλμα Αποθήκευσης"}), description: t({en: "Could not save the offer sheet.", el: "Δεν ήταν δυνατή η αποθήκευση."}), variant: "destructive" });
+    } catch (error: any) {
+        toast({ title: t({en: "Save Error", el: "Σφάλμα Αποθήκευσης"}), description: error.message || t({en: "Could not save the offer sheet.", el: "Δεν ήταν δυνατή η αποθήκευση."}), variant: "destructive" });
     } finally {
         setIsSaving(false);
     }
@@ -754,7 +787,7 @@ export default function OfferSheetForm() {
     }
     setIsExportingExcel(true);
     try {
-        const XLSX = await import('xlsx');
+        const { utils, write } = await import('xlsx');
         await new Promise(resolve => setTimeout(resolve, 100));
         const worksheetData = offerData.products.map(p => ({
             'Product Title': p.title,
@@ -764,10 +797,10 @@ export default function OfferSheetForm() {
             'Discounted Price Type': p.discountedPriceType,
             'Description': p.description,
         }));
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const worksheet = utils.json_to_sheet(worksheetData);
+        const workbook = utils.book_new();
+        utils.book_append_sheet(workbook, worksheet, "Products");
+        const excelBuffer = write(workbook, { bookType: 'xlsx', type: 'array' });
         const blob = new Blob([excelBuffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'});
         
         const url = URL.createObjectURL(blob);
@@ -781,7 +814,7 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingExcel(false);
     }
-  }, [offerData, t, toast, currentEntitlements]);
+  }, [offerData.products, t, toast, currentEntitlements]);
 
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -854,38 +887,24 @@ export default function OfferSheetForm() {
         };
 
         if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-          try {
-            await navigator.share(shareData);
-            toast({ title: t({en: "Shared Successfully", el: "Επιτυχής Κοινοποίηση"}), description: t({en: "Offer sheet shared via native dialog.", el: "Το δελτίο προσφοράς κοινοποιήθηκε."})});
-          } catch (error) {
-            console.error("Error using Web Share API:", error);
-            toast({ title: t({en: "Sharing Cancelled or Failed", el: "Η Κοινοποίηση Ακυρώθηκε ή Απέτυχε"}), description: t({en: "Could not share directly. PDF downloaded, opening email draft.", el: "Δεν ήταν δυνατή η κοινοποίηση. Το PDF λήφθηκε."}), variant: "default"});
-            await exportAsPdfInternal(false); 
-            const email = offerData.customerInfo.contact;
-            const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
-            const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
-            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-          }
+          await navigator.share(shareData);
+          toast({ title: t({en: "Shared Successfully", el: "Επιτυχής Κοινοποίηση"}), description: t({en: "Offer sheet shared via native dialog.", el: "Το δελτίο προσφοράς κοινοποιήθηκε."})});
         } else {
           toast({ title: t({en: "Direct Share Not Supported", el: "Η Απευθείας Κοινοποίηση δεν Υποστηρίζεται"}), description: t({en: "PDF downloaded. Please share it manually.", el: "Το PDF λήφθηκε. Παρακαλούμε κοινοποιήστε το."}), variant: "default"});
           await exportAsPdfInternal(false); 
-          const email = offerData.customerInfo.contact;
-          const subject = encodeURIComponent(t({en: "Offer Sheet from ", el: "Προσφορά από "}) + (offerData.sellerInfo.name || t({en:"Our Company", el: " την Εταιρεία μας"})));
-          const body = encodeURIComponent(t({en: "Dear ", el: "Αγαπητέ/ή "}) + (offerData.customerInfo.name || t({en:"Customer", el: "Πελάτη"})) + `,\n\n${t({en: "Please find our offer sheet attached.", el: "Παρακαλούμε βρείτε συνημμένο το δελτίο προσφοράς μας."})}\n\n${t({en:"Best regards", el: "Με εκτίμηση"})},\n` + (offerData.sellerInfo.name || ''));
-          if (email && email.includes('@')) { 
-             window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-          } else {
-             window.location.href = `mailto:?subject=${subject}&body=${body}`; 
-             toast({ title: t({en: "Customer Email Missing", el: "Λείπει το Email Πελάτη"}), description: t({en: "Customer email not found. Please enter it manually.", el: "Το email του πελάτη δεν βρέθηκε."}), variant: "default"});
-          }
         }
     } catch (error) {
-        console.error("Error in share process:", error);
-        toast({ title: t({en: "Sharing Error", el: "Σφάλμα Κοινοποίησης"}), description: t({en: "An unexpected error occurred during sharing.", el: "Παρουσιάστηκε σφάλμα."}), variant: "destructive"});
+        // Ignore AbortError which happens when the user cancels the share dialog
+        if ((error as DOMException).name === 'AbortError') {
+            console.log("Share action was cancelled by the user.");
+        } else {
+            console.error("Error in share process:", error);
+            toast({ title: t({en: "Sharing Error", el: "Σφάλμα Κοινοποίησης"}), description: t({en: "An unexpected error occurred during sharing.", el: "Παρουσιάστηκε σφάλμα."}), variant: "destructive"});
+        }
     } finally {
         setIsSharing(false);
     }
-  }, [exportAsPdfInternal, offerData.customerInfo, offerData.sellerInfo.name, t, toast]);
+  }, [exportAsPdfInternal, offerData.customerInfo, t, toast]);
 
   const handleSaveTemplate = async () => {
     if (!currentEntitlements.canSaveTemplates) {

@@ -13,12 +13,12 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase'; // Import db
-import { doc, setDoc, getDoc, Timestamp, updateDoc, increment } from 'firebase/firestore'; // Import Firestore functions
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore'; // Import Firestore functions
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useLocalization } from '@/hooks/useLocalization';
 import type { UserSubscription, PlanEntitlements, PlanId } from '@/lib/types';
-import { getEntitlements, PLANS } from '@/config/plans';
+import { getEntitlements } from '@/config/plans';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -38,6 +38,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Entitlements for a user who is logged in but has no active subscription.
 const defaultNoPlanEntitlements = getEntitlements('none');
+
+const getFriendlyAuthErrorMessage = (errorCode: string, t: (translations: { [key in 'en' | 'el']?: string }) => string): string => {
+  switch (errorCode) {
+    case 'auth/email-already-in-use':
+      return t({en: "This email address is already in use by another account.", el: "Αυτή η διεύθυνση email χρησιμοποιείται ήδη από άλλον λογαριασμό."});
+    case 'auth/invalid-email':
+      return t({en: "The email address is not valid.", el: "Η διεύθυνση email δεν είναι έγκυρη."});
+    case 'auth/operation-not-allowed':
+      return t({en: "Email/password accounts are not enabled.", el: "Οι λογαριασμοί email/κωδικού δεν είναι ενεργοποιημένοι."});
+    case 'auth/weak-password':
+      return t({en: "The password is too weak.", el: "Ο κωδικός πρόσβασης είναι πολύ αδύναμος."});
+    case 'auth/user-disabled':
+        return t({en: "This user account has been disabled.", el: "Αυτός ο λογαριασμός χρήστη έχει απενεργοποιηθεί."});
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+        return t({en: "Invalid email or password.", el: "Μη έγκυρο email ή κωδικός πρόσβασης."});
+    case 'auth/popup-closed-by-user':
+        return t({en: "The sign-in window was closed. Please try again.", el: "Το παράθυρο σύνδεσης έκλεισε. Παρακαλώ προσπαθήστε ξανά."})
+    default:
+      return t({en: "An unexpected error occurred. Please try again.", el: "Παρουσιάστηκε ένα μη αναμενόμενο σφάλμα. Παρακαλώ προσπαθήστε ξανά."});
+  }
+};
+
 
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -70,7 +94,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           await new Promise(resolve => setTimeout(resolve, 500));
         } else {
           console.error("Error fetching user subscription:", error);
-          // Don't toast here as it can be annoying on intermittent connection issues
           return null;
         }
       }
@@ -84,11 +107,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       const sub = await fetchUserSubscription(currentUser.uid);
       setUserSubscription(sub);
 
-      // Gate access based on status. If not 'active' or 'trialing', they get no entitlements.
       if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
         setCurrentEntitlements(getEntitlements(sub.planId));
       } else {
-        // Canceled, past_due, or no subscription all result in 'none' plan entitlements
         setCurrentEntitlements(getEntitlements('none'));
       }
       setLoading(false);
@@ -111,7 +132,6 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (user) {
         const sub = await fetchUserSubscription(user.uid);
         setUserSubscription(sub);
-        // Gate access based on status
         if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
           setCurrentEntitlements(getEntitlements(sub.planId));
         } else {
@@ -136,14 +156,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Let the Stripe webhook for 'customer.subscription.created' handle the trial record creation.
-      // This keeps the logic centralized.
-      toast({ title: t({en: "Account Created", el: "Ο λογαριασμός δημιουργήθηκε"}), description: t({en: "Welcome! Check our plans to get started.", el: "Καλώς ήρθατε! Δείτε τα πλάνα μας για να ξεκινήσετε."}) });
+      toast({ title: t({en: "Account Created!", el: "Ο λογαριασμός δημιουργήθηκε!"}), description: t({en: "Welcome! Choose a plan below to start your free trial.", el: "Καλώς ήρθατε! Επιλέξτε ένα πρόγραμμα για να ξεκινήσετε τη δωρεάν δοκιμή σας."}) });
       router.push('/pricing');
       return userCredential.user;
     } catch (error: any) {
       console.error("Sign up error:", error);
-      toast({ title: t({en: "Sign Up Failed", el: "Η Εγγραφή Απέτυχε"}), description: error.message || t({en: "Could not create account.", el: "Δεν ήταν δυνατή η δημιουργία."}), variant: "destructive" });
+      toast({ title: t({en: "Sign Up Failed", el: "Η Εγγραφή Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
       return null;
     } finally {
       setLoading(false);
@@ -164,7 +182,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     } catch (error: any)
        {
       console.error("Sign in error:", error);
-      toast({ title: t({en: "Sign In Failed", el: "Η Σύνδεση Απέτυχε"}), description: error.message || t({en: "Could not sign in.", el: "Δεν ήταν δυνατή η σύνδεση."}), variant: "destructive" });
+      toast({ title: t({en: "Sign In Failed", el: "Η Σύνδεση Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
       return null;
     } finally {
       setLoading(false);
@@ -197,7 +215,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
        if (error.code === 'auth/unauthorized-domain' && typeof window !== 'undefined') {
          console.error(`[AuthContext] Google Sign-In failed for domain: ${window.location.hostname}. Please ensure this domain is authorized in your Firebase project settings (Authentication -> Sign-in method -> Authorized domains) AND in your Google Cloud Console OAuth consent screen & client ID credentials.`);
        }
-      toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: error.message || t({en: "Could not sign in with Google.", el: "Δεν ήταν δυνατή η σύνδεση."}), variant: "destructive" });
+      toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
       return null;
     } finally {
       setLoading(false);
@@ -219,7 +237,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       router.push('/login'); 
     } catch (error: any) {
       console.error("Sign out error:", error);
-      toast({ title: t({en: "Sign Out Failed", el: "Η Αποσύνδεση Απέτυχε"}), description: error.message || t({en: "Could not sign out.", el: "Δεν ήταν δυνατή η αποσύνδεση."}), variant: "destructive" });
+      toast({ title: t({en: "Sign Out Failed", el: "Η Αποσύνδεση Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
     }
   };
   
