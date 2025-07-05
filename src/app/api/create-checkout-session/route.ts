@@ -2,8 +2,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { PLANS } from '@/config/plans';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
 import type { PlanId } from '@/lib/types';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -41,13 +40,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: { message: 'Stripe Price ID not configured for this plan. Please check server logs.' } }, { status: 500 });
     }
 
-    const userSubRef = doc(db, 'users', userId, 'subscription', 'current');
-    const userSubSnap = await getDoc(userSubRef);
-    let stripeCustomerId = userSubSnap.exists() ? userSubSnap.data()?.stripeCustomerId : undefined;
+    const userSubRef = adminDb.collection('users').doc(userId).collection('subscription').doc('current');
+    const userSubSnap = await userSubRef.get();
+    let stripeCustomerId = userSubSnap.exists ? userSubSnap.data()?.stripeCustomerId : undefined;
 
     // A user should only get a trial if they have never had a subscription before.
     // Our check here is if a subscription document exists for them at all.
-    const allowTrial = !userSubSnap.exists();
+    const allowTrial = !userSubSnap.exists;
 
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
