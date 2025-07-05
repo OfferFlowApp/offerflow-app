@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: { message: 'User not authenticated.' } }, { status: 401 });
     }
     
-    // Updated Plan ID check
     const validPlanIds: PlanId[] = ['pro-monthly', 'pro-yearly', 'business-monthly', 'business-yearly'];
     if (!planId || !validPlanIds.includes(planId)) {
       return NextResponse.json({ error: { message: 'Invalid plan ID.' } }, { status: 400 });
@@ -40,12 +39,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: { message: 'Stripe Price ID not configured for this plan. Please check server logs.' } }, { status: 500 });
     }
 
-    const userSubRef = adminDb.collection('users').doc(userId).collection('subscription').doc('current');
-    const userSubSnap = await userSubRef.get();
-    let stripeCustomerId = userSubSnap.exists ? userSubSnap.data()?.stripeCustomerId : undefined;
+    const userDocRef = adminDb.collection('users').doc(userId);
+    const userDocSnap = await userDocRef.get();
+
+    let stripeCustomerId = userDocSnap.exists ? userDocSnap.data()?.stripeCustomerId : undefined;
 
     // A user should only get a trial if they have never had a subscription before.
-    // Our check here is if a subscription document exists for them at all.
+    // Check for the existence of the subscription document.
+    const userSubRef = adminDb.collection('users').doc(userId).collection('subscription').doc('current');
+    const userSubSnap = await userSubRef.get();
     const allowTrial = !userSubSnap.exists;
 
     if (!stripeCustomerId) {
@@ -55,7 +57,8 @@ export async function POST(request: NextRequest) {
         },
       });
       stripeCustomerId = customer.id;
-      // We don't create a subscription doc here anymore, it gets created by the webhook after successful checkout.
+      // Store it on the main user document immediately.
+      await userDocRef.set({ stripeCustomerId: stripeCustomerId }, { merge: true });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
       ],
       subscription_data: allowTrial ? {
           trial_period_days: 30,
-      } : undefined, // Add trial period if user is new
+      } : undefined,
       success_url: `${request.nextUrl.origin}/profile?session_id={CHECKOUT_SESSION_ID}&payment_status=success`,
       cancel_url: `${request.nextUrl.origin}/pricing?payment_status=cancelled`,
       metadata: {

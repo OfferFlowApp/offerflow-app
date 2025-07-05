@@ -5,9 +5,21 @@ import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocalization } from '@/hooks/useLocalization';
 import { FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function TermsOfServicePage() {
   const { t } = useLocalization();
+
+  // This state prevents hydration errors by ensuring dynamic content like dates
+  // are only rendered on the client after the initial render.
+  const [lastUpdated, setLastUpdated] = useState('July 26, 2024');
+
+  useEffect(() => {
+    // Set a static date to avoid hydration mismatch.
+    // In a real app, this date would be updated when the policy changes.
+    const staticDate = new Date('2024-07-26T12:00:00Z');
+    setLastUpdated(staticDate.toLocaleDateString(t({ en: 'en-US', el: 'el-GR' })));
+  }, [t]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -21,7 +33,7 @@ export default function TermsOfServicePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="prose prose-sm md:prose-base dark:prose-invert max-w-none mx-auto p-6 md:p-8 space-y-4">
-            <p><strong>{t({ en: 'Last Updated:', el: 'Τελευταία Ενημέρωση:' })}</strong> {new Date().toLocaleDateString(t({ en: 'en-US', el: 'el-GR' }))}</p>
+            <p><strong>{t({ en: 'Last Updated:', el: 'Τελευταία Ενημέρωση:' })}</strong> {lastUpdated}</p>
 
             <h2>1. {t({ en: 'Introduction', el: 'Εισαγωγή' })}</h2>
             <p>
