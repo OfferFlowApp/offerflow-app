@@ -38,14 +38,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: { message: 'User not authenticated.' } }, { status: 401 });
     }
 
-    const subRef = adminDb.collection('users').doc(userId).collection('subscription').doc('current');
-    const subSnap = await subRef.get();
-    
-    if (!subSnap.exists) {
-        return NextResponse.json({ error: { message: 'No active subscription found for this user.' } }, { status: 404 });
+    const userRef = adminDb.collection('users').doc(userId);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists) {
+        return NextResponse.json({ error: { message: 'User not found.' } }, { status: 404 });
     }
 
-    const stripeCustomerId = subSnap.data()?.stripeCustomerId;
+    const stripeCustomerId = userSnap.data()?.stripeCustomerId;
+
     if (!stripeCustomerId) {
       return NextResponse.json({ error: { message: 'Stripe customer ID not found for this user.' } }, { status: 404 });
     }

@@ -55,22 +55,20 @@ export default function SignupPage() {
       setError(t({en: "Passwords do not match.", el: "Οι κωδικοί δεν ταιριάζουν."}));
       return;
     }
-    try {
-      await signUpWithEmail(email, password);
-      // AuthContext handles navigation and toasts
-    } catch (err: any) {
-       // Error handling is mostly within AuthContext
+    const errorMsg = await signUpWithEmail(email, password);
+    if (errorMsg) {
+      setError(errorMsg);
     }
+    // AuthContext handles successful navigation and toasts
   };
 
   const handleGoogleSignIn = async () => {
     setError('');
-    try {
-      await signInWithGoogle();
-      // AuthContext handles navigation and toasts
-    } catch (err: any) {
-      // Error handling is mostly within AuthContext
+    const errorMsg = await signInWithGoogle();
+    if (errorMsg) {
+      setError(errorMsg);
     }
+    // AuthContext handles successful navigation and toasts
   };
 
   const togglePasswordVisibility = () => {

@@ -26,9 +26,9 @@ interface AuthContextType {
   currentEntitlements: PlanEntitlements;
   loading: boolean;
   logOut: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<FirebaseUser | null>;
-  signInWithEmail: (email: string, password: string) => Promise<FirebaseUser | null>;
-  signInWithGoogle: () => Promise<FirebaseUser | null>;
+  signUpWithEmail: (email: string, password: string) => Promise<string | null>;
+  signInWithEmail: (email: string, password: string) => Promise<string | null>;
+  signInWithGoogle: () => Promise<string | null>;
   incrementOfferCountForCurrentUser: () => Promise<boolean>;
   fetchUserSubscription: (userId: string) => Promise<UserSubscription | null>;
   refreshSubscription: () => Promise<void>;
@@ -148,51 +148,55 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, [fetchUserSubscription]);
 
-  const signUpWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
+  const signUpWithEmail = async (email: string, password: string): Promise<string | null> => {
     if (!auth || typeof createUserWithEmailAndPassword !== 'function') {
-      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Account creation is currently unavailable.", el: "Η δημιουργία λογαριασμού δεν είναι διαθέσιμη."}), variant: "destructive" });
-      return null;
+      const errorMsg = t({en: "Account creation is currently unavailable.", el: "Η δημιουργία λογαριασμού δεν είναι διαθέσιμη."});
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: errorMsg, variant: "destructive" });
+      return errorMsg;
     }
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       toast({ title: t({en: "Account Created!", el: "Ο λογαριασμός δημιουργήθηκε!"}), description: t({en: "Welcome! Choose a plan below to start your free trial.", el: "Καλώς ήρθατε! Επιλέξτε ένα πρόγραμμα για να ξεκινήσετε τη δωρεάν δοκιμή σας."}) });
       router.push('/pricing');
-      return userCredential.user;
+      return null; // No error
     } catch (error: any) {
       console.error("Sign up error:", error);
-      toast({ title: t({en: "Sign Up Failed", el: "Η Εγγραφή Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
-      return null;
+      const errorMsg = getFriendlyAuthErrorMessage(error.code, t);
+      toast({ title: t({en: "Sign Up Failed", el: "Η Εγγραφή Απέτυχε"}), description: errorMsg, variant: "destructive" });
+      return errorMsg;
     } finally {
       setLoading(false);
     }
   };
 
-  const signInWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
+  const signInWithEmail = async (email: string, password: string): Promise<string | null> => {
     if (!auth || typeof signInWithEmailAndPassword !== 'function') {
-      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Login is currently unavailable.", el: "Η σύνδεση δεν είναι διαθέσιμη."}), variant: "destructive" });
-      return null;
+      const errorMsg = t({en: "Login is currently unavailable.", el: "Η σύνδεση δεν είναι διαθέσιμη."});
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: errorMsg, variant: "destructive" });
+      return errorMsg;
     }
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
       router.push('/');
-      return userCredential.user;
-    } catch (error: any)
-       {
+      return null; // No error
+    } catch (error: any) {
       console.error("Sign in error:", error);
-      toast({ title: t({en: "Sign In Failed", el: "Η Σύνδεση Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
-      return null;
+      const errorMsg = getFriendlyAuthErrorMessage(error.code, t);
+      toast({ title: t({en: "Sign In Failed", el: "Η Σύνδεση Απέτυχε"}), description: errorMsg, variant: "destructive" });
+      return errorMsg;
     } finally {
       setLoading(false);
     }
   };
 
-  const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
+  const signInWithGoogle = async (): Promise<string | null> => {
     if (!auth || typeof signInWithPopup !== 'function' || typeof GoogleAuthProvider !== 'function') {
-      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: t({en: "Google Sign-In is unavailable.", el: "Η σύνδεση με Google δεν είναι διαθέσιμη."}), variant: "destructive" });
-      return null;
+      const errorMsg = t({en: "Google Sign-In is unavailable.", el: "Η σύνδεση με Google δεν είναι διαθέσιμη."});
+      toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: errorMsg, variant: "destructive" });
+      return errorMsg;
     }
     setLoading(true);
     const provider = new GoogleAuthProvider();
@@ -209,14 +213,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
          toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
          router.push('/');
       }
-      return result.user;
+      return null; // No error
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
        if (error.code === 'auth/unauthorized-domain' && typeof window !== 'undefined') {
          console.error(`[AuthContext] Google Sign-In failed for domain: ${window.location.hostname}. Please ensure this domain is authorized in your Firebase project settings (Authentication -> Sign-in method -> Authorized domains) AND in your Google Cloud Console OAuth consent screen & client ID credentials.`);
        }
-      toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
-      return null;
+      const errorMsg = getFriendlyAuthErrorMessage(error.code, t);
+      toast({ title: t({en: "Google Sign-In Failed", el: "Η Σύνδεση με Google Απέτυχε"}), description: errorMsg, variant: "destructive" });
+      return errorMsg;
     } finally {
       setLoading(false);
     }

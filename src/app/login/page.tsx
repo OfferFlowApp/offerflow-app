@@ -50,22 +50,20 @@ export default function LoginPage() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    try {
-      await signInWithEmail(email, password);
-      // AuthContext handles navigation and toasts
-    } catch (err: any) {
-      // Error handling is mostly within AuthContext, which now also handles general errors
+    const errorMsg = await signInWithEmail(email, password);
+    if (errorMsg) {
+      setError(errorMsg);
     }
+    // AuthContext handles successful navigation and toasts
   };
 
   const handleGoogleSignIn = async () => {
     setError('');
-    try {
-      await signInWithGoogle();
-      // AuthContext handles navigation and toasts
-    } catch (err: any) {
-       // Error handling is mostly within AuthContext
+    const errorMsg = await signInWithGoogle();
+    if (errorMsg) {
+        setError(errorMsg);
     }
+    // AuthContext handles successful navigation and toasts
   };
 
   const togglePasswordVisibility = () => {
