@@ -3,6 +3,7 @@
 
 import React from 'react'; // Ensure React is imported
 import type { OfferSheetData, Product, Language, PlanEntitlements } from '@/lib/types';
+import { format } from 'date-fns';
 
 interface PdfPageLayoutProps {
   offerData: OfferSheetData;
@@ -88,8 +89,8 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
           <div className="w-1/5 text-xs text-right">
             <h1 className="font-bold text-lg mb-2 uppercase">{t({en: "Offer", el: "Προσφορά"})}</h1>
             <p>{t({en: "Date:", el: "Ημερομηνία:"})} {creationDate}</p>
-            {validityStartDate && <p>{t({en: "Valid From:", el: "Ισχύει από:"})} {new Date(validityStartDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}</p>}
-            {validityEndDate && <p>{t({en: "Valid Until:", el: "Ισχύει έως:"})} {new Date(validityEndDate).toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}</p>}
+            {validityStartDate && <p>{t({en: "Valid From:", el: "Ισχύει από:"})} {format(new Date(validityStartDate), 'dd/MM/yyyy')}</p>}
+            {validityEndDate && <p>{t({en: "Valid Until:", el: "Ισχύει έως:"})} {format(new Date(validityEndDate), 'dd/MM/yyyy')}</p>}
             <p className="font-semibold mt-2">{t({en: "Page", el: "Σελίδα"})} {pageNum} / {totalPages}</p>
           </div>
         </header>

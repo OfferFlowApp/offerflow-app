@@ -28,6 +28,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '../ui/loading-spinner';
 import dynamic from 'next/dynamic';
+import { format } from 'date-fns';
 
 const PdfPageLayout = dynamic(() => import('./PdfPageLayout'));
 
@@ -598,7 +599,7 @@ export default function OfferSheetForm() {
     const PRODUCTS_PER_PAGE = 3; 
     const totalPages = Math.max(1, Math.ceil(offerData.products.length / PRODUCTS_PER_PAGE));
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const creationDate = new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string);
+    const creationDate = format(new Date(), 'dd/MM/yyyy');
 
     toast({ title: t({en: "Generating PDF...", el: "Δημιουργία PDF..."}), description: t({en: "This may take a moment.", el: "Αυτό μπορεί να πάρει λίγο χρόνο."})});
 
@@ -684,6 +685,7 @@ export default function OfferSheetForm() {
   }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, currentEntitlements]);
 
   const handleExportPdf = async () => {
+    // Temporarily disabled for user
     // if (!currentEntitlements.allowedExportFormats.includes('pdf')) {
     //     setUpgradeReason(t({en:"PDF export is not available on your current plan.", el: "Η εξαγωγή PDF δεν είναι διαθέσιμη."}));
     //     setShowUpgradeModal(true);
@@ -700,6 +702,7 @@ export default function OfferSheetForm() {
   };
 
   const handleExportJpeg = React.useCallback(async () => {
+    // Temporarily disabled for user
     // if (!currentEntitlements.allowedExportFormats.includes('jpeg')) {
     //     setUpgradeReason(t({en:"JPEG export is not available on your current plan.", el: "Η εξαγωγή JPEG δεν είναι διαθέσιμη."}));
     //     setShowUpgradeModal(true);
@@ -727,7 +730,7 @@ export default function OfferSheetForm() {
             totalPages={Math.max(1, Math.ceil(offerData.products.length / 3))} 
             currencySymbol={currentCurrencySymbol}
             calculatedTotals={currentCalculatedTotals}
-            creationDate={new Date().toLocaleDateString(t({en: 'en-US', el: 'el-GR'}) as string)}
+            creationDate={format(new Date(), 'dd/MM/yyyy')}
             t={t}
             entitlements={currentEntitlements}
           />
@@ -752,6 +755,7 @@ export default function OfferSheetForm() {
   }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, currentEntitlements]);
 
   const handleExportJson = React.useCallback(async () => {
+    // Temporarily disabled for user
     //  if (!currentEntitlements.allowedExportFormats.includes('json')) {
     //     setUpgradeReason(t({en:"JSON data export is not available on your current plan.", el: "Η εξαγωγή JSON δεν είναι διαθέσιμη."}));
     //     setShowUpgradeModal(true);
@@ -777,9 +781,10 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingJson(false);
     }
-  }, [offerData, isFinalPriceVatInclusive, t, toast, currentEntitlements]);
+  }, [offerData, isFinalPriceVatInclusive, t, toast]);
 
   const handleExportExcel = React.useCallback(async () => {
+    // Temporarily disabled for user
     // if (!currentEntitlements.allowedExportFormats.includes('csv')) {
     //     setUpgradeReason(t({en:"Excel/CSV export is a Business feature.", el: "Η εξαγωγή Excel/CSV είναι Business λειτουργία."}));
     //     setShowUpgradeModal(true);
@@ -814,7 +819,7 @@ export default function OfferSheetForm() {
     } finally {
         setIsExportingExcel(false);
     }
-  }, [offerData.products, t, toast, currentEntitlements]);
+  }, [offerData.products, t, toast]);
 
 
   const handleImportFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -907,6 +912,7 @@ export default function OfferSheetForm() {
   }, [exportAsPdfInternal, offerData.customerInfo, t, toast]);
 
   const handleSaveTemplate = async () => {
+    // Temporarily disabled for user
     // if (!currentEntitlements.canSaveTemplates) {
     //   setUpgradeReason(t({en:"Saving templates is a Pro/Business feature.", el:"Η αποθήκευση προτύπων είναι Pro/Business λειτουργία."}));
     //   setShowUpgradeModal(true);
@@ -949,6 +955,7 @@ export default function OfferSheetForm() {
   };
 
   const handleSaveCustomer = async () => {
+    // Temporarily disabled for user
     //  if (!currentEntitlements.canSaveCustomers) {
     //   setUpgradeReason(t({en:"Saving customer profiles is a Pro/Business feature.", el: "Η αποθήκευση πελατών είναι Pro/Business λειτουργία."}));
     //   setShowUpgradeModal(true);
@@ -1294,7 +1301,7 @@ export default function OfferSheetForm() {
               {isExportingJson ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 lucide lucide-file-json-2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M7 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M15 10a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1"/><path d="M11 10a1 1 0 0 0-1 1v0a1 1 0 0 0 1 1"/><path d="M4 15l2 2-2 2"/><path d="M18 15l-2 2 2 2"/></svg>}
               {isExportingJson ? t({en: 'Exporting Data...', el: 'Εξαγωγή Δεδομένων...'}) : t({ en: 'Export Offer Data (.json)', el: 'Εξαγωγή Δεδομένων Προσφοράς (.json)' })}
             </DropdownMenuItem>
-            {currentEntitlements.allowedExportFormats.includes('csv') && <DropdownMenuSeparator />}
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleExportExcel} disabled={isExportingExcel}>
               {isExportingExcel ? <LoadingSpinner className="mr-2 h-4 w-4" /> : <FileText className="mr-2 h-4 w-4" />}
               {isExportingExcel ? t({en: 'Exporting Excel...', el: 'Εξαγωγή Excel...'}) : t({en: 'Export as Excel (.xlsx)', el: 'Εξαγωγή ως Excel (.xlsx)'})}
