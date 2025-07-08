@@ -115,12 +115,12 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
 
                       return (
                           <tr key={product.id} className="border-b border-gray-200 align-top">
-                              <td className="p-1">
+                              <td className="p-1 align-middle">
                                   {product.imageUrl ? (
                                   <img src={product.imageUrl} alt={product.title} className="w-full h-auto object-contain max-h-20 border" data-ai-hint="product photo"/>
                                   ) : (
-                                  <div className="w-full h-20 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
-                                      {t({en: "No Image", el: "Χωρίς Εικόνα"})}
+                                  <div className="w-full h-20 border flex items-center justify-center bg-gray-50">
+                                      {/* Intentionally blank */}
                                   </div>
                                   )}
                               </td>
@@ -128,9 +128,24 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
                                   <h3 className="font-bold text-sm mb-0.5">{product.title}</h3>
                                   <p className="text-xs whitespace-pre-line">{product.description}</p>
                               </td>
-                              <td className="text-center p-1">{product.quantity}</td>
-                              <td className="text-right p-1">{unitPriceToDisplay.toFixed(2)}</td>
-                              <td className="text-right p-1 font-semibold">{lineTotal.toFixed(2)}</td>
+                              <td className="text-center p-1 align-middle">{product.quantity}</td>
+                              <td className="text-right p-1 align-middle">
+                                {product.originalPrice && product.originalPrice > 0 && product.originalPrice.toFixed(2) !== unitPriceToDisplay.toFixed(2) ? (
+                                  <div className="flex items-baseline justify-end gap-2">
+                                    <span className="text-xs" style={{ color: 'rgb(107, 114, 128)', textDecoration: 'line-through' }}>
+                                      {product.originalPrice.toFixed(2)}
+                                    </span>
+                                    <span className="font-semibold">
+                                      {unitPriceToDisplay.toFixed(2)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span>
+                                    {unitPriceToDisplay.toFixed(2)}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="text-right p-1 font-semibold align-middle">{lineTotal.toFixed(2)}</td>
                           </tr>
                       );
                   })}
