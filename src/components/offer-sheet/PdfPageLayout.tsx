@@ -177,9 +177,6 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
                 )}
               </div>
             </div>
-            <div className="text-center mt-2 text-gray-500 text-[10px]">
-              {t({en: "Thank you for your business!", el: "Ευχαριστούμε για την προτίμησή σας!"})}
-            </div>
           </footer>
         )}
         {pageNum !== totalPages && <div style={{ flexGrow: 1 }}></div>} 
