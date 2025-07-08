@@ -3,7 +3,6 @@
 
 import React from 'react'; // Ensure React is imported
 import type { OfferSheetData, Product, Language, PlanEntitlements } from '@/lib/types';
-import Image from 'next/image';
 
 interface PdfPageLayoutProps {
   offerData: OfferSheetData;
@@ -60,7 +59,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
         <header className="flex justify-between items-start pb-4 border-b border-gray-300">
           <div className="w-2/5">
             {sellerInfo.logoUrl ? (
-              <Image src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} width={120} height={60} className="max-h-20 object-contain mb-2" data-ai-hint="company brand"/>
+              <img src={sellerInfo.logoUrl} alt={t({en: "Seller Logo", el: "Λογότυπο Πωλητή"})} className="max-h-20 object-contain mb-2" data-ai-hint="company brand"/>
             ) : (
               <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-500 mb-2 rounded">
                   {t({en: "No Logo", el: "Χωρίς Λογότυπο"})}
@@ -118,7 +117,7 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
                           <tr key={product.id} className="border-b border-gray-200 align-top">
                               <td className="p-1">
                                   {product.imageUrl ? (
-                                  <Image src={product.imageUrl} alt={product.title} width={80} height={80} className="w-full h-auto object-contain max-h-20 border" data-ai-hint="product photo"/>
+                                  <img src={product.imageUrl} alt={product.title} className="w-full h-auto object-contain max-h-20 border" data-ai-hint="product photo"/>
                                   ) : (
                                   <div className="w-full h-20 border flex items-center justify-center text-gray-400 text-xs bg-gray-50">
                                       {t({en: "No Image", el: "Χωρίς Εικόνα"})}
