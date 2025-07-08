@@ -18,13 +18,14 @@ OfferFlow is a web application built with Next.js, TypeScript, and Tailwind CSS,
 
 Congratulations on building your app! The code is now complete. The final steps involve creating your personal Firebase and Stripe accounts and connecting them to the application. This guide will walk you through it.
 
-### **Step 1: Create a `.env.local` File**
+### **Step 1: Open and Populate the `.env.local` File**
 
-This file will hold all your secret API keys. It is the most important configuration file.
+This file will hold all your secret API keys. The keys currently in this file are for the development environment only and must be replaced.
 
-1.  In the root directory of your project, create a new file and name it exactly `.env.local`.
-2.  Copy the entire content from the `.env.example` file and paste it into your new `.env.local` file.
-3.  Follow the instructions below to get your keys and paste them into this file.
+1.  In the file explorer, open the `.env.local` file.
+2.  Delete the existing content.
+3.  Copy the entire content from the `.env.example` file and paste it into your empty `.env.local` file.
+4.  Follow the instructions below to get your keys and paste them into this file.
 
 ---
 
