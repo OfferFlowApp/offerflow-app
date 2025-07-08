@@ -16,33 +16,32 @@ OfferFlow is a web application built with Next.js, TypeScript, and Tailwind CSS,
 
 ## Final Steps to Go Live
 
-Congratulations on building your app! The code is now complete. The final steps involve creating your personal Firebase and Stripe accounts and connecting them to the application. This guide will walk you through it.
+Congratulations! The application code is now complete and ready for you to publish. The final steps involve creating your personal Firebase and Stripe accounts and connecting them to the application using your private API keys. This guide will walk you through the entire process, step by step.
 
 ### **Step 1: Open and Populate the `.env.local` File**
 
-This file will hold all your secret API keys. The keys currently in this file are for the development environment only and must be replaced.
+This file will hold all your secret API keys. The keys currently in this file are for the development environment only and **must be replaced**.
 
-1.  In the file explorer, open the `.env.local` file.
-2.  Delete the existing content.
-3.  Copy the entire content from the `.env.example` file and paste it into your empty `.env.local` file.
-4.  Follow the instructions below to get your keys and paste them into this file.
+1.  In your project's file explorer, find and open the file named `.env.local`.
+2.  Delete the existing placeholder content.
+3.  Follow the instructions below to get your personal keys and paste them into this file. The `.env.example` file serves as a reference for what you need.
 
 ---
 
-### **Step 2: Set Up Your Firebase Project**
+### **Step 2: Set Up Your **NEW** Firebase Project**
 
-This is for your user database and cloud storage.
+This is for your user database and cloud storage. It is crucial that you create a **new, personal project** for your live application.
 
-1.  **Create a Firebase Project**: Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project (it's free).
-2.  **Create a Web App**: In your project, click the Web icon (`</>`) to add a new Web App. Firebase will give you a `firebaseConfig` object.
-3.  **Copy Firebase Keys**: Copy the keys from the `firebaseConfig` object into your `.env.local` file.
+1.  **Create a New Firebase Project**: Go to the [Firebase Console](https://console.firebase.google.com/) and click **"Create a project"**. Do **not** use the existing `offerflow-dmswf` project, as that is for development only. Give your new project a unique name.
+2.  **Create a Web App**: Once your new project is created, click the Web icon (`</>`) on the project overview page to add a new Web App.
+3.  **Copy Firebase Keys**: Firebase will give you a `firebaseConfig` object. Copy the keys from this object into your `.env.local` file.
     *   `NEXT_PUBLIC_FIREBASE_API_KEY`
     *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
     *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
     *   ...and so on for all the `NEXT_PUBLIC_FIREBASE_` keys.
-4.  **Enable Services**:
+4.  **Enable Services in Your New Project**:
     *   In the Firebase Console, go to **Authentication** -> **Sign-in method** and enable **Email/Password** and **Google**.
-    *   Go to **Firestore Database** and create a new database. Start in **test mode**.
+    *   Go to **Firestore Database** and **Create database**. Start in **test mode**.
 
 ---
 
@@ -81,7 +80,7 @@ To run this project on your local machine for testing or further development:
     npm install
     ```
 3.  **Configure Environment Variables:**
-    - Follow the "Final Steps to Go Live" guide above to create your `.env.local` file and populate it with your keys.
+    - Follow the "Final Steps to Go Live" guide above to create and populate your `.env.local` file with your keys.
 4.  **Run the development server:**
     ```bash
     npm run dev
