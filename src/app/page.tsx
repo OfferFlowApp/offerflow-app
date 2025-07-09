@@ -65,8 +65,11 @@ export default function LandingPage() {
                         {t({en: "Trusted By", el: "Μας Εμπιστεύονται"})}
                     </p>
                     <div className="flex items-center justify-center gap-x-8 sm:gap-x-16 gap-y-4 text-muted-foreground flex-wrap">
-                        <div className="flex flex-col items-center font-semibold text-xs tracking-wider">
-                           rhodesinc
+                        <div className="flex flex-col items-center font-semibold text-xs tracking-wider uppercase">
+                           Alpha Hustle Co
+                        </div>
+                         <div className="flex flex-col items-center font-semibold text-xs tracking-wider uppercase">
+                           dromeas office dodecanese
                         </div>
                         <svg
                             role="img"
@@ -79,6 +82,12 @@ export default function LandingPage() {
                             <text x="0" y="40" fontFamily="sans-serif" fontSize="12">FURNITURE</text>
                             <text x="145" y="40" fontFamily="sans-serif" fontSize="10" fontStyle="italic">since 1965</text>
                         </svg>
+                        <div className="flex flex-col items-center font-semibold text-xs tracking-wider uppercase">
+                            media strom rho
+                        </div>
+                         <div className="flex flex-col items-center font-semibold text-xs tracking-wider">
+                           rhodesinc
+                        </div>
                         <div className="flex flex-col items-center font-semibold text-xs tracking-wider">
                             visuals.rho
                         </div>
