@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,22 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Capture referral ID from URL and store in a cookie
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const refId = searchParams.get('ref');
+      if (refId) {
+        // Store in a cookie that expires in 30 days
+        const d = new Date();
+        d.setTime(d.getTime() + (30*24*60*60*1000));
+        let expires = "expires="+ d.toUTCString();
+        document.cookie = `referral_id=${refId};${expires};path=/`;
+        console.log(`Referral ID ${refId} captured and stored in cookie.`);
+      }
+    }
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -23,6 +23,14 @@ const proPlanYearly = PLANS['pro-yearly'];
 const businessPlanMonthly = PLANS['business-monthly'];
 const businessPlanYearly = PLANS['business-yearly'];
 
+function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
+}
+
 export default function PricingPage() {
   const { t } = useLocalization();
   const { currentUser, userSubscription, loading: authLoading } = useAuth();
@@ -67,12 +75,19 @@ export default function PricingPage() {
     setIsLoadingPlan(planId);
 
     try {
+      const refId = getCookie('referral_id');
+      const requestBody = {
+        planId: planId,
+        userId: currentUser.uid,
+        ...(refId && { refId: refId }),
+      };
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ planId: planId, userId: currentUser.uid }),
+        body: JSON.stringify(requestBody),
       });
 
       const session = await response.json();

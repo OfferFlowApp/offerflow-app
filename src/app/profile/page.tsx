@@ -10,11 +10,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useLocalization } from '@/hooks/useLocalization';
-import { CheckCircle, Clock, XCircle, ExternalLink, UserCircle, ShieldCheck } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, ExternalLink, UserCircle, ShieldCheck, Link as LinkIcon, Copy } from 'lucide-react';
 import { getPlanDetails } from '@/config/plans';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function ProfilePage() {
   const { currentUser, userSubscription, loading: authLoading, logOut, refreshSubscription } = useAuth();
@@ -22,17 +23,32 @@ export default function ProfilePage() {
   const { t } = useLocalization();
   const { toast } = useToast();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [referralLink, setReferralLink] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // If auth is done loading and there's no user, redirect to login.
     if (!authLoading && !currentUser) {
       router.push('/login');
+      return;
     }
     // Refresh subscription data when component mounts and user is available
     if (currentUser) {
         refreshSubscription();
+        // Set referral link - ensure window is defined
+        if (typeof window !== 'undefined') {
+          setReferralLink(`${window.location.origin}/signup?ref=${currentUser.uid}`);
+        }
     }
   }, [currentUser, authLoading, router, refreshSubscription]);
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(referralLink).then(() => {
+      setCopied(true);
+      toast({ title: t({ en: "Copied!", el: "Αντιγράφηκε!" }), description: t({ en: "Referral link copied to clipboard.", el: "Ο σύνδεσμος παραπομπής αντιγράφηκε." }) });
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
   
   const handleManageSubscription = async () => {
       if (!currentUser) return;
@@ -190,6 +206,31 @@ export default function ProfilePage() {
             </CardFooter>
           </Card>
         </div>
+
+        <Card className="shadow-lg rounded-lg max-w-4xl mx-auto mt-8">
+            <CardHeader>
+              <CardTitle className="text-2xl flex items-center">
+                <LinkIcon className="mr-3 h-7 w-7 text-primary" />
+                {t({en: "Your Referral Link", el: "Ο Σύνδεσμος Παραπομπής σας"})}
+              </CardTitle>
+              <CardDescription>
+                {t({en: "Share this link with others. We'll track who signs up!", el: "Μοιραστείτε αυτόν τον σύνδεσμο. Θα παρακολουθούμε ποιος εγγράφεται!"})}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="referral-link"
+                    value={referralLink}
+                    readOnly
+                    className="bg-muted"
+                  />
+                  <Button type="button" size="icon" onClick={handleCopyToClipboard}>
+                    {copied ? <CheckCircle className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+            </CardContent>
+          </Card>
       </main>
       <Footer />
     </div>

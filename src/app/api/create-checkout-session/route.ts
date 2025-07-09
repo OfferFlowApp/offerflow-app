@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { planId, userId } = await request.json();
+    const { planId, userId, refId } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: { message: 'User not authenticated.' } }, { status: 401 });
@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         userId: userId,
         planId: planId,
+        ...(refId && { refId: refId }), // Add refId to metadata if it exists
       }
     });
 

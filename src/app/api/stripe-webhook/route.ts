@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
 
         const userId = session.metadata?.userId;
         const stripeCustomerId = session.customer as string;
+        const refId = session.metadata?.refId; // Get referral ID from metadata
 
         if (!userId || !stripeCustomerId) {
           console.error('[Stripe Webhook] Missing metadata from checkout session:', session.id, session.metadata);
@@ -92,7 +93,17 @@ export async function POST(request: NextRequest) {
 
         // Store the stripeCustomerId on the user document for future lookups
         const userDocRef = adminDb.collection('users').doc(userId);
-        await userDocRef.set({ stripeCustomerId: stripeCustomerId }, { merge: true });
+        
+        const dataToSet: { stripeCustomerId: string; referredBy?: string } = {
+          stripeCustomerId: stripeCustomerId,
+        };
+
+        if (refId) {
+          dataToSet.referredBy = refId;
+          console.log(`[Stripe Webhook] User ${userId} was referred by ${refId}.`);
+        }
+
+        await userDocRef.set(dataToSet, { merge: true });
         console.log(`[Stripe Webhook] Stored Stripe Customer ID ${stripeCustomerId} for user ${userId}.`);
 
         // The subscription data will be set by the customer.subscription.created/updated events.
