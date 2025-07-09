@@ -6,17 +6,20 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle, Info, ShoppingCart, Sparkles, Clock } from 'lucide-react';
+import { Check, XCircle, Info, ShoppingCart, Sparkles, Clock, CheckCircle } from 'lucide-react';
 import { useLocalization } from '@/hooks/useLocalization';
 import { PLANS, type PricingPlanDetails } from '@/config/plans';
 import type { PlanId } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch'; // Using Switch instead of Tabs
+import { Label } from '@/components/ui/label';
 import { differenceInDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { cn } from '@/lib/utils';
+
 
 const proPlanMonthly = PLANS['pro-monthly'];
 const proPlanYearly = PLANS['pro-yearly'];
@@ -116,13 +119,7 @@ export default function PricingPage() {
     }
   };
 
-  const getFeatureIcon = (iconType?: 'check' | 'x' | 'info') => {
-    if (iconType === 'x') return <XCircle className="h-5 w-5 text-destructive mr-2 mt-0.5 shrink-0" />;
-    if (iconType === 'info') return <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 shrink-0" />;
-    return <CheckCircle className="h-5 w-5 text-accent mr-2 mt-0.5 shrink-0" />;
-  };
-
-  const plansToShow = [proPlan, businessPlan];
+  const plansToShow = [PLANS['none'], proPlan, businessPlan]; // Add a free tier for visual consistency
   
   const getIntroText = () => {
     if (isAlreadyPaid) {
@@ -134,20 +131,19 @@ export default function PricingPage() {
     if (currentUser && !userSubscription) {
         return t({en: "Welcome! Choose a plan below to start your 30-day free trial.", el: "Καλώς ήρθατε! Επιλέξτε ένα πρόγραμμα για να ξεκινήσετε τη δωρεάν δοκιμή 30 ημερών."});
     }
-    // This is for logged-out users
-    return t({en: "Create an account to automatically start your 30-day free Pro trial. Choose a plan below to continue when the trial ends.", el: "Δημιουργήστε λογαριασμό για να ξεκινήσετε αυτόματα τη δωρεάν δοκιμή 30 ημερών. Επιλέξτε ένα πρόγραμμα παρακάτω για να συνεχίσετε μετά τη δοκιμή."});
+    return t({en: "Create an account to automatically start your 30-day free Pro trial.", el: "Δημιουργήστε λογαριασμό για να ξεκινήσετε αυτόματα τη δωρεάν δοκιμή 30 ημερών."});
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-12">
         <section className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-primary font-headline">
-            {t({ en: 'Choose Your Plan', el: 'Επιλέξτε το Πρόγραμμά σας' })}
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+            {t({ en: 'Pricing', el: 'Τιμολόγηση' })}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {getIntroText()}
+            {t({ en: 'Get the best value for your money with our competitive pricing.', el: 'Αποκτήστε την καλύτερη αξία για τα χρήματά σας με τις ανταγωνιστικές μας τιμές.' })}
           </p>
         </section>
 
@@ -162,93 +158,77 @@ export default function PricingPage() {
         )}
 
         <section className="flex flex-col items-center gap-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold mb-2">{t({ en: 'Select Billing Cycle', el: 'Επιλέξτε Κύκλο Χρέωσης' })}</h2>
-              <p className="text-muted-foreground">{t({ en: 'Save more by choosing a yearly plan!', el: 'Εξοικονομήστε περισσότερα επιλέγοντας ετήσιο πρόγραμμα!' })}</p>
+            <div className="flex items-center space-x-3">
+              <Label htmlFor="billing-cycle" className={cn("font-medium", billingInterval === 'monthly' ? 'text-primary' : 'text-muted-foreground')}>
+                {t({ en: 'Monthly', el: 'Μηνιαία' })}
+              </Label>
+              <Switch
+                id="billing-cycle"
+                checked={billingInterval === 'yearly'}
+                onCheckedChange={(checked) => setBillingInterval(checked ? 'yearly' : 'monthly')}
+                aria-label="Toggle billing cycle"
+              />
+              <Label htmlFor="billing-cycle" className={cn("font-medium", billingInterval === 'yearly' ? 'text-primary' : 'text-muted-foreground')}>
+                {t({ en: 'Yearly', el: 'Ετήσια' })}
+                <span className="text-accent text-sm font-semibold ml-2">({t({en: 'Save Big!', el: 'Μεγάλη Έκπτωση!'})})</span>
+              </Label>
             </div>
-            <Tabs
-                defaultValue="monthly"
-                onValueChange={(value) => setBillingInterval(value as 'monthly' | 'yearly')}
-                className="w-auto"
-            >
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="monthly">{t({ en: 'Monthly', el: 'Μηνιαία' })}</TabsTrigger>
-                    <TabsTrigger value="yearly">{t({ en: 'Yearly', el: 'Ετήσια' })} <span className="hidden sm:inline ml-2 bg-destructive text-destructive-foreground font-semibold px-2.5 py-1 rounded-full text-xs animate-pulse">SAVE BIG!</span></TabsTrigger>
-                </TabsList>
-            </Tabs>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto w-full">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto w-full items-start">
             {plansToShow.map((plan) => {
                 const isCurrentPlan = isAlreadyPaid && userSubscription?.planId === plan.id;
-                const isDisabled = isLoadingPlan === plan.id || authLoading || isAlreadyPaid;
+                const isLoadingThisPlan = isLoadingPlan === plan.id;
+                const isHighlighted = plan.isFeatured;
 
                 const getButtonText = () => {
+                  if (plan.id === 'none') return t({en: "Start for Free", el: "Ξεκινήστε Δωρεάν"});
                   if (isCurrentPlan) return t({en: "Your Current Plan", el: "Το Πρόγραμμά σας"});
-                  if (isTrialing) return t({en: "Invest Now", el: "Επενδύστε Τώρα"});
+                  if (isTrialing) return t({en: "Activate Now", el: "Ενεργοποίηση Τώρα"});
                   return t(plan.buttonTextKey);
                 }
 
                 return (
                   <Card
                   key={plan.id}
-                  className={`flex flex-col rounded-lg transition-all duration-300 ${
-                      isCurrentPlan ? 'border-accent border-[3px] ring-4 ring-accent/60 relative shadow-2xl' :
-                      plan.isFeatured
-                      ? 'border-primary border-[3px] ring-4 ring-primary/60 relative shadow-2xl'
-                      : 'border shadow-xl hover:shadow-2xl'
-                  }`}
-                  >
-                  {plan.isFeatured && !isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-sm font-semibold rounded-full shadow-md flex items-center gap-1.5">
-                        <Sparkles className="h-4 w-4" />
-                        {t({en: "Most Popular", el: "Πιο Δημοφιλές"})}
-                      </div>
+                  className={cn(
+                    "flex flex-col rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 h-full",
+                    isHighlighted ? 'bg-primary text-primary-foreground border-2 border-primary' : 'bg-card text-card-foreground',
+                     isCurrentPlan ? 'border-accent ring-2 ring-accent' : ''
                   )}
-                  <CardHeader className="pt-8">
-                      <CardTitle className="text-2xl font-bold font-headline text-center text-primary">
-                      {t(plan.nameKey)}
+                  >
+                  <CardHeader className="pt-8 pb-4">
+                      <CardTitle className="text-2xl font-bold text-center">
+                        {t(plan.nameKey)}
                       </CardTitle>
-                      <CardDescription className="text-center text-muted-foreground min-h-[40px]">
-                      {t(plan.descriptionKey)}
+                      <CardDescription className={cn("text-center min-h-[20px]", isHighlighted ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+                        {plan.id === 'none' ? t({en: 'To get you started', el: 'Για να ξεκινήσετε'}) : t(plan.descriptionKey)}
                       </CardDescription>
-                      {plan.isFeatured && (
-                        <div className="flex items-center justify-center gap-2 text-destructive font-semibold pt-2">
-                          <Clock className="h-5 w-5 animate-pulse" />
-                          <span>{t({en: "Limited Time Offer!", el: "Προσφορά Περιορισμένου Χρόνου!"})}</span>
-                        </div>
-                      )}
                   </CardHeader>
-                  <CardContent className="flex-grow">
-                      <div className="text-center mb-6">
-                        <div className="flex items-baseline justify-center gap-2">
-                          {plan.listPriceKey && t(plan.listPriceKey) !== t(plan.priceKey) && (
-                            <span className="text-2xl font-medium text-muted-foreground line-through decoration-destructive decoration-2">
-                              {t(plan.listPriceKey)}
-                            </span>
-                          )}
-                          <span className="text-4xl font-extrabold text-foreground">{t(plan.priceKey)}</span>
-                        </div>
-                        {plan.priceSuffixKey && <span className="text-muted-foreground">{t(plan.priceSuffixKey)}</span>}
+                  <CardContent className="flex-grow flex flex-col">
+                      <div className="text-center mb-8">
+                        <span className="text-5xl font-extrabold">{t(plan.priceKey)}</span>
+                        {plan.priceSuffixKey && <span className={cn("text-sm", isHighlighted ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{t(plan.priceSuffixKey)}</span>}
                       </div>
-                      <ul className="space-y-3">
+                      <ul className="space-y-4 flex-grow">
                       {plan.features.map((feature, index) => (
                           <li key={t(feature.textKey) + index} className="flex items-start">
-                          {getFeatureIcon(feature.icon)}
-                          <span className={`text-muted-foreground ${!feature.available ? 'line-through' : ''}`}>{t(feature.textKey)}</span>
+                            <Check className={cn("h-5 w-5 mr-3 mt-0.5 shrink-0", isHighlighted ? 'text-accent' : 'text-primary')} />
+                            <span className={isHighlighted ? 'text-primary-foreground/90' : 'text-muted-foreground'}>{t(feature.textKey)}</span>
                           </li>
                       ))}
                       </ul>
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="p-6 mt-6">
                       <Button
-                      onClick={() => handleChoosePlan(plan.id)}
-                      className={`w-full text-lg py-3 ${
-                        isCurrentPlan ? 'bg-accent hover:bg-accent/90 text-accent-foreground' :
-                        plan.isFeatured ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-accent hover:bg-accent/90 text-accent-foreground'
-                      }`}
-                      disabled={isDisabled}
+                        onClick={() => handleChoosePlan(plan.id)}
+                        className={cn(
+                            'w-full text-lg py-6',
+                            isHighlighted ? 'bg-white text-primary hover:bg-gray-200' : 'bg-primary hover:bg-primary/90 text-primary-foreground',
+                            isCurrentPlan && '!bg-accent hover:!bg-accent/90'
+                        )}
+                        disabled={isLoadingThisPlan || authLoading || (isAlreadyPaid && !isCurrentPlan) || (plan.id === 'none' && currentUser != null)}
                       >
-                      {isLoadingPlan === plan.id ? (
+                      {isLoadingThisPlan ? (
                         <>
                           <LoadingSpinner className="mr-2 h-5 w-5" />
                           {t({ en: 'Redirecting...', el: 'Ανακατεύθυνση...' })}
@@ -259,10 +239,7 @@ export default function PricingPage() {
                             {getButtonText()}
                           </>
                       ) : (
-                          <>
-                            <ShoppingCart className="mr-2 h-5 w-5" />
-                            {getButtonText()}
-                          </>
+                          getButtonText()
                       )}
                       </Button>
                   </CardFooter>

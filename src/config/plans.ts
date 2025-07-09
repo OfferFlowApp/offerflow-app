@@ -46,10 +46,15 @@ const businessEntitlements: PlanEntitlements = {
 export const PLANS: Record<PlanId, PricingPlanDetails> = {
   'none': {
     id: 'none',
-    nameKey: { en: 'No Plan', el: 'Κανένα Πρόγραμμα' },
-    priceKey: { en: '', el: '' },
+    nameKey: { en: 'Free', el: 'Δωρεάν' },
+    priceKey: { en: '€0', el: '€0' },
+    priceSuffixKey: { en: '/ month', el: '/ μήνα' },
     descriptionKey: { en: '', el: '' },
-    features: [],
+    features: [
+        { textKey: { en: '1 Offer Sheet', el: '1 Δελτίο Προσφοράς' } },
+        { textKey: { en: 'Standard PDF Export', el: 'Standard Εξαγωγή PDF' } },
+        { textKey: { en: 'Email Support', el: 'Υποστήριξη Email' } },
+    ],
     buttonTextKey: { en: 'Choose Plan', el: 'Επιλογή Προγράμματος' },
     entitlements: {
       ...defaultEntitlements,
@@ -59,87 +64,77 @@ export const PLANS: Record<PlanId, PricingPlanDetails> = {
   },
   'pro-monthly': {
     id: 'pro-monthly',
-    nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
-    listPriceKey: { en: '€11.98', el: '€11.98' },
+    nameKey: { en: 'Pro', el: 'Pro' },
     priceKey: { en: '€7.98', el: '€7.98' },
     priceSuffixKey: { en: '/ month', el: '/ μήνα' },
-    descriptionKey: { en: 'Limited Time Deal! Huge monthly savings.', el: 'Προσφορά για λίγο! Τεράστια μηνιαία εξοικονόμηση.' },
+    descriptionKey: { en: 'For individual professionals.', el: 'Για μεμονωμένους επαγγελματίες.' },
     features: [
-        { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
-        { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
-        { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
-        { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
-        { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
-        { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
+        { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' } },
+        { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' } },
+        { textKey: { en: 'Save & Reuse Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' } },
+        { textKey: { en: 'Save & Manage Customers', el: 'Αποθήκευση & Διαχείριση Πελατών' } },
+        { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' } },
     ],
-    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
+    buttonTextKey: { en: 'Get Pro', el: 'Απόκτηση Pro' },
     isFeatured: true,
     entitlements: proEntitlements,
     stripePriceId: 'price_1RcYqTGxDVvbchhpdQw7awbM' 
   },
   'pro-yearly': {
     id: 'pro-yearly',
-    nameKey: { en: 'Pro Plan', el: 'Pro Πρόγραμμα' },
-    listPriceKey: { en: '€143.76', el: '€143.76' },
+    nameKey: { en: 'Pro', el: 'Pro' },
     priceKey: { en: '€83.79', el: '€83.79' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
-    descriptionKey: { en: 'Limited Time Deal! Save ~1.5 months.', el: 'Προσφορά για λίγο! Εξοικονομήστε ~1.5 μήνα.' },
-    features: [
-        { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' }, available: true, icon: 'check' },
-        { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' }, available: true, icon: 'check' },
-        { textKey: { en: 'Save & Reuse Custom Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' }, available: true, icon: 'check' },
-        { textKey: { en: 'Save & Manage Customer Info', el: 'Αποθήκευση & Διαχείριση Πελατών' }, available: true, icon: 'check' },
-        { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' }, available: true, icon: 'check' },
-        { textKey: { en: 'Standard Email Support (~48h)', el: 'Standard Υποστήριξη Email (~48h)' }, available: true, icon: 'check' },
+    descriptionKey: { en: 'For individual professionals.', el: 'Για μεμονωμένους επαγγελματίες.' },
+     features: [
+        { textKey: { en: 'Unlimited Offer Sheets', el: 'Απεριόριστα Δελτία Προσφορών' } },
+        { textKey: { en: 'Custom Logo & Branding', el: 'Προσαρμοσμένο Λογότυπο & Επωνυμία' } },
+        { textKey: { en: 'Save & Reuse Templates', el: 'Αποθήκευση & Επαναχρησιμοποίηση Προτύπων' } },
+        { textKey: { en: 'Save & Manage Customers', el: 'Αποθήκευση & Διαχείριση Πελατών' } },
+        { textKey: { en: 'PDF, JPEG, JSON Export', el: 'Εξαγωγή PDF, JPEG, JSON' } },
     ],
-    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
+    buttonTextKey: { en: 'Get Pro', el: 'Απόκτηση Pro' },
     isFeatured: true,
     entitlements: proEntitlements,
     stripePriceId: 'price_1RcZ5VGxDVvbchhpXseQQ1qV' 
   },
   'business-monthly': {
     id: 'business-monthly',
-    nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
+    nameKey: { en: 'Business', el: 'Business' },
     priceKey: { en: '€38.98', el: '€38.98' },
     priceSuffixKey: { en: '/ month', el: '/ μήνα' },
     descriptionKey: { en: 'For growing teams and businesses.', el: 'Για αναπτυσσόμενες ομάδες και επιχειρήσεις.' },
     features: [
-        { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
-        { textKey: { en: 'Replace Header Logo with Yours', el: 'Αντικατάσταση Λογοτύπου Κεφαλίδας' }, available: true, icon: 'check' },
-        { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
-        { textKey: { en: 'Excel/CSV Export Options', el: 'Επιλογές Εξαγωγής Excel/CSV' }, available: true, icon: 'check' },
-        { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
-        { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
+        { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' } },
+        { textKey: { en: 'Replace Header Logo', el: 'Αντικατάσταση Λογοτύπου Κεφαλίδας' } },
+        { textKey: { en: 'Excel/CSV Export Options', el: 'Επιλογές Εξαγωγής Excel/CSV' } },
+        { textKey: { en: 'Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης' } },
+        { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' } },
     ],
-    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
+    buttonTextKey: { en: 'Get Business', el: 'Απόκτηση Business' },
     entitlements: businessEntitlements,
     stripePriceId: 'price_1RcYuxGxDVvbchhpjUS5jpM9' 
   },
   'business-yearly': {
     id: 'business-yearly',
-    nameKey: { en: 'Business Plan', el: 'Business Πρόγραμμα' },
-    listPriceKey: { en: '€467.76', el: '€467.76' },
+    nameKey: { en: 'Business', el: 'Business' },
     priceKey: { en: '€389.80', el: '€389.80' },
     priceSuffixKey: { en: '/ year', el: '/ έτος' },
-    descriptionKey: { en: 'Save 2 months! For growing businesses.', el: 'Εξοικονομήστε 2 μήνες! Για αναπτυσσόμενες επιχειρήσεις.' },
+    descriptionKey: { en: 'For growing teams and businesses.', el: 'Για αναπτυσσόμενες ομάδες και επιχειρήσεις.' },
     features: [
-        { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' }, available: true, icon: 'check' },
-        { textKey: { en: 'Replace Header Logo with Yours', el: 'Αντικατάσταση Λογοτύπου Κεφαλίδας' }, available: true, icon: 'check' },
-        { textKey: { en: 'Up to 4 Team Users', el: 'Έως 4 Χρήστες Ομάδας' }, available: true, icon: 'check' },
-        { textKey: { en: 'Excel/CSV Export Options', el: 'Επιλογές Εξαγωγής Excel/CSV' }, available: true, icon: 'check' },
-        { textKey: { en: 'Offer Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης Προσφορών' }, available: true, icon: 'check' },
-        { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' }, available: true, icon: 'check' },
+        { textKey: { en: 'Everything in Pro Plan', el: 'Όλα όσα περιλαμβάνει το Pro' } },
+        { textKey: { en: 'Replace Header Logo', el: 'Αντικατάσταση Λογοτύπου Κεφαλίδας' } },
+        { textKey: { en: 'Excel/CSV Export Options', el: 'Επιλογές Εξαγωγής Excel/CSV' } },
+        { textKey: { en: 'Performance Analytics', el: 'Αναλυτικά Στοιχεία Απόδοσης' } },
+        { textKey: { en: 'Priority Support (24h)', el: 'Υποστήριξη κατά Προτεραιότητα (24h)' } },
     ],
-    buttonTextKey: { en: 'Invest Now', el: 'Επενδύστε Τώρα' },
+    buttonTextKey: { en: 'Get Business', el: 'Απόκτηση Business' },
     entitlements: businessEntitlements,
     stripePriceId: 'price_1RcZHOGxDVvbchhpxW5LE71u'
   },
 };
 
 export const getPlanDetails = (planId: PlanId | undefined | null): PricingPlanDetails => {
-  // A 'canceled' subscription should not grant entitlements.
-  // We can refine this logic based on how we want to handle grace periods.
-  // For now, if a plan exists, they get its details. The AuthContext can decide what to do with a 'canceled' status.
   return PLANS[planId || 'none'] || PLANS.none;
 };
 
@@ -149,5 +144,5 @@ export const getEntitlements = (planId: PlanId | undefined | null): PlanEntitlem
 
 export const isPaidUser = (planId: PlanId | undefined | null): boolean => {
   if (!planId || planId === 'none') return false;
-  return true; // Any plan other than 'none' is a paid/trialing plan
+  return true;
 };
