@@ -446,8 +446,8 @@ export default function OfferSheetForm() {
   };
 
   const handleVatRateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setOfferData({ ...offerData, vatRate: parseFloat(value) || 0 });
+    const value = parseFloat(e.target.value);
+    setOfferData({ ...offerData, vatRate: Math.max(0, value) || 0 });
   };
 
   const currentCalculatedTotals = React.useMemo(() => {
@@ -1209,7 +1209,7 @@ export default function OfferSheetForm() {
           <div className="space-y-2">
             <Label htmlFor="vatRate">{t({ en: 'VAT Rate (%)', el: 'Ποσοστό ΦΠΑ (%)' })}</Label>
             <div className="flex items-center">
-              <Input id="vatRate" type="number" value={offerData.vatRate || 0} onChange={handleVatRateChange} placeholder="0" className="w-24 mr-2" />
+              <Input id="vatRate" type="number" value={offerData.vatRate || 0} onChange={handleVatRateChange} placeholder="0" min="0" className="w-24 mr-2" />
               <Percent className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
