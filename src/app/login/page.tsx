@@ -3,7 +3,7 @@
 
 import React, { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 
 import Header from '@/components/layout/Header';
@@ -42,6 +42,9 @@ export default function LoginPage() {
   const { t, language } = useLocalization();
   const { signInWithEmail, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/dashboard';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -50,7 +53,7 @@ export default function LoginPage() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    const errorMsg = await signInWithEmail(email, password);
+    const errorMsg = await signInWithEmail(email, password, redirectPath);
     if (errorMsg) {
       setError(errorMsg);
     }
@@ -59,7 +62,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setError('');
-    const errorMsg = await signInWithGoogle();
+    const errorMsg = await signInWithGoogle(redirectPath);
     if (errorMsg) {
         setError(errorMsg);
     }

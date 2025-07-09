@@ -3,6 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getUserIdFromToken } from '@/lib/server-utils';
 import { adminDb } from '@/lib/firebase-admin';
 
+// The new analytics page will be at /analytics
+// This file is now deprecated and can be removed.
+// I am renaming this file to reflect that it is no longer the dashboard.
 export async function GET(request: NextRequest) {
     const authToken = request.headers.get('Authorization');
     const userId = await getUserIdFromToken(authToken || '');

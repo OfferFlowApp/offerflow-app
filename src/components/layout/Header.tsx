@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, ArrowLeft, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { Languages, UserCircle, LogIn, UserPlus, Settings, FileText, CreditCard, HelpCircle, ArrowLeft, ArrowRight, LayoutDashboard as DashboardIcon, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -75,11 +75,11 @@ export default function Header() {
 
         <div className="mr-8 flex items-center">
           {currentEntitlements.canReplaceHeaderLogo && headerLogoUrl ? (
-            <Link href="/">
+            <Link href={currentUser ? "/dashboard" : "/"}>
               <Image src={headerLogoUrl} alt={t({en: "Company Logo", el: "Λογότυπο Εταιρείας"})} width={120} height={40} className="max-h-10 object-contain" data-ai-hint="company brand" />
             </Link>
           ) : (
-            <Link href="/" className="flex items-center">
+            <Link href={currentUser ? "/dashboard" : "/"} className="flex items-center">
               <span className="text-2xl font-bold">
                 <span className="text-primary">Offer</span><span className="text-accent">Flow</span>
               </span>
@@ -87,16 +87,24 @@ export default function Header() {
           )}
         </div>
 
-        <nav className="flex items-center space-x-4 text-sm font-medium">
-          <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary flex items-center">
-            <FileText className="mr-1 h-4 w-4" />
-            {t({ en: 'Create Offer', el: 'Δημιουργία' })}
-          </Link>
-          {currentUser && currentEntitlements.canUseDashboard && (
+        <nav className="hidden md:flex items-center space-x-4 text-sm font-medium">
+          {currentUser && (
+            <>
               <Link href="/dashboard" className="transition-colors hover:text-primary flex items-center">
-                  <LayoutDashboard className="mr-1 h-4 w-4" />
-                  {t({ en: 'Dashboard', el: 'Πίνακας' })}
+                <DashboardIcon className="mr-1 h-4 w-4" />
+                {t({ en: 'Dashboard', el: 'Πίνακας' })}
               </Link>
+              <Link href="/offer-sheet/edit" className="transition-colors hover:text-primary flex items-center">
+                <FileText className="mr-1 h-4 w-4" />
+                {t({ en: 'Create Offer', el: 'Δημιουργία' })}
+              </Link>
+              {currentEntitlements.hasAnalytics && (
+                  <Link href="/analytics" className="transition-colors hover:text-primary flex items-center">
+                      <BarChart2 className="mr-1 h-4 w-4" />
+                      {t({ en: 'Analytics', el: 'Αναλυτικά' })}
+                  </Link>
+              )}
+            </>
           )}
            <Link href="/pricing" className="transition-colors hover:text-primary flex items-center">
             <CreditCard className="mr-1 h-4 w-4" />

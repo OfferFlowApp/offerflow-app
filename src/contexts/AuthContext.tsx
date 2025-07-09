@@ -11,6 +11,8 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  browserSessionPersistence,
+  setPersistence,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase'; // Import db
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore'; // Import Firestore functions
@@ -27,8 +29,8 @@ interface AuthContextType {
   loading: boolean;
   logOut: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<string | null>;
-  signInWithEmail: (email: string, password: string) => Promise<string | null>;
-  signInWithGoogle: () => Promise<string | null>;
+  signInWithEmail: (email: string, password: string, redirectPath?: string) => Promise<string | null>;
+  signInWithGoogle: (redirectPath?: string) => Promise<string | null>;
   incrementOfferCountForCurrentUser: () => Promise<boolean>;
   fetchUserSubscription: (userId: string) => Promise<UserSubscription | null>;
   refreshSubscription: () => Promise<void>;
@@ -36,8 +38,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Entitlements for a user who is logged in but has no active subscription.
-const defaultNoPlanEntitlements = getEntitlements('none');
+// Entitlements for a user who is logged out or has no plan.
+const loggedOutEntitlements = getEntitlements('none');
+// Set max offers to 0 for logged out users to force signup/login.
+loggedOutEntitlements.maxOfferSheetsPerMonth = 0;
+
 
 const getFriendlyAuthErrorMessage = (errorCode: string, t: (translations: { [key in 'en' | 'el']?: string }) => string): string => {
   switch (errorCode) {
@@ -66,7 +71,7 @@ const getFriendlyAuthErrorMessage = (errorCode: string, t: (translations: { [key
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
-  const [currentEntitlements, setCurrentEntitlements] = useState<PlanEntitlements>(defaultNoPlanEntitlements);
+  const [currentEntitlements, setCurrentEntitlements] = useState<PlanEntitlements>(loggedOutEntitlements);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
@@ -110,6 +115,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
         setCurrentEntitlements(getEntitlements(sub.planId));
       } else {
+        // A logged in user with no plan gets 'none' entitlements, allowing 1 offer.
         setCurrentEntitlements(getEntitlements('none'));
       }
       setLoading(false);
@@ -121,7 +127,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!auth || typeof auth.onAuthStateChanged !== 'function') {
       setCurrentUser(null);
       setUserSubscription(null);
-      setCurrentEntitlements(defaultNoPlanEntitlements);
+      setCurrentEntitlements(loggedOutEntitlements);
       setLoading(false);
       return;
     }
@@ -139,7 +145,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         }
       } else {
         setUserSubscription(null);
-        setCurrentEntitlements(defaultNoPlanEntitlements);
+        setCurrentEntitlements(loggedOutEntitlements);
       }
       setLoading(false);
     });
@@ -156,9 +162,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
     setLoading(true);
     try {
+      await setPersistence(auth, browserSessionPersistence);
       await createUserWithEmailAndPassword(auth, email, password);
-      toast({ title: t({en: "Account Created!", el: "Ο λογαριασμός δημιουργήθηκε!"}), description: t({en: "Welcome! Choose a plan below to start your free trial.", el: "Καλώς ήρθατε! Επιλέξτε ένα πρόγραμμα για να ξεκινήσετε τη δωρεάν δοκιμή σας."}) });
-      router.push('/pricing');
+      toast({ title: t({en: "Account Created!", el: "Ο λογαριασμός δημιουργήθηκε!"}), description: t({en: "Welcome! You have a 30-day free Pro trial.", el: "Καλώς ήρθατε! Έχετε 30 ημέρες δωρεάν δοκιμή Pro."}) });
+      router.push('/dashboard');
       return null; // No error
     } catch (error: any) {
       console.error("Sign up error:", error);
@@ -170,7 +177,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  const signInWithEmail = async (email: string, password: string): Promise<string | null> => {
+  const signInWithEmail = async (email: string, password: string, redirectPath: string = '/dashboard'): Promise<string | null> => {
     if (!auth || typeof signInWithEmailAndPassword !== 'function') {
       const errorMsg = t({en: "Login is currently unavailable.", el: "Η σύνδεση δεν είναι διαθέσιμη."});
       toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: errorMsg, variant: "destructive" });
@@ -178,9 +185,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
     setLoading(true);
     try {
+      await setPersistence(auth, browserSessionPersistence);
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in!", el: "Επιτυχής σύνδεση!"}) });
-      router.push('/');
+      router.push(redirectPath);
       return null; // No error
     } catch (error: any) {
       console.error("Sign in error:", error);
@@ -192,7 +200,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  const signInWithGoogle = async (): Promise<string | null> => {
+  const signInWithGoogle = async (redirectPath: string = '/dashboard'): Promise<string | null> => {
     if (!auth || typeof signInWithPopup !== 'function' || typeof GoogleAuthProvider !== 'function') {
       const errorMsg = t({en: "Google Sign-In is unavailable.", el: "Η σύνδεση με Google δεν είναι διαθέσιμη."});
       toast({ title: t({en: "Service Unavailable", el: "Η υπηρεσία δεν είναι διαθέσιμη"}), description: errorMsg, variant: "destructive" });
@@ -201,18 +209,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      
-      const subRef = doc(db, 'users', result.user.uid, 'subscription', 'current');
-      const subSnap = await getDoc(subRef);
-      
-      if (!subSnap.exists()) {
-        toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Welcome! Check out our plans to start a trial.", el: "Καλώς ήρθατε! Δείτε τα πλάνα μας για να ξεκινήσετε μια δοκιμή."}) });
-         router.push('/pricing');
-      } else {
-         toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
-         router.push('/');
-      }
+      await setPersistence(auth, browserSessionPersistence);
+      await signInWithPopup(auth, provider);
+      toast({ title: t({en: "Signed In", el: "Συνδεθήκατε"}), description: t({en: "Successfully signed in with Google!", el: "Επιτυχής σύνδεση με Google!"}) });
+      router.push(redirectPath);
       return null; // No error
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
@@ -231,15 +231,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!auth || typeof signOut !== 'function') {
       setCurrentUser(null);
       setUserSubscription(null);
-      setCurrentEntitlements(defaultNoPlanEntitlements);
+      setCurrentEntitlements(loggedOutEntitlements);
       setLoading(false); 
-      router.push('/login'); 
+      router.push('/'); 
       return;
     }
     try {
       await signOut(auth);
       toast({ title: t({en: "Signed Out", el: "Αποσυνδεθήκατε"}), description: t({en: "Successfully signed out.", el: "Επιτυχής αποσύνδεση."})});
-      router.push('/login'); 
+      router.push('/'); 
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast({ title: t({en: "Sign Out Failed", el: "Η Αποσύνδεση Απέτυχε"}), description: getFriendlyAuthErrorMessage(error.code, t), variant: "destructive" });
