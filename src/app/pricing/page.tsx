@@ -119,7 +119,7 @@ export default function PricingPage() {
     }
   };
 
-  const plansToShow = [PLANS['none'], proPlan, businessPlan]; // Add a free tier for visual consistency
+  const plansToShow = [proPlan, businessPlan];
   
   const getIntroText = () => {
     if (isAlreadyPaid) {
@@ -174,7 +174,7 @@ export default function PricingPage() {
               </Label>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto w-full items-start">
+            <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto w-full items-start">
             {plansToShow.map((plan) => {
                 const isCurrentPlan = isAlreadyPaid && userSubscription?.planId === plan.id;
                 const isLoadingThisPlan = isLoadingPlan === plan.id;
