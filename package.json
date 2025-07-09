@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "github-upload": "git init -b main && git remote add origin https://github.com/OfferFlowApp/offerflow-app.git && git add . && git commit -m 'Initial project upload' && git push -u origin main"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

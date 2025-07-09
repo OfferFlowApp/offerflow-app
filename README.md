@@ -18,39 +18,30 @@ OfferFlow is a web application built with Next.js, TypeScript, and Tailwind CSS,
 
 Congratulations! The application code is now complete and ready for you to publish. The final steps involve creating your personal Firebase and Stripe accounts and connecting them to the application using your private API keys. This guide will walk you through the entire process, step by step.
 
-### **Step 1: Open and Populate the `.env.local` File**
+### **Step 1: Upload Your Code to GitHub**
 
-This file will hold all your secret API keys. The keys currently in this file are for the development environment only and **must be replaced**.
+Before you can deploy your site, you need to upload your code to the empty GitHub repository you created.
 
-1.  In your project's file explorer, find and open the file named `.env.local`.
-2.  Delete the existing placeholder content.
-3.  Follow the instructions below to get your personal keys and paste them into this file. The `.env.example` file serves as a reference for what you need.
+1.  **Open a new terminal** in this development environment if you don't already have one open.
+2.  Copy and paste the following single command into the terminal and press **Enter**:
+    ```bash
+    npm run github-upload
+    ```
+    This command will automatically handle all the steps: initializing Git, adding your files, creating a commit, and pushing them to your `OfferFlowApp/offerflow-app` repository on GitHub.
 
----
+### **Step 2: Connect Firebase to GitHub**
 
-### **Step 2: Set Up Your **NEW** Firebase Project**
+1.  Go back to the Firebase "Set up App Hosting" page.
+2.  **Refresh the page.**
+3.  Under "Deployment settings," you should now be able to select **`main`** from the "Live branch" dropdown.
+4.  Click **"Finish setup"**.
 
-This is for your user database and cloud storage. It is crucial that you create a **new, personal project** for your live application.
+Firebase will now deploy your application. Once it's finished, it will give you your live public URL.
 
-1.  **Create a New Firebase Project**: Go to the [Firebase Console](https://console.firebase.google.com/) and click **"Create a project"**. Do **not** use the existing `offerflow-dmswf` project, as that is for development only. Give your new project a unique name.
-2.  **Create a Web App**: Once your new project is created, click the Web icon (`</>`) on the project overview page to add a new Web App.
-3.  **Copy Firebase Keys**: Firebase will give you a `firebaseConfig` object. Copy the keys from this object into your `.env.local` file.
-    *   `NEXT_PUBLIC_FIREBASE_API_KEY`
-    *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-    *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-    *   ...and so on for all the `NEXT_PUBLIC_FIREBASE_` keys.
-4.  **Enable Services in Your New Project**:
-    *   In the Firebase Console, go to **Authentication** -> **Sign-in method** and enable **Email/Password** and **Google**.
-    *   Go to **Firestore Database** and **Create database**. Start in **test mode**.
-
----
-
-### **Step 3: Set Up Your Stripe Account**
-
-This is for handling customer subscriptions and payments.
+### **Step 3: Set Up Your Stripe Account & Webhook**
 
 1.  **Create a Stripe Account**: Go to [Stripe.com](https://dashboard.stripe.com/register) and create an account.
-2.  **Get Your API Key**: In the Stripe Dashboard, go to **Developers** -> **API keys**. Find your **Secret key** (`sk_...`) and copy it into your `.env.local` file for `STRIPE_SECRET_KEY`.
+2.  **Get Your API Key**: In the Stripe Dashboard, go to **Developers** -> **API keys**. Find your **Secret key** (`sk_...`) and paste it into your `.env.local` file for `STRIPE_SECRET_KEY`.
 3.  **Create Products and Prices**:
     *   In the Stripe Dashboard, go to the **Products** section.
     *   Create two products: a "Pro Plan" and a "Business Plan".
@@ -58,31 +49,13 @@ This is for handling customer subscriptions and payments.
     *   After creating each price, Stripe will give you a **Price ID** (`price_...`). You will have four Price IDs in total.
 4.  **Update Plan IDs in Code**:
     *   Open the file `src/config/plans.ts`.
-    *   Replace the placeholder `stripePriceId` values with the four real Price IDs you just created in Stripe. Make sure you match them correctly (e.g., the monthly Pro price ID goes into the `pro-monthly` plan).
-5.  **Set Up Webhook**: This lets Stripe notify your app about payments.
-    *   **Deploy your app first!** You need a public URL (e.g., `https://your-app.com`) before you can create the webhook.
+    *   Replace the placeholder `stripePriceId` values with the four real Price IDs you just created in Stripe.
+5.  **Set Up Webhook**:
     *   In Stripe, go to **Developers** -> **Webhooks**.
-    *   Click **Add endpoint**. The URL is your public URL plus `/api/stripe-webhook`. (e.g., `https://your-app.com/api/stripe-webhook`).
+    *   Click **Add endpoint**. The URL is your new public URL from Firebase plus `/api/stripe-webhook`. (e.g., `https://your-app.web.app/api/stripe-webhook`).
     *   For the events, add: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`.
     *   Create the endpoint. Stripe will give you a **Webhook signing secret** (`whsec_...`). Copy this into your `.env.local` file for `STRIPE_WEBHOOK_SECRET`.
 
 ---
 
-That's it! Once you've completed these steps, your application will be fully configured, operational, and ready for customers.
-
-### Local Development Setup
-
-To run this project on your local machine for testing or further development:
-
-1.  **Clone the repository.**
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Configure Environment Variables:**
-    - Follow the "Final Steps to Go Live" guide above to create and populate your `.env.local` file with your keys.
-4.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+That's it! Once you've completed these steps, your application will be fully configured and operational.
