@@ -64,7 +64,7 @@ export default function LandingPage() {
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-6">
                         {t({en: "Trusted By", el: "Μας Εμπιστεύονται"})}
                     </p>
-                    <div className="flex items-center justify-center gap-x-8 sm:gap-x-12 gap-y-4 text-muted-foreground">
+                    <div className="flex items-center justify-center gap-x-8 sm:gap-x-16 gap-y-4 text-muted-foreground flex-wrap">
                         <svg
                             role="img"
                             aria-label="Giorgaras Furniture Logo"
@@ -76,6 +76,27 @@ export default function LandingPage() {
                             <text x="0" y="40" fontFamily="sans-serif" fontSize="12">FURNITURE</text>
                             <text x="145" y="40" fontFamily="sans-serif" fontSize="10" fontStyle="italic">since 1965</text>
                         </svg>
+
+                         <div className="flex flex-col items-center">
+                           <svg 
+                                role="img" 
+                                aria-label="Rhodes Inc. Logo" 
+                                className="h-12 w-12" 
+                                viewBox="0 0 100 100" 
+                                fill="none" 
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <g stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M50 15 C 80 30, 80 70, 50 85" fill="#00808030"/>
+                                    <path d="M50 15 C 20 30, 20 70, 50 85" fill="#4b008230" />
+                                    <path d="M50 15 C 80 30, 80 70, 50 85" />
+                                    <path d="M50 15 C 20 30, 20 70, 50 85" />
+                                    <path d="M40 25 C 70 40, 70 60, 40 75" opacity="0.7"/>
+                                    <path d="M60 25 C 30 40, 30 60, 60 75" opacity="0.7"/>
+                                </g>
+                           </svg>
+                           <span className="text-xs font-semibold tracking-wider mt-1">rhodesinc</span>
+                        </div>
                     </div>
                 </div>
             </div>
