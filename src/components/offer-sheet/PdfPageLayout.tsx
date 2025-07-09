@@ -166,7 +166,14 @@ const PdfPageLayout: React.FC<PdfPageLayoutProps> = (props) => {
                 {calculatedTotals.totalOriginalPrice.toFixed(2) !== calculatedTotals.subtotalDiscounted.toFixed(2) && (
                   <p>{t({en: "Total Original (Excl. VAT):", el: "Συνολική Αρχική (Εκτός ΦΠΑ):"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.totalOriginalPrice.toFixed(2)}</span></p>
                 )}
-                <p className="font-bold">{t({en: "Subtotal (Excl. VAT):", el: "Μερικό Σύνολο (Εκτός ΦΠΑ):"})} <span className="font-semibold">{currencySymbol}{calculatedTotals.subtotalDiscounted.toFixed(2)}</span></p>
+                <p className="font-bold">
+                  {offerData.isFinalPriceVatInclusive
+                    ? t({en: "Subtotal (Net):", el: "Μερικό Σύνολο (Καθαρό):"})
+                    : t({en: "Subtotal (Excl. VAT):", el: "Μερικό Σύνολο (Εκτός ΦΠΑ):"})
+                  }
+                  {' '}
+                  <span className="font-semibold">{currencySymbol}{calculatedTotals.subtotalDiscounted.toFixed(2)}</span>
+                </p>
                 {vatRate !== undefined && vatRate > 0 && (
                   <>
                     <p>{t({en: "VAT", el: "ΦΠΑ"})} ({vatRate}%): <span className="font-semibold">{currencySymbol}{calculatedTotals.vatAmount.toFixed(2)}</span></p>

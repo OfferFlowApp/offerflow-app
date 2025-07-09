@@ -702,12 +702,6 @@ export default function OfferSheetForm() {
   };
 
   const handleExportJpeg = React.useCallback(async () => {
-    // Temporarily disabled for user
-    // if (!currentEntitlements.allowedExportFormats.includes('jpeg')) {
-    //     setUpgradeReason(t({en:"JPEG export is not available on your current plan.", el: "Η εξαγωγή JPEG δεν είναι διαθέσιμη."}));
-    //     setShowUpgradeModal(true);
-    //     return;
-    // }
     setIsExportingJpeg(true);
     try {
         const { default: html2canvas } = await import('html2canvas');
@@ -755,12 +749,6 @@ export default function OfferSheetForm() {
   }, [offerData, isFinalPriceVatInclusive, currentCurrencySymbol, currentCalculatedTotals, t, toast, currentEntitlements]);
 
   const handleExportJson = React.useCallback(async () => {
-    // Temporarily disabled for user
-    //  if (!currentEntitlements.allowedExportFormats.includes('json')) {
-    //     setUpgradeReason(t({en:"JSON data export is not available on your current plan.", el: "Η εξαγωγή JSON δεν είναι διαθέσιμη."}));
-    //     setShowUpgradeModal(true);
-    //     return;
-    // }
     setIsExportingJson(true);
     try {
         await new Promise(resolve => setTimeout(resolve, 100)); 
@@ -784,12 +772,6 @@ export default function OfferSheetForm() {
   }, [offerData, isFinalPriceVatInclusive, t, toast]);
 
   const handleExportExcel = React.useCallback(async () => {
-    // Temporarily disabled for user
-    // if (!currentEntitlements.allowedExportFormats.includes('csv')) {
-    //     setUpgradeReason(t({en:"Excel/CSV export is a Business feature.", el: "Η εξαγωγή Excel/CSV είναι Business λειτουργία."}));
-    //     setShowUpgradeModal(true);
-    //     return;
-    // }
     setIsExportingExcel(true);
     try {
         const { utils, write } = await import('xlsx');
@@ -912,13 +894,6 @@ export default function OfferSheetForm() {
   }, [exportAsPdfInternal, offerData.customerInfo, t, toast]);
 
   const handleSaveTemplate = async () => {
-    // Temporarily disabled for user
-    // if (!currentEntitlements.canSaveTemplates) {
-    //   setUpgradeReason(t({en:"Saving templates is a Pro/Business feature.", el:"Η αποθήκευση προτύπων είναι Pro/Business λειτουργία."}));
-    //   setShowUpgradeModal(true);
-    //   return;
-    // }
-    
     if (!currentUser) {
         toast({ title: t({en: "Authentication Required", el: "Απαιτείται Σύνδεση"}), description: t({en: "You must be logged in to save templates.", el: "Πρέπει να είστε συνδεδεμένοι."}), variant: "destructive" });
         return;
@@ -955,13 +930,6 @@ export default function OfferSheetForm() {
   };
 
   const handleSaveCustomer = async () => {
-    // Temporarily disabled for user
-    //  if (!currentEntitlements.canSaveCustomers) {
-    //   setUpgradeReason(t({en:"Saving customer profiles is a Pro/Business feature.", el: "Η αποθήκευση πελατών είναι Pro/Business λειτουργία."}));
-    //   setShowUpgradeModal(true);
-    //   return;
-    // }
-
     if (!currentUser) {
         toast({ title: t({en: "Authentication Required", el: "Απαιτείται Σύνδεση"}), description: t({en: "You must be logged in to save customers.", el: "Πρέπει να είστε συνδεδεμένοι."}), variant: "destructive" });
         return;
@@ -1218,7 +1186,12 @@ export default function OfferSheetForm() {
             </div>
           )}
           <div className="flex justify-between items-center text-base md:text-lg">
-            <span className="text-muted-foreground">{t({ en: 'Subtotal (Discounted, excl. VAT):', el: 'Μερικό Σύνολο (με Έκπτωση, χωρίς ΦΠΑ):' })}</span>
+            <span className="text-muted-foreground">
+              {isFinalPriceVatInclusive
+                ? t({ en: 'Subtotal (Net):', el: 'Μερικό Σύνολο (Καθαρό):' })
+                : t({ en: 'Subtotal (Discounted, excl. VAT):', el: 'Μερικό Σύνολο (με Έκπτωση, χωρίς ΦΠΑ):' })
+              }
+            </span>
             <span className="font-semibold">{currentCurrencySymbol}{currentCalculatedTotals.subtotalDiscounted.toFixed(2)}</span>
           </div>
           
