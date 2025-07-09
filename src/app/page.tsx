@@ -57,25 +57,28 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Featured In Section */}
+        {/* Trusted by Section */}
         <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-6">
-                <div className="flex-grow border-t border-gray-300"></div>
-                <span className="px-4 text-sm font-medium text-muted-foreground uppercase tracking-widest">{t({en: "Featured In", el: "Παρουσιάστηκε σε"})}</span>
-                <div className="flex-grow border-t border-gray-300"></div>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-x-8 sm:gap-x-12 gap-y-4 text-muted-foreground">
-                <div className="h-8 flex items-center text-2xl font-bold tracking-widest" title="BBC">BBC</div>
-                <div className="h-8 flex items-center text-2xl font-bold" title="FOX">FOX</div>
-                <div className="h-8 flex items-center text-2xl font-serif" title="The Guardian">The Guardian</div>
-                <div className="h-8 flex items-center text-xl font-sans font-bold" title="Business Insider">BUSINESS INSIDER</div>
-                <div className="h-8 flex items-center text-2xl font-bold" title="Vice">VICE</div>
-                <div className="h-8 flex items-center text-2xl font-sans" title="Bloomberg">Bloomberg</div>
-              </div>
+            <div className="container mx-auto px-4">
+                <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-6">
+                        {t({en: "Trusted By", el: "Μας Εμπιστεύονται"})}
+                    </p>
+                    <div className="flex items-center justify-center gap-x-8 sm:gap-x-12 gap-y-4 text-muted-foreground">
+                        <svg
+                            role="img"
+                            aria-label="Giorgaras Furniture Logo"
+                            className="h-12 w-auto"
+                            viewBox="0 0 250 50"
+                            fill="currentColor"
+                        >
+                            <text x="0" y="20" fontFamily="sans-serif" fontSize="22" fontWeight="bold">GIORGARAS</text>
+                            <text x="0" y="40" fontFamily="sans-serif" fontSize="12">FURNITURE</text>
+                            <text x="145" y="40" fontFamily="sans-serif" fontSize="10" fontStyle="italic">since 1965</text>
+                        </svg>
+                    </div>
+                </div>
             </div>
-          </div>
         </section>
 
 

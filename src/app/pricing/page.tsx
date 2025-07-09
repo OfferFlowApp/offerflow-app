@@ -143,7 +143,7 @@ export default function PricingPage() {
             {t({ en: 'Pricing', el: 'Τιμολόγηση' })}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t({ en: 'Get the best value for your money with our competitive pricing.', el: 'Αποκτήστε την καλύτερη αξία για τα χρήματά σας με τις ανταγωνιστικές μας τιμές.' })}
+            {getIntroText()}
           </p>
         </section>
 
