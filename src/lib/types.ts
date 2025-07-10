@@ -85,7 +85,8 @@ export interface PlanEntitlements {
 
 export interface UserSubscription {
   planId: PlanId; // Will be one of the 4 paid plans
-  status: 'active' | 'trialing' | 'canceled' | 'past_due'; // status from Stripe
+  // This now includes all possible statuses from Stripe to prevent type errors.
+  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'unpaid' | 'incomplete' | 'incomplete_expired' | 'paused';
   currentPeriodStart?: number; // Timestamp (ms)
   currentPeriodEnd?: number; // Timestamp (ms)
   offersCreatedThisPeriod?: number;

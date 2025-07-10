@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useLocalization } from '@/hooks/useLocalization';
-import { CheckCircle, Clock, XCircle, ExternalLink, UserCircle, ShieldCheck, Link as LinkIcon, Copy } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, ExternalLink, UserCircle, ShieldCheck, Link as LinkIcon, Copy, AlertTriangle } from 'lucide-react';
 import { getPlanDetails } from '@/config/plans';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -117,6 +117,19 @@ export default function ProfilePage() {
                 icon: <XCircle className="h-5 w-5 text-destructive" />,
                 text: t({en: "Canceled", el: "Ακυρωμένη"}),
                 description: endDate ? `${t({en:"Your access will end on", el:"Η πρόσβασή σας λήγει στις"})} ${format(endDate, 'PPP')}` : ''
+            };
+        case 'past_due':
+        case 'unpaid':
+            return {
+                icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
+                text: t({en: "Payment Issue", el: "Θέμα Πληρωμής"}),
+                description: t({en:"Please update your payment method to continue.", el:"Ενημερώστε τον τρόπο πληρωμής σας για να συνεχίσετε."})
+            };
+        case 'incomplete':
+             return {
+                icon: <Clock className="h-5 w-5 text-amber-500" />,
+                text: t({en: "Incomplete", el: "Εκκρεμής"}),
+                description: t({en:"Your subscription is not yet active. Please complete payment.", el:"Η συνδρομή σας δεν είναι ενεργή. Ολοκληρώστε την πληρωμή."})
             };
         default:
             return {
