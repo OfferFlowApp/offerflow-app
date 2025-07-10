@@ -53,16 +53,17 @@ export default function LandingPage() {
               Create and manage professional offer sheets.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Generate, customize, and share beautiful offer sheets in minutes. Streamline your sales process, reduce errors, and impress your clients.
+              Generate, customize, and share beautiful offer sheets in minutes. Streamline your sales process and impress your clients.
+              Sign up for a 30-day free trial—no credit card required.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button asChild size="lg" className="text-base">
+                <Button asChild size="lg" className="text-base bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Link href="/signup">
                     Create New Offer Sheet
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="text-base">
+                <Button asChild size="lg" variant="outline" className="text-base bg-accent hover:bg-accent/90 text-accent-foreground border-accent">
                     <Link href="/help">
                         Learn More
                     </Link>
@@ -117,3 +118,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
