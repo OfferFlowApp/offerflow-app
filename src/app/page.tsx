@@ -85,10 +85,10 @@ export default function LandingPage() {
                         <div className="flex flex-col items-center font-semibold text-xs tracking-wider uppercase">
                             media strom rho
                         </div>
-                         <div className="flex flex-col items-center font-semibold text-xs tracking-wider">
+                         <div className="flex flex-col items-center font-semibold text-xs tracking-wider uppercase">
                            rhodesinc
                         </div>
-                        <div className="flex flex-col items-center font-semibold text-xs tracking-wider">
+                        <div className="flex flex-col items-center font-semibold text-xs tracking-wider uppercase">
                             visuals.rho
                         </div>
                     </div>
